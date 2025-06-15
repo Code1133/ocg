@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "OneButtonLevelGeneration",
+	"Description": "One Button Level Generation Plugin",
+	"Category": "Other",
+	"CreatedBy": "Code1133",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "OneButtonLevelGeneration",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
