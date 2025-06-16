@@ -33,7 +33,10 @@ struct FOCGBiomeSettings
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     UMaterialInterface* BiomeMaterial;
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+	UMaterialFunctionInterface* BiomeMaterialFunc;
+	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     TArray<FOCGBiomeStaticMesh> StaticMeshSettings;
 

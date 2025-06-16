@@ -9,7 +9,8 @@
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ONEBUTTONLEVELGENERATION_API UOCGComponent : public UActorComponent
+class ONEBUTTONLEVELGENERATION_API
+UOCGComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -20,5 +21,10 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes; 
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
+	UMaterialInstance* LandscapeMaterialInstance;
+
+	UFUNCTION(CallInEditor, Category = "OCG")
+	void EditMasterMaterial();
 };
