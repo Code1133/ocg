@@ -28,7 +28,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"Core",
 				"PCG",
 				"PCGEditor",
-				"PCGGeometryScriptInterop"
+				"PCGGeometryScriptInterop", 
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -49,6 +49,8 @@ public class OneButtonLevelGeneration : ModuleRules
 				"AssetTools",
 				"AdvancedPreviewScene", 
 				"WorkspaceMenuStructure", 
+				"EditorStyle"
+				
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

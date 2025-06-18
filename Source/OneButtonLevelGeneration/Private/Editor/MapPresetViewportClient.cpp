@@ -1,12 +1,18 @@
 #include "Editor/MapPresetViewportClient.h"
 #include "AdvancedPreviewScene.h"
+#include "Editor/MapPresetEditorToolkit.h"
 
 FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEditorToolkit> InToolKit,
-	FAdvancedPreviewScene* InPreviewScene, TSharedPtr<SEditorViewport> InEditorViewportWidget)
+                                                   FAdvancedPreviewScene* InPreviewScene, TSharedPtr<SEditorViewport> InEditorViewportWidget)
 		: FEditorViewportClient(nullptr, InPreviewScene, InEditorViewportWidget)
 {
 	SetRealtime(true);
 	EngineShowFlags.SetGrid(true);
+
+	InToolKit->OnGenerateButtonClicked.AddLambda([&]()
+	{
+		UE_LOG(LogTemp, Display, TEXT("Generate button clicked in viewport client!"));
+	});
 }
 
 void FMapPresetViewportClient::Tick(float DeltaSeconds)

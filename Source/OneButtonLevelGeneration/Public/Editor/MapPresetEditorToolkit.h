@@ -7,6 +7,8 @@
 
 class UMapPreset;
 
+DECLARE_MULTICAST_DELEGATE(FOnGenerateButtonClicked);
+
 class FMapPresetEditorToolkit : public FWorkflowCentricApplication
 {
 public:
@@ -39,6 +41,8 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	// 디테일 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
+	// 탭의 본문 위젯 생성 함수
+	TSharedRef<SWidget> CreateTabBody();
 	
 private:
 	// 편집 중인 UMapPreset 에셋
@@ -52,4 +56,17 @@ private:
 	// 탭 식별을 위한 고유 FName
 	static const FName ViewportTabId;
 	static const FName DetailsTabId;
+
+private:
+	/** 툴바에 버튼을 추가하는 함수 */
+	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
+
+	/** "Generate" 버튼 클릭 시 실행될 함수 */
+	FReply OnGenerateClicked();
+
+	/** 툴킷의 UI 커맨드 리스트 */
+	TSharedPtr<FUICommandList> ToolkitCommands;
+
+public:
+	FOnGenerateButtonClicked OnGenerateButtonClicked;
 };
