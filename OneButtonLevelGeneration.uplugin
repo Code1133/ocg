@@ -4,7 +4,7 @@
 	"VersionName": "1.0",
 	"FriendlyName": "OneButtonLevelGeneration",
 	"Description": "One Button Level Generation Plugin",
-	"Category": "Other",
+	"Category": "Procedural Content Generation",
 	"CreatedBy": "Code1133",
 	"CreatedByURL": "",
 	"DocsURL": "",
@@ -19,6 +19,16 @@
 			"Name": "OneButtonLevelGeneration",
 			"Type": "Editor",
 			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "PCG",
+			"Enabled": true
+		},
+		{
+			"Name": "PCGGeometryScriptInterop",
+			"Enabled": true
 		}
 	]
 }

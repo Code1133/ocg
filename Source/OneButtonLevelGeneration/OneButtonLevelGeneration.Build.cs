@@ -26,7 +26,9 @@ public class OneButtonLevelGeneration : ModuleRules
 			new string[]
 			{
 				"Core",
-
+				"PCG",
+				"PCGEditor",
+				"PCGGeometryScriptInterop"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
