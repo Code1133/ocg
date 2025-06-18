@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGMapGenerateComponent.generated.h"
 
+class AOCGLevelGenerator;
 struct FOCGBiomeSettings;
 struct FLandscapeImportLayerInfo;
 class ALandscape;
@@ -101,13 +102,13 @@ private:
 	float HeightNoiseScale = 0.002f;
 
 	// 대륙의 큰 형태를 만드는 저주파 노이즈 스케일
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true")) 
 	float ContinentNoiseScale = 0.002f;
 
 	// 대륙 노이즈가 지형 노이즈에 미치는 영향력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true"))
 	float ContinentInfluence = 0.7f;
-
+ 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))
     int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
 

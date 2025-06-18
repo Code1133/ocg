@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "OCGLevelGenerator.generated.h"
 
+struct FOCGBiomeSettings;
+class UOCGLandscapeGenerateComponent;
 class UOCGTerrainGenerateComponent;
 class UOCGMapGenerateComponent;
 
@@ -25,8 +27,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-public:
+	
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void OnClickGenerate();
+	
 	TObjectPtr<UOCGMapGenerateComponent> GetMapGenerateComponent() { return MapGenerateComponent; }
 	TObjectPtr<UOCGTerrainGenerateComponent> GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
 
@@ -41,6 +45,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UOCGLandscapeGenerateComponent> LandscapeGenerateComponent;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TerrainGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGTerrainGenerateComponent> TerrainGenerateComponent;
 };

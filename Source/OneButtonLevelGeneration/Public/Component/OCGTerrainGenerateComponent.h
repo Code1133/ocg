@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGTerrainGenerateComponent.generated.h"
 
+class AOCGLevelGenerator;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ONEBUTTONLEVELGENERATION_API UOCGTerrainGenerateComponent : public UActorComponent
