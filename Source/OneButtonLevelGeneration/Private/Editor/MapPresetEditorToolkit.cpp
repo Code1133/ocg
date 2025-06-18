@@ -7,6 +7,9 @@
 #include "Editor/MapPresetEditorTabFactory.h"
 #include "Editor/MapPresetViewport.h"
 
+const FName FMapPresetEditorToolkit::ViewportTabId(TEXT("MapPresetEditor_Viewport"));
+const FName FMapPresetEditorToolkit::DetailsTabId(TEXT("MapPresetEditor_Details"));
+
 const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
 
