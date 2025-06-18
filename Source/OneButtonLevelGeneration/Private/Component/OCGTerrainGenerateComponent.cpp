@@ -3,6 +3,8 @@
 
 #include "Component/OCGTerrainGenerateComponent.h"
 
+#include "OCGLevelGenerator.h"
+
 
 // Sets default values for this component's properties
 UOCGTerrainGenerateComponent::UOCGTerrainGenerateComponent()
@@ -32,5 +34,10 @@ void UOCGTerrainGenerateComponent::TickComponent(float DeltaTime, ELevelTick Tic
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+AOCGLevelGenerator* UOCGTerrainGenerateComponent::GetLevelGenerator() const
+{
+	return Cast<AOCGLevelGenerator>(GetOwner());
 }
 

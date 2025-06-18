@@ -27,10 +27,38 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		private:
+private:
+	AOCGLevelGenerator* GetLevelGenerator() const;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivateAccess="true"))
+	TMap<FName, FOCGBiomeSettings> Biomes;
+		
+	UPROPERTY()
+	TArray<uint16> HeightMapData;
+	
+	UPROPERTY()
+	TArray<uint16> TemperatureMapData;
+	
+	UPROPERTY()
+	TArray<uint16> HumidityMapData;
+
+public:
+	FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
+	FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
+	FORCEINLINE const TArray<uint16>& GetHumidityMapData() { return HumidityMapData; }
+
+	FORCEINLINE const TMap<FName, FOCGBiomeSettings>& GetBiomes() { return Biomes; }
+
+	FORCEINLINE const FIntPoint& GetMapResolution() const { return MapResolution; }
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (AllowPrivateAccess="true"))
 	int32 Seed = 1337;
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129", AllowPrivateAccess="true"))
+	FIntPoint MapResolution = FIntPoint(1009, 1009);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (AllowPrivateAccess="true"))
+	TArray<UTexture2D*> AdditiveHeightMaps;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = -32768.f, AllowPrivateAccess="true"))
 	float MinHeight = -15000.0f;
 
@@ -64,7 +92,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (AllowPrivateAccess="true"))
 	float RedistributionFactor = 1.f;
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (AllowPrivateAccess="true"))
+	int32 BiomeBlendRadius = 10;
 private:
 	// --- Noise Settings ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (DisplayName = "Terrain Noise Scale", AllowPrivateAccess="true"))
@@ -86,57 +116,26 @@ private:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true"))
     float Persistence = 0.5f; // 진폭 변화율 (작을수록 추가되는 노이즈의 높이가 낮아짐)
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivateAccess="true"))
-	TArray<FOCGBiomeSettings> Biomes;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material", meta = (AllowPrivateAccess="true"))
-	UMaterialInstance* MaterialInstance;
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	ALandscape* TargetLandscape;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_QuadsPerSection = 63;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_SectionsPerComponent = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_ComponentCountX = 8;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_ComponentCountY = 8;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
-	int32 WorldPartitionGridSize = 2;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
-	int32 WorldPartitionRegionSize = 16;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 LandscapeSize = 1009;
 
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
-	void Generate() { /* TODO: Implements this */ }
+	void GenerateMaps();
 
 private:
+	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
+
+	void GenerateHeightMap(TArray<uint16>& OutHeightMap) const;
 	float CalculateHeightForCoordinate(const int32 InX, const int32 InY) const;
-	void GenerateLandscape();
 	void GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
 	void GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
-	void ExportMap(const TArray<uint16>& InMap, const FString& FileName) const;
 	void DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap);
-	void ExportBiomeMap(const TArray<FColor>& InBiomeMap, const FString FileName);
-	void FinalizeLayerInfos(ALandscape* Landscape,
-	                               const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
-	FOCGBiomeSettings* FindBiome(const FName BiomeName);
+	void BelndBiome(const TArray<FName>& InBiomeMap);
+	void ExportMap(const TArray<uint16>& InMap, const FString& FileName) const;
 
 private:
 	float CachedGlobalMinTemp;
 	float CachedGlobalMaxTemp;
 	float CachedGlobalMinHumidity;
 	float CachedGlobalMaxHumidity;
-	
 };

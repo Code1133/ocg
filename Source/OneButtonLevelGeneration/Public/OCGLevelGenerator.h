@@ -26,9 +26,21 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY()
+public:
+	TObjectPtr<UOCGMapGenerateComponent> GetMapGenerateComponent() { return MapGenerateComponent; }
+	TObjectPtr<UOCGTerrainGenerateComponent> GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
+
+	const TArray<uint16>& GetHeightMapData() const;
+	const TArray<uint16>& GetTemperatureMapData() const;
+	const TArray<uint16>& GetHumidityMapData() const;
+
+	const TMap<FName, FOCGBiomeSettings>& GetBiomes() const;
+
+	const FIntPoint& GetMapResolution() const;
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TerrainGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGTerrainGenerateComponent> TerrainGenerateComponent;
 };
