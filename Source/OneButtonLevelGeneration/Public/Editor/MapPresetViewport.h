@@ -14,7 +14,7 @@ public:
 	SLATE_ARGUMENT(TWeakPtr<FMapPresetEditorToolkit>, MapPresetEditorToolkit)
 	SLATE_END_ARGS()
 
-	void Construct(const FArguments& InArgs, TSharedPtr<FAdvancedPreviewScene> InPreviewScene) override;
+	void Construct(const FArguments& InArgs, TSharedPtr<FAdvancedPreviewScene> InPreviewScene);
 	virtual ~SMapPresetViewport() override;
 
 protected:
