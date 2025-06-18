@@ -21,10 +21,19 @@ USTRUCT(BlueprintType)
 struct FOCGBiomeSettings
 {
     GENERATED_BODY()
-	
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
-    FString BiomeName;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+    FName BiomeName;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+	float Temperature;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+	float Humidity;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+	FLinearColor Color;
+	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     float MinHeight = -100.0f;
 
@@ -42,4 +51,7 @@ struct FOCGBiomeSettings
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     int Weight = 1;
+	
+	UPROPERTY()
+	TArray<uint8> WeightLayer;
 };
