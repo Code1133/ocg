@@ -45,6 +45,10 @@ public class OneButtonLevelGeneration : ModuleRules
 				"Landscape",
 				"LandscapeEditor",
 				"MaterialEditor",
+				"PropertyEditor",
+				"AssetTools",
+				"AdvancedPreviewScene", 
+				"WorkspaceMenuStructure", 
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

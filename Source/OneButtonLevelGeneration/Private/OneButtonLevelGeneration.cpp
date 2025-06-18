@@ -2,17 +2,35 @@
 
 #include "OneButtonLevelGeneration.h"
 
+#include "AssetToolsModule.h"
+#include "IAssetTools.h"
+#include "Editor/MapPresetAssetTypeActions.h"
+
 #define LOCTEXT_NAMESPACE "FOneButtonLevelGenerationModule"
 
 void FOneButtonLevelGenerationModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+
+	// 생성한 에셋 타입 액션을 등록합니다.
+	TSharedRef<IAssetTypeActions> Action = MakeShareable(new FMapPresetAssetTypeActions());
+	AssetTools.RegisterAssetTypeActions(Action);
+
+	// 등록된 액션을 나중에 ShutdownModule에서 해제할 수 있도록 저장합니다.
+	RegisteredAssetTypeActions.Add(Action);
 }
 
 void FOneButtonLevelGenerationModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	// 모듈이 언로드될 때 등록된 액션을 해제합니다.
+	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		IAssetTools& AssetTools = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get();
+		for (auto Action : RegisteredAssetTypeActions)
+		{
+			AssetTools.UnregisterAssetTypeActions(Action);
+		}
+	}
 }
 
 #undef LOCTEXT_NAMESPACE
