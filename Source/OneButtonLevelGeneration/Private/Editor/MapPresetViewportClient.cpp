@@ -1,4 +1,7 @@
 #include "Editor/MapPresetViewportClient.h"
+
+#include <OCGLevelGenerator.h>
+
 #include "AdvancedPreviewScene.h"
 #include "Editor/MapPresetEditorToolkit.h"
 
@@ -12,7 +15,13 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 	InToolKit->OnGenerateButtonClicked.AddLambda([&]()
 	{
 		UE_LOG(LogTemp, Display, TEXT("Generate button clicked in viewport client!"));
+		if (LevelGenerator)
+		{
+			LevelGenerator->OnClickGenerate();
+		}
 	});
+	
+	LevelGenerator = NewObject<AOCGLevelGenerator>(InPreviewScene->GetWorld());
 }
 
 void FMapPresetViewportClient::Tick(float DeltaSeconds)
