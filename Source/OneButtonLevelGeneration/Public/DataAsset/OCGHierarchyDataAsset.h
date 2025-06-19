@@ -40,9 +40,9 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName LayerName;
 
-	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 높을수록 이 레이어의 영향력이 커집니다. */
+	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 낮을수록 이 레이어의 영향력이 커집니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
-	float BlendedWeight = 0.5f;
+	float BlendingRatio = 0.5f;
 
 	/** 제곱미터당 생성할 포인트의 수입니다. 포인트 밀도를 결정합니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
