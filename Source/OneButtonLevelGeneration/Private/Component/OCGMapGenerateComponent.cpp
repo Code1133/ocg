@@ -7,6 +7,7 @@
 #include "IImageWrapperModule.h"
 #include "OCGLevelGenerator.h"
 #include "Data/MapData.h"
+#include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
 
 
@@ -46,6 +47,17 @@ AOCGLevelGenerator* UOCGMapGenerateComponent::GetLevelGenerator() const
 
 void UOCGMapGenerateComponent::GenerateMaps()
 {
+    AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+
+    const TArray<FOCGBiomeSettings>& BiomesArr = LevelGenerator->GetMapPreset()->Biomes;
+
+    for (const FOCGBiomeSettings& Biome : BiomesArr)
+    {
+        Biomes.Add(Biome.BiomeName, Biome);
+    }
+    
 	FRandomStream Stream(Seed);
 	NoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 	NoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);

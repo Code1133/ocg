@@ -63,7 +63,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape()
 
     // 3. 랜드스케이프 생성
     UWorld* World = GetWorld(); // 액터이므로 GetWorld()로 월드를 가져옵니다.
-    if (!World || !World->IsEditorWorld()) // 에디터에서만 실행되도록 확인
+    if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
     {
         UE_LOG(LogTemp, Error, TEXT("유효한 에디터 월드가 아닙니다."));
         return;

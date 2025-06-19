@@ -20,8 +20,14 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 			LevelGenerator->OnClickGenerate();
 		}
 	});
+
+	UWorld* World = InPreviewScene->GetWorld();
+	if (World)
+	{
+		LevelGenerator = World->SpawnActor<AOCGLevelGenerator>();
+		LevelGenerator->SetMapPreset(InToolKit->GetMapPreset());
+	}
 	
-	LevelGenerator = NewObject<AOCGLevelGenerator>(InPreviewScene->GetWorld());
 }
 
 void FMapPresetViewportClient::Tick(float DeltaSeconds)

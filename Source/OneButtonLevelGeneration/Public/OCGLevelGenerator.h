@@ -41,6 +41,13 @@ public:
 	const TMap<FName, FOCGBiomeSettings>& GetBiomes() const;
 
 	const FIntPoint& GetMapResolution() const;
+
+	void SetMapPreset(class UMapPreset* InMapPreset);
+
+	const class UMapPreset* GetMapPreset() const { return MapPreset; }
+	
+private:
+	TObjectPtr<class UMapPreset> MapPreset;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;

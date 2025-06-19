@@ -73,3 +73,8 @@ const FIntPoint& AOCGLevelGenerator::GetMapResolution() const
 	return MapGenerateComponent->GetMapResolution();
 }
 
+void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
+{
+	MapPreset = InMapPreset;
+}
+
