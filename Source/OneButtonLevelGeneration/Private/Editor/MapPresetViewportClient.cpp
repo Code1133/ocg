@@ -12,6 +12,8 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 	SetRealtime(true);
 	EngineShowFlags.SetGrid(true);
 
+	ViewportType = LVT_Perspective; // 원근 뷰
+
 	InToolKit->OnGenerateButtonClicked.AddLambda([&]()
 	{
 		UE_LOG(LogTemp, Display, TEXT("Generate button clicked in viewport client!"));

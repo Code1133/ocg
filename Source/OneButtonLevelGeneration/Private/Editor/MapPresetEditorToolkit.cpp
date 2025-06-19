@@ -46,7 +46,6 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 
 	// 뷰포트 위젯 생성
 	ViewportWidget = SNew(SMapPresetViewport, PreviewScene).MapPresetEditorToolkit(SharedThis(this));
-	ViewportWidget->SetRenderDirectlyToWindow(true);
 
 	// 에디터 모드 추가
 	AddApplicationMode(
