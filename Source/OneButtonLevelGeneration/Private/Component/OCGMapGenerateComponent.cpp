@@ -84,7 +84,7 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
 
 void UOCGMapGenerateComponent::GenerateHeightMap(TArray<uint16>& OutHeightMap) const
 {
-    FIntPoint InResolution = FixToNearestValidResolution(MapResolution);
+    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
     OutHeightMap.AddZeroed(InResolution.X * InResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
@@ -171,7 +171,7 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
 
 void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
 {
-    FIntPoint InResolution = FixToNearestValidResolution(MapResolution);
+    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
 	if (OutTempMap.Num() != InResolution.X * InResolution.Y)
     {
         OutTempMap.SetNumUninitialized(InResolution.X * InResolution.Y);
@@ -267,7 +267,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
 void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
 	TArray<uint16>& OutHumidityMap)
 {
-    FIntPoint InResolution = FixToNearestValidResolution(MapResolution);
+    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
     if (OutHumidityMap.Num() != InResolution.X * InResolution.Y)
     {
         OutHumidityMap.SetNumUninitialized(InResolution.X * InResolution.Y);
