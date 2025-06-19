@@ -13,5 +13,5 @@ public:
 	void ExportPreviewSceneToLevel();
 private:
 	TObjectPtr<class AOCGLevelGenerator> LevelGenerator;
-	
+	FAdvancedPreviewScene* PreviewScene = nullptr;
 };

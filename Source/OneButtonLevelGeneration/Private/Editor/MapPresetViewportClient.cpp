@@ -17,13 +17,14 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 	EngineShowFlags.SetGrid(true);
 
 	ViewportType = LVT_Perspective; // 원근 뷰
-
+	PreviewScene = InPreviewScene;
+	
 	InToolKit->OnGenerateButtonClicked.AddLambda([&]()
 	{
 		UE_LOG(LogTemp, Display, TEXT("Generate button clicked in viewport client!"));
-		if (LevelGenerator)
+		if (LevelGenerator && PreviewScene)
 		{
-			LevelGenerator->OnClickGenerate(InPreviewScene->GetWorld());
+			LevelGenerator->OnClickGenerate(PreviewScene->GetWorld());
 		}
 	});
 
@@ -32,13 +33,14 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 		ExportPreviewSceneToLevel();
 	});
 
+	
+
 	UWorld* World = InPreviewScene->GetWorld();
 	if (World)
 	{
 		LevelGenerator = World->SpawnActor<AOCGLevelGenerator>();
 		LevelGenerator->SetMapPreset(InToolKit->GetMapPreset());
 	}
-	
 }
 
 void FMapPresetViewportClient::Tick(float DeltaSeconds)
