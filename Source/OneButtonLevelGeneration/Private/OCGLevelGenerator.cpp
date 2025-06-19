@@ -30,7 +30,7 @@ void AOCGLevelGenerator::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-void AOCGLevelGenerator::OnClickGenerate()
+void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 {
 	if (MapGenerateComponent)
 	{
@@ -39,7 +39,7 @@ void AOCGLevelGenerator::OnClickGenerate()
 
 	if (LandscapeGenerateComponent)
 	{
-		LandscapeGenerateComponent->GenerateLandscape();
+		LandscapeGenerateComponent->GenerateLandscape(InWorld);
 	}
 
 	if (TerrainGenerateComponent)

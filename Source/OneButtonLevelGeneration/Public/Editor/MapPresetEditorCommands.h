@@ -13,4 +13,5 @@ public:
 
 public:
 	TSharedPtr<FUICommandInfo> GenerateAction;
+	TSharedPtr<FUICommandInfo> ExportToLevelAction;
 };

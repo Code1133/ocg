@@ -10,6 +10,8 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	void ExportPreviewSceneToLevel();
 private:
-	TObjectPtr<class AOCGLevelGenerator> LevelGenerator; 
+	TObjectPtr<class AOCGLevelGenerator> LevelGenerator;
+	
 };

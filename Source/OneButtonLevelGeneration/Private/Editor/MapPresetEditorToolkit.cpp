@@ -194,13 +194,36 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		]
 	];
 
+	CustomToolbarBox->AddSlot()
+	.AutoWidth()
+	.HAlign(HAlign_Right)
+	.Padding(2.0f)
+	[
+		SNew(SButton)
+		.ButtonStyle(GenerateButtonStyle)
+		.HAlign(HAlign_Center)
+		.OnClicked(FOnClicked::CreateSP(this, &FMapPresetEditorToolkit::OnExportToLevelClicked))
+		.ToolTipText(FMapPresetEditorCommands::Get().ExportToLevelAction->GetDescription())
+		[
+			SNew(STextBlock)
+			.Text(FMapPresetEditorCommands::Get().ExportToLevelAction->GetLabel())
+			.Justification(ETextJustify::Center)
+		]
+	];
+
 	ToolbarBuilder.AddWidget(CustomToolbarBox);
 }
 
 FReply FMapPresetEditorToolkit::OnGenerateClicked()
 {
-	// !TODO : EditorViewportClient의 액터 찾아서 호출
 	OnGenerateButtonClicked.Broadcast();
 
+	return FReply::Handled();
+}
+
+FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
+{
+	OnExportToLevelButtonClicked.Broadcast();
+	
 	return FReply::Handled();
 }

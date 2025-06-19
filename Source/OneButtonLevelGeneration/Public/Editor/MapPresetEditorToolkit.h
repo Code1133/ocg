@@ -8,6 +8,7 @@
 class UMapPreset;
 
 DECLARE_MULTICAST_DELEGATE(FOnGenerateButtonClicked);
+DECLARE_MULTICAST_DELEGATE(FOnExportToLevelButtonClicked);
 
 class FMapPresetEditorToolkit : public FWorkflowCentricApplication
 {
@@ -64,9 +65,13 @@ private:
 	/** "Generate" 버튼 클릭 시 실행될 함수 */
 	FReply OnGenerateClicked();
 
+	/** "Export to Level" 버튼 클릭 시 실행될 함수 */
+	FReply OnExportToLevelClicked();
+
 	/** 툴킷의 UI 커맨드 리스트 */
 	TSharedPtr<FUICommandList> ToolkitCommands;
 
 public:
 	FOnGenerateButtonClicked OnGenerateButtonClicked;
+	FOnExportToLevelButtonClicked OnExportToLevelButtonClicked;
 };

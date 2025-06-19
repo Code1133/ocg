@@ -29,7 +29,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	UFUNCTION(CallInEditor, Category = "Actions")
-	void OnClickGenerate();
+	void OnClickGenerate(UWorld* InWorld);
 	
 	TObjectPtr<UOCGMapGenerateComponent> GetMapGenerateComponent() { return MapGenerateComponent; }
 	TObjectPtr<UOCGTerrainGenerateComponent> GetTerrainGenerateComponent() { return TerrainGenerateComponent; }

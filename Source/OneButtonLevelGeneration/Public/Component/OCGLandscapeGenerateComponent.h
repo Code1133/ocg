@@ -53,7 +53,9 @@ private:
 	int32 LandscapeSize = 1009;
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
-	void GenerateLandscape();
+	void GenerateLandscapeInEditor();
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateLandscape(UWorld* World);
 	
 private:
 	void FinalizeLayerInfos(ALandscape* Landscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);

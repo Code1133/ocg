@@ -16,6 +16,9 @@ void FMapPresetEditorCommands::RegisterCommands()
 {
 	UI_COMMAND(GenerateAction, "Generate", "Generate a new level based on the preset settings.",
 		EUserInterfaceActionType::Button, FInputChord());
+
+	UI_COMMAND(ExportToLevelAction, "Export to Level", "Export current preset to a new level.",
+		EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

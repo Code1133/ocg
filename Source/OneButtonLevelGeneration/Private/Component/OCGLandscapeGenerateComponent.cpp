@@ -44,7 +44,12 @@ void UOCGLandscapeGenerateComponent::TickComponent(float DeltaTime, ELevelTick T
 	// ...
 }
 
-void UOCGLandscapeGenerateComponent::GenerateLandscape()
+void UOCGLandscapeGenerateComponent::GenerateLandscapeInEditor()
+{
+    GenerateLandscape(GetWorld());
+}
+
+void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 {
 #if WITH_EDITOR
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
@@ -60,9 +65,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape()
     const int32 SizeY = ComponentCountY * QuadsPerComponent + 1;
     const int32 NumPixels = SizeX * SizeY;
 
-
-    // 3. 랜드스케이프 생성
-    UWorld* World = GetWorld(); // 액터이므로 GetWorld()로 월드를 가져옵니다.
     if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
     {
         UE_LOG(LogTemp, Error, TEXT("유효한 에디터 월드가 아닙니다."));
