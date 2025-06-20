@@ -23,6 +23,10 @@ struct FMeshAndWeight
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, UIMin = 0))
 	int32 Weight = 1;
 
+	/** Mesh의 기본 Collision을 활성화 합니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bEnableDefaultCollision = false;
+
 	/** 메시가 속할 레이어의 이름입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName LayerName;
@@ -59,6 +63,18 @@ struct FLandscapeHierarchyData
 	/** 포인트의 가파른 정도를 제어합니다. 0과 1 사이의 값으로, 1에 가까울수록 경사가 급해집니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
 	float PointSteepness = 0.5f;
+
+	/** 월드 위치 오프셋 기능이 비활성화되는 거리입니다. 0이면 항상 활성화 됩니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 WorldPositionOffsetDisableDistance = 0;
+
+	/** Mesh를 Cull할 시작 거리입니다. 0이면 항상 활성화 됩니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 StartCullDistance = 0;
+
+	/** Mesh를 Cull할 끝 거리입니다. 0이면 항상 활성화 됩니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 EndCullDistance = 0;
 
 	/** 포인트 생성을 위한 랜덤 시드입니다. 동일한 시드는 동일한 결과를 생성합니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
