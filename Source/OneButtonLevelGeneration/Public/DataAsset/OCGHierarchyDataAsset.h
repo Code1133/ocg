@@ -28,7 +28,7 @@ struct FMeshAndWeight
 	bool bEnableDefaultCollision = false;
 
 	/** 메시가 속할 레이어의 이름입니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly)
 	FName LayerName;
 };
 
@@ -101,6 +101,16 @@ UCLASS(BlueprintType)
 class ONEBUTTONLEVELGENERATION_API UOCGHierarchyDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
+
+public:
+	virtual void PostLoad() override;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
+protected:
+	void UpdateMeshLayerNames();
 
 public:
 	/** 레벨 생성을 위한 계층 데이터의 배열입니다. */
