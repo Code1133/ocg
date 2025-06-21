@@ -61,11 +61,6 @@ void FMapPresetViewportClient::Tick(float DeltaSeconds)
 	{
 		MapPresetEditorWorld->Tick(LEVELTICK_All, DeltaSeconds);
 	}
-	
-	if (PreviewScene)
-	{
-		PreviewScene->GetWorld()->Tick(LEVELTICK_All, DeltaSeconds);
-	}
 }
 
 void FMapPresetViewportClient::ExportPreviewSceneToLevel()
@@ -77,44 +72,7 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
     }
 	
 	UWorld* SourceWorld = GetWorld();
-
-    // IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-    // if (!DesktopPlatform)
-    // {
-    //     UE_LOG(LogTemp, Error, TEXT("Failed to get IDesktopPlatform module."));
-    //     return;
-    // }
-    //
-    // void* ParentWindowHandle = nullptr; // 부모 창 핸들 (보통 null)
-    // FString DefaultFilePath = FPaths::ProjectSavedDir() + TEXT("OCGLevels"); // 기본 저장 디렉토리 (파일 대화 상자의 초기 경로)
-    // FString FileTypes = TEXT("Unreal Map (*.umap)|*.umap"); // 파일 타입 필터
-    // TArray<FString> OutFilenames;
-    //
-    // // 저장 대화 상자 열기
-    // bool bFileChosen = DesktopPlatform->SaveFileDialog(
-    //     ParentWindowHandle,
-    //     TEXT("Save Generated Map As"),// 다이얼로그 제목
-    //     DefaultFilePath,
-    //     TEXT("GeneratedMap.umap"),    // 기본 파일 이름
-    //     FileTypes,
-    //     EFileDialogFlags::None,       // 특별한 플래그 없음
-    //     OutFilenames
-    // );
-    //
-    // // 사용자가 저장 취소 또는 파일 선택 실패 시 처리
-    // if (!bFileChosen || OutFilenames.Num() == 0)
-    // {
-    //     UE_LOG(LogTemp, Warning, TEXT("Map save cancelled by user."));    
-    //     return; 
-    // }
-    //
-    // FString TargetFilePath = OutFilenames[0]; // 사용자가 선택한 전체 파일 경로 (예: C:/Project/Saved/MyMaps/GeneratedMap.umap)
-
-	//bool bSuccess = FEditorFileUtils::SaveMap(SourceWorld, TargetFilePath);
 	bool bSuccess = FEditorFileUtils::SaveLevelAs(SourceWorld->GetCurrentLevel());
-	if (bSuccess)
-	{
-	}
 }
 
 UWorld* FMapPresetViewportClient::GetWorld() const
