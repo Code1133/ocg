@@ -4,7 +4,11 @@
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
 #include "OCGLevelGenerator.h"
+#include "Components/SkyLightComponent.h"
+#include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/SkyLight.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
@@ -53,13 +57,14 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 {
 #if WITH_EDITOR
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    FIntPoint MapResolution = LevelGenerator->GetMapResolution();
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    FIntPoint MapResolution = MapPreset->MapResolution;
     
     // 랜드스케이프 생성
-    const int32 QuadsPerSection = Landscape_QuadsPerSection;
-    const int32 ComponentCountX = (MapResolution.X - 1) / (Landscape_QuadsPerSection * Landscape_SectionsPerComponent);
-    const int32 ComponentCountY = (MapResolution.Y - 1) / (Landscape_QuadsPerSection * Landscape_SectionsPerComponent);
-    const int32 QuadsPerComponent = Landscape_SectionsPerComponent * QuadsPerSection;
+    const int32 QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+    const int32 ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+    const int32 ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+    const int32 QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
     
     const int32 SizeX = ComponentCountX * QuadsPerComponent + 1;
     const int32 SizeY = ComponentCountY * QuadsPerComponent + 1;
@@ -76,12 +81,11 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         TargetLandscape->Destroy();
     }
     
-    if ((MapResolution.X - 1) % (Landscape_QuadsPerSection * Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (Landscape_QuadsPerSection * Landscape_SectionsPerComponent) != 0)
+    if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
     {
         UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
     }
-
-    // 빈 랜드스케이프 생성
+    
     TargetLandscape = World->SpawnActor<ALandscape>();
     if (!TargetLandscape)
     {
@@ -89,7 +93,8 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         return;
     }
     TargetLandscape->bCanHaveLayersContent = true;
-    TargetLandscape->LandscapeMaterial = LandscapeMaterial;
+    TargetLandscape->bCanHaveLayersContent = true;
+    TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
     
     // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
     // 키(Key)는 레이어의 고유 ID(GUID)이고, 값(Value)은 해당 레이어의 하이트맵 데이터입니다.
@@ -104,12 +109,13 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     TArray<FLandscapeImportLayerInfo> ImportLayerDataPerLayer;
     const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
     ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
-    
-    for (const auto& Biome : LevelGenerator->GetBiomes())
+
+    TMap<FName, TArray<uint8>> WeightLayers = LevelGenerator->GetWeightLayers();
+    for (const auto& Biome : LevelGenerator->GetMapPreset()->Biomes)
     {
         FLandscapeImportLayerInfo LayerInfo;
-        LayerInfo.LayerName = Biome.Value.BiomeName;
-        LayerInfo.LayerData = Biome.Value.WeightLayer;
+        LayerInfo.LayerName = Biome.Key;
+        LayerInfo.LayerData = WeightLayers.FindChecked(Biome.Key);
 
         // TODO : Material의 Layer의 이름도 맞춰야 함
         
@@ -128,8 +134,9 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "LandscapeEditor_CreateLandscape", "Create Landscape"));
 
     // 랜드스케이프의 기본 속성 설정
-    float Offset = (-LandscapeSize / 2.f) * 100.f;
-    TargetLandscape->SetActorLocation(FVector(Offset, Offset, 0));
+    float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f;
+    float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f;
+    TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
     TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f));
     
     // Import 함수 호출 (변경된 시그니처에 맞춰서)
@@ -137,20 +144,22 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         FGuid::NewGuid(),
         0, 0,
         MapResolution.X - 1, MapResolution.Y - 1,
-        Landscape_SectionsPerComponent,
+        MapPreset->Landscape_SectionsPerComponent,
         QuadsPerSection,
         HeightmapDataPerLayer,
         nullptr,
         MaterialLayerDataPerLayer,
         ELandscapeImportAlphamapType::Additive,
         TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
-    );
-
-    FinalizeLayerInfos(TargetLandscape, MaterialLayerDataPerLayer);
+    );    
     
+    FinalizeLayerInfos(TargetLandscape, MaterialLayerDataPerLayer);
+
     // 액터 등록 및 뷰포트 업데이트
     TargetLandscape->RegisterAllComponents();
     GEditor->RedrawAllViewports();
+
+    TargetLandscape->ForceUpdateLayersContent(true);
 #endif
 }
 

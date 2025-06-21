@@ -203,17 +203,23 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
-	// 1. 디렉토리 및 전체 경로 구성
+	// 1. 디렉토리 및 전체 경로 구성 (가독성이 뛰어난 방식)
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
+	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+
+	// 2. 일관성을 위해 IPlatformFile 인터페이스로 디렉토리 확인 및 생성
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (!FPaths::DirectoryExists(DirectoryPath))
+
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) // FPaths 대신 PlatformFile 사용
 	{
+		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
-			return false;
+			return false; // 또는 다른 에러 처리
 		}
 	}
 
@@ -238,7 +244,7 @@ bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resol
 		return false;
 	}
 
-	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.Num() * sizeof(uint16), Width, Height, ERGBFormat::Gray, 16))
+	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.GetAllocatedSize(), Width, Height, ERGBFormat::Gray, 16))
 	{
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
 
@@ -261,8 +267,29 @@ bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resol
 #endif
 }
 
-bool MapDataUtils::ExportMap(const TArray<FColor>& InBiomeMap, const FIntPoint& Resolution, const FString& FileName)
+bool MapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
+#if WITH_EDITOR
+	// 1. 디렉토리 및 전체 경로 구성 (가독성이 뛰어난 방식)
+	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
+	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
+
+	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+
+	// 2. 일관성을 위해 IPlatformFile 인터페이스로 디렉토리 확인 및 생성
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) // FPaths 대신 PlatformFile 사용
+	{
+		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
+		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+			return false; // 또는 다른 에러 처리
+		}
+	}
+	
 	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
 
@@ -272,14 +299,21 @@ bool MapDataUtils::ExportMap(const TArray<FColor>& InBiomeMap, const FIntPoint& 
 		return false;
 	}
 
+	// 3. 데이터 설정
+	const int32 Width = Resolution.X;
+	const int32 Height = Resolution.Y;
+
+	const int32 ExpectedSize = Width * Height;
+	if (InMap.Num() != ExpectedSize)
+	{
+		UE_LOG(LogTemp, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
+		return false;
+	}
+
 	// BGRA8 형식으로 원본 데이터를 설정합니다. FColor는 내부적으로 BGRA 순서입니다.
-	if (ImageWrapper->SetRaw(InBiomeMap.GetData(), InBiomeMap.GetAllocatedSize(), Resolution.X, Resolution.Y, ERGBFormat::BGRA, 8))
+	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.Num() * sizeof(FColor), Width, Height, ERGBFormat::BGRA, 8))
 	{
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
-        
-		const FString FullPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"), FileName);
-		// 디렉토리 생성 로직 (필요 시 추가)
-		// ...
 
 		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
 		{
@@ -297,4 +331,5 @@ bool MapDataUtils::ExportMap(const TArray<FColor>& InBiomeMap, const FIntPoint& 
 		UE_LOG(LogTemp, Error, TEXT("Failed to set raw color data to Image Wrapper."));
 		return false;
 	}
+#endif
 }

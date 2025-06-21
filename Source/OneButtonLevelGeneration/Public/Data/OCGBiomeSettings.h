@@ -39,9 +39,9 @@ struct FOCGBiomeSettings
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     float MaxHeight = 1000.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
-    UMaterialInterface* BiomeMaterial;
+    
+    // UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+    // UMaterialInterface* BiomeMaterial;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
 	UMaterialFunctionInterface* BiomeMaterialFunc;
@@ -51,7 +51,4 @@ struct FOCGBiomeSettings
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     int Weight = 1;
-	
-	UPROPERTY()
-	TArray<uint8> WeightLayer;
 };

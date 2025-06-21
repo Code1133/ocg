@@ -30,6 +30,25 @@ void AOCGLevelGenerator::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+void AOCGLevelGenerator::Generate()
+{
+	if (MapGenerateComponent)
+	{
+		MapGenerateComponent->GenerateMaps();
+	}
+
+	if (LandscapeGenerateComponent)
+	{
+		LandscapeGenerateComponent->GenerateLandscape(GetWorld());
+	}
+
+	if (TerrainGenerateComponent)
+	{
+		
+	}
+}
+
 void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 {
 	if (MapGenerateComponent)
@@ -63,14 +82,9 @@ const TArray<uint16>& AOCGLevelGenerator::GetHumidityMapData() const
 	return MapGenerateComponent->GetHumidityMapData();
 }
 
-const TMap<FName, FOCGBiomeSettings>& AOCGLevelGenerator::GetBiomes() const
+const TMap<FName, TArray<uint8>>& AOCGLevelGenerator::GetWeightLayers() const
 {
-	return MapGenerateComponent->GetBiomes();
-}
-
-const FIntPoint& AOCGLevelGenerator::GetMapResolution() const
-{
-	return MapGenerateComponent->GetMapResolution();
+	return MapGenerateComponent->GetWeightLayers();
 }
 
 void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)

@@ -47,32 +47,35 @@ AOCGLevelGenerator* UOCGMapGenerateComponent::GetLevelGenerator() const
 
 void UOCGMapGenerateComponent::GenerateMaps()
 {
-    AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator || !LevelGenerator->GetMapPreset())
         return;
-
-    const TArray<FOCGBiomeSettings>& BiomesArr = LevelGenerator->GetMapPreset()->Biomes;
-
-    for (const FOCGBiomeSettings& Biome : BiomesArr)
-    {
-        Biomes.Add(Biome.BiomeName, Biome);
-    }
     
-	FRandomStream Stream(Seed);
-	NoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
-	NoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     
-    HeightMapData.AddUninitialized(MapResolution.X * MapResolution.Y);
+    // Biomes.Empty();
+    // for (const FOCGBiomeSettings& Biome : BiomesArr)
+    // {
+    //     Biomes.Add(Biome.BiomeName, Biome);
+    // }
+
+	const FRandomStream Stream(MapPreset->Seed);
+    
+	NoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+	NoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    const FIntPoint CurMapResolution = MapPreset->MapResolution;
+    HeightMapData.AddUninitialized(CurMapResolution.X * CurMapResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
-    for (int32 y = 0; y < MapResolution.Y; ++y)
+    for (int32 y = 0; y < CurMapResolution.Y; ++y)
     {
-        for (int32 x = 0; x < MapResolution.X; ++x)
+        for (int32 x = 0; x <CurMapResolution.X; ++x)
         {
-            float CalculatedHeight = CalculateHeightForCoordinate(x, y);
+            const float CalculatedHeight = CalculateHeightForCoordinate(x, y);
             const float NormalizedHeight = 32768.0f + CalculatedHeight;
             const uint16 HeightValue = FMath::Clamp(FMath::RoundToInt(NormalizedHeight), 0, 65535);
-            HeightMapData[y * MapResolution.X  + x] = HeightValue;
+            HeightMapData[y * CurMapResolution.X + x] = HeightValue;
         }
     }
     ExportMap(HeightMapData, "HeightMap.png");
@@ -96,35 +99,46 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
 
 void UOCGMapGenerateComponent::GenerateHeightMap(TArray<uint16>& OutHeightMap) const
 {
-    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
-    OutHeightMap.AddZeroed(InResolution.X * InResolution.Y);
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    
+    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    OutHeightMap.AddZeroed(CurResolution.X * CurResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
-    for (int32 y = 0; y < InResolution.Y; ++y)
+    for (int32 y = 0; y < CurResolution.Y; ++y)
     {
-        for (int32 x = 0; x < InResolution.X; ++x)
+        for (int32 x = 0; x < CurResolution.X; ++x)
         {
             float CalculatedHeight = CalculateHeightForCoordinate(x, y);
             const float NormalizedHeight = 32768.0f + CalculatedHeight;
             const uint16 HeightValue = FMath::Clamp(FMath::RoundToInt(NormalizedHeight), 0, 65535);
-            OutHeightMap[y * InResolution.X + x] = HeightValue;
+            OutHeightMap[y * CurResolution.X + x] = HeightValue;
         }
     }
 
     ExportMap(OutHeightMap, "HeightMap.png");
-    MapDataUtils::ImportTextureFromPNG("HeightMap.png");
 }
 
 float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, const int32 InY) const
 {
-	float HeightRange = MaxHeight - MinHeight;
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return 0.0f;
+
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+
+	const float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
 	// ==========================================================
     //            1. 대륙의 기반이 되는 저주파 노이즈 생성
     // ==========================================================
-    float ContinentNoiseInputX = InX * ContinentNoiseScale + NoiseOffset.X;
-    float ContinentNoiseInputY = InY * ContinentNoiseScale + NoiseOffset.Y;
+    const float ContinentNoiseInputX = InX * MapPreset->ContinentNoiseScale + NoiseOffset.X;
+    const float ContinentNoiseInputY = InY * MapPreset->ContinentNoiseScale + NoiseOffset.Y;
     // ContinentNoise는 0~1 사이의 값으로, 평야(0)와 산맥 기반(1)을 나눈다.
-    float ContinentNoise = FMath::PerlinNoise2D(FVector2D(ContinentNoiseInputX, ContinentNoiseInputY)) * 0.5f + 0.5f;
+    const float ContinentNoise = FMath::PerlinNoise2D(FVector2D(ContinentNoiseInputX, ContinentNoiseInputY)) * 0.5f + 0.5f;
     
     //return MinHeight + (ContinentNoise) * HeightRange;
 
@@ -136,15 +150,15 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
     float TerrainNoise = 0.0f;
     float MaxPossibleAmplitude = 0.0f;
     
-    for (int32 i = 0; i < Octaves; ++i)
+    for (int32 i = 0; i < MapPreset->Octaves; ++i)
     {
-        float NoiseInputX = (InX * HeightNoiseScale * Frequency) + NoiseOffset.X;
-        float NoiseInputY = (InY * HeightNoiseScale * Frequency) + NoiseOffset.Y;
-        float PerlinValue = FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)); // -1 ~ 1
+        const float NoiseInputX = (InX * MapPreset->HeightNoiseScale * Frequency) + NoiseOffset.X;
+        const float NoiseInputY = (InY * MapPreset->HeightNoiseScale * Frequency) + NoiseOffset.Y;
+        const float PerlinValue = FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)); // -1 ~ 1
         TerrainNoise += PerlinValue * Amplitude;
         MaxPossibleAmplitude += Amplitude;
-        Amplitude *= Persistence;
-        Frequency *= Lacunarity;
+        Amplitude *= MapPreset->Persistence;
+        Frequency *= MapPreset->Lacunarity;
     }
     
     // 지형 노이즈를 -1 ~ 1 사이로 정규화
@@ -155,18 +169,18 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
     // ==========================================================
     // 대륙 노이즈 값이 클수록(산맥 기반 지역), 지형 노이즈의 영향을 더 많이 받도록 한다.
     // ContinentInfluence로 그 강도를 조절.
-    float CombinedNoise = TerrainNoise * FMath::Pow(ContinentNoise, ContinentInfluence);
+    const float CombinedNoise = TerrainNoise * FMath::Pow(ContinentNoise, MapPreset->ContinentInfluence);
     
     // 최종 노이즈 값을 0~1 범위로 변환
-    float FinalNoiseValue = CombinedNoise * 0.5f + 0.5f;
+    const float FinalNoiseValue = CombinedNoise * 0.5f + 0.5f;
     
     // 최종 높이 계산
     float Height = FinalNoiseValue;
 
-    if (RedistributionFactor > 1.f && Height > 0.f && Height < 1.f)
+    if (MapPreset->RedistributionFactor > 1.f && Height > 0.f && Height < 1.f)
     {
-        float PowX = FMath::Pow(Height, RedistributionFactor);
-        float Pow1_X = FMath::Pow(1-Height, RedistributionFactor);
+        const float PowX = FMath::Pow(Height, MapPreset->RedistributionFactor);
+        const float Pow1_X = FMath::Pow(1-Height, MapPreset->RedistributionFactor);
         Height = PowX/(PowX + Pow1_X);
     }
     
@@ -175,32 +189,38 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
     // ==========================================================
     //         4. 최종 월드 높이로 변환
     // ==========================================================
-    
-    float FinalWorldHeight = MinHeight + (Height * HeightRange);
+
+    const float FinalWorldHeight = MapPreset->MinHeight + (Height * HeightRange);
     
     return FinalWorldHeight;
 }
 
 void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
 {
-    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
-	if (OutTempMap.Num() != InResolution.X * InResolution.Y)
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+
+    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+	if (OutTempMap.Num() != CurResolution.X * CurResolution.Y)
     {
-        OutTempMap.SetNumUninitialized(InResolution.X * InResolution.Y);
+        OutTempMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
     }
     
     TArray<float> TempMapFloat;
-    TempMapFloat.SetNumUninitialized(InResolution.X * InResolution.Y);
+    TempMapFloat.SetNumUninitialized(CurResolution.X * CurResolution.Y);
 
     float GlobalMinTemp = TNumericLimits<float>::Max();
     float GlobalMaxTemp = TNumericLimits<float>::Lowest();
-    float TempRange = MaxTemp - MinTemp;
+    float TempRange = MapPreset->MaxTemp - MapPreset->MinTemp;
 
-    for (int32 y = 0; y < InResolution.Y; ++y)
+    for (int32 y = 0; y < CurResolution.Y; ++y)
     {
-        for (int32 x = 0; x < InResolution.X; ++x)
+        for (int32 x = 0; x < CurResolution.X; ++x)
         {
-            const int32 Index = y * InResolution.X + x;
+            const int32 Index = y * CurResolution.X + x;
             
             // ==========================================================
             //       ★ 1. 노이즈 기반으로 기본 온도 설정 ★
@@ -213,36 +233,36 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;
 
             // 노이즈 값에 따라 MinTemp와 MaxTemp 사이의 기본 온도를 결정합니다.
-            float BaseTemp = FMath::Lerp(MinTemp, MaxTemp, TempNoiseAlpha);
+            float BaseTemp = FMath::Lerp(MapPreset->MinTemp, MapPreset->MaxTemp, TempNoiseAlpha);
 
             // ==========================================================
             //                 2. 고도에 따른 온도 감쇠 (그대로 유지)
             // ==========================================================
             const uint16 Height16 = InHeightMap[Index];
             const float WorldHeight = static_cast<float>(Height16) - 32768.0f;
-            const float SeaLevelHeight = MinHeight + SeaLevel * (MaxHeight - MinHeight);
+            const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
             
             if (WorldHeight > SeaLevelHeight)
             {
-                BaseTemp -= (WorldHeight / 1000.0f) * TempDropPer1000Units;
+                BaseTemp -= (WorldHeight / 1000.0f) * MapPreset->TempDropPer1000Units;
             }
             else
             {
-                BaseTemp += (WorldHeight / 1000.0f) * TempDropPer1000Units;
+                BaseTemp += (WorldHeight / 1000.0f) * MapPreset->TempDropPer1000Units;
             }
 
-            float NormalizedBaseTemp = (BaseTemp - MinTemp) / TempRange;
-            if (RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
+            float NormalizedBaseTemp = (BaseTemp - MapPreset->MinTemp) / TempRange;
+            if (MapPreset->RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
             {
-                float PowX = FMath::Pow(NormalizedBaseTemp, RedistributionFactor);
-                float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, RedistributionFactor);
+                float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
+                float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
                 NormalizedBaseTemp = PowX/(PowX + Pow1_X);
             }
-            BaseTemp = MinTemp + NormalizedBaseTemp * TempRange;
+            BaseTemp = MapPreset->MinTemp + NormalizedBaseTemp * TempRange;
             // ==========================================================
             //          3. 최종 온도 값 저장
             // ==========================================================
-            float FinalTemp = FMath::Clamp(BaseTemp, MinTemp, MaxTemp);
+            float FinalTemp = FMath::Clamp(BaseTemp, MapPreset->MinTemp, MapPreset->MaxTemp);
             
             TempMapFloat[Index] = FinalTemp;
 
@@ -279,22 +299,27 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
 void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
 	TArray<uint16>& OutHumidityMap)
 {
-    FIntPoint InResolution = MapResolution;//FixToNearestValidResolution(MapResolution);
-    if (OutHumidityMap.Num() != InResolution.X * InResolution.Y)
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    if (OutHumidityMap.Num() != CurResolution.X * CurResolution.Y)
     {
-        OutHumidityMap.SetNumUninitialized(InResolution.X * InResolution.Y);
+        OutHumidityMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
     }
     
     // --- 사전 준비 ---
-    const float SeaLevelWorldHeight = MinHeight + SeaLevel * (MaxHeight - MinHeight);
+    const float SeaLevelWorldHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
 
     // 임시 float 배열들을 사용하여 중간 계산 결과를 저장합니다.
     TArray<float> HumidityMapFloat;
-    HumidityMapFloat.Init(0.0f, InResolution.X * InResolution.Y);
+    HumidityMapFloat.Init(0.0f, CurResolution.X * CurResolution.Y);
 
     // 각 픽셀에서 가장 가까운 물까지의 거리를 저장할 배열
     TArray<float> DistanceToWater;
-    DistanceToWater.Init(TNumericLimits<float>::Max(), InResolution.X * InResolution.Y);
+    DistanceToWater.Init(TNumericLimits<float>::Max(), CurResolution.X * CurResolution.Y);
     
     // ==========================================================
     //            Pass 1: 물 공급원 찾기 및 거리 계산
@@ -302,11 +327,11 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
     
     // 1-A: 모든 물 픽셀(습기 공급원)을 찾아서 큐에 넣습니다.
     TQueue<FIntPoint> Frontier; // 너비 우선 탐색(BFS)을 위한 큐
-    for (int32 y = 0; y < InResolution.Y; ++y)
+    for (int32 y = 0; y < CurResolution.Y; ++y)
     {
-        for (int32 x = 0; x < InResolution.X; ++x)
+        for (int32 x = 0; x < CurResolution.X; ++x)
         {
-            const int32 Index = y * InResolution.X  + x;
+            const int32 Index = y * CurResolution.X  + x;
             const float WorldHeight = (static_cast<float>(InHeightMap[Index]) - 32768.0f); // Z스케일 문제 무시
 
             if (WorldHeight <= SeaLevelWorldHeight)
@@ -318,8 +343,8 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
     }
 
     // 1-B: BFS를 사용하여 모든 육지 픽셀에서 가장 가까운 물까지의 거리를 계산합니다.
-    int32 dx[] = {0, 0, 1, -1};
-    int32 dy[] = {1, -1, 0, 0};
+    const int32 dx[] = {0, 0, 1, -1};
+    const int32 dy[] = {1, -1, 0, 0};
 
     while (!Frontier.IsEmpty())
     {
@@ -328,16 +353,16 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
 
         for (int32 i = 0; i < 4; ++i)
         {
-            int32 nx = Current.X + dx[i];
-            int32 ny = Current.Y + dy[i];
+            const int32 nx = Current.X + dx[i];
+            const int32 ny = Current.Y + dy[i];
             
-            if (nx >= 0 && nx < InResolution.X && ny >= 0 && ny < InResolution.Y)
+            if (nx >= 0 && nx < CurResolution.X && ny >= 0 && ny < CurResolution.Y)
             {
-                int32 NeighborIndex = ny * InResolution.X + nx;
+                const int32 NeighborIndex = ny * CurResolution.X + nx;
                 // 아직 방문하지 않은(거리가 무한대인) 이웃 픽셀이라면
                 if (DistanceToWater[NeighborIndex] == TNumericLimits<float>::Max())
                 {
-                    DistanceToWater[NeighborIndex] = DistanceToWater[Current.Y * InResolution.X + Current.X] + 1.0f;
+                    DistanceToWater[NeighborIndex] = DistanceToWater[Current.Y * CurResolution.X + Current.X] + 1.0f;
                     Frontier.Enqueue(FIntPoint(nx, ny));
                 }
             }
@@ -350,7 +375,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
     float GlobalMinHumidity = TNumericLimits<float>::Max();
     float GlobalMaxHumidity = TNumericLimits<float>::Lowest();
     
-    for (int32 i = 0; i < InResolution.X * InResolution.Y; ++i)
+    for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
     {
         float FinalHumidity = 0.0f;
         
@@ -362,19 +387,19 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
         else
         {
             // 2-A: 물과의 거리를 기반으로 기본 습도를 계산합니다.
-            float HumidityFromDistance = FMath::Exp(-DistanceToWater[i] * MoistureFalloffRate);
+            const float HumidityFromDistance = FMath::Exp(-DistanceToWater[i] * MapPreset->MoistureFalloffRate);
         
             // 2-B: 온도의 영향을 적용합니다.
-            float NormalizedTemp = static_cast<float>(InTempMap[i]) / 65535.0f;
-            FinalHumidity = HumidityFromDistance * (1.0f - (NormalizedTemp * TemperatureInfluenceOnHumidity));
+            const float NormalizedTemp = static_cast<float>(InTempMap[i]) / 65535.0f;
+            FinalHumidity = HumidityFromDistance * (1.0f - (NormalizedTemp * MapPreset->TemperatureInfluenceOnHumidity));
         }
 
         FinalHumidity = FMath::Clamp(FinalHumidity, 0.0f, 1.0f);
         
-        if (RedistributionFactor > 1.f && FinalHumidity > 0.f && FinalHumidity < 1.f)
+        if (MapPreset->RedistributionFactor > 1.f && FinalHumidity > 0.f && FinalHumidity < 1.f)
         {
-            float PowX = FMath::Pow(FinalHumidity, RedistributionFactor);
-            float Pow1_X = FMath::Pow(1-FinalHumidity, RedistributionFactor);
+            const float PowX = FMath::Pow(FinalHumidity, MapPreset->RedistributionFactor);
+            const float Pow1_X = FMath::Pow(1-FinalHumidity, MapPreset->RedistributionFactor);
             FinalHumidity = PowX/(PowX + Pow1_X);
         }
         
@@ -396,56 +421,70 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
 
     for (int32 i = 0; i < HumidityMapFloat.Num(); ++i)
     {
-        float NormalizedHumidity = (HumidityMapFloat[i] - GlobalMinHumidity) / HumidityRange;
+        const float NormalizedHumidity = (HumidityMapFloat[i] - GlobalMinHumidity) / HumidityRange;
         OutHumidityMap[i] = static_cast<uint16>(NormalizedHumidity * 65535.0f);
     }
 
-    //ExportMap(OutHumidityMap, "HumidityMap.png");
+    ExportMap(OutHumidityMap, "HumidityMap.png");
 }
 
 void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
     const TArray<uint16>& InHumidityMap)
 {
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    
     TArray<FColor> BiomeColorMap;
-    BiomeColorMap.AddUninitialized(MapResolution.X * MapResolution.Y);
+    BiomeColorMap.AddUninitialized(CurResolution.X * CurResolution.Y);
     TArray<FName> BiomeMap;
-    BiomeMap.AddUninitialized(MapResolution.X * MapResolution.Y);
-    
-    for (auto& Biome : Biomes)
-    {
-        Biome.Value.WeightLayer.Init(0, MapResolution.X * MapResolution.Y);
-    }
+    BiomeMap.AddUninitialized(CurResolution.X * CurResolution.Y);
 
-    float SeaLevelHeight = MinHeight + SeaLevel * (MaxHeight - MinHeight);
-    
-    for (int32 y = 0; y < MapResolution.Y; ++y)
+    for (auto& Biome : MapPreset->Biomes)
     {
-        for (int32 x = 0; x < MapResolution.X; ++x)
+        TArray<uint8> WeightLayer;
+        WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
+        WeightLayers.Add(Biome.Key, WeightLayer);
+    }
+    
+    // for (auto& Biome : Biomes)
+    // {
+    //     Biome.Value.WeightLayer.Init(0, CurResolution.X * CurResolution.Y);
+    // }
+
+    const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    
+    for (int32 y = 0; y < CurResolution.Y; ++y)
+    {
+        for (int32 x = 0; x < CurResolution.X; ++x)
         {
-            const int32 Index = y * MapResolution.X + x;
+            const int32 Index = y * CurResolution.X + x;
             float Height = static_cast<float>(InHeightMap[Index]);
             Height -= 32768.f;
-            float NormalizedTemp = static_cast<float>(InTempMap[y * MapResolution.X + x]) / 65535.f;
+            float NormalizedTemp = static_cast<float>(InTempMap[y * CurResolution.X + x]) / 65535.f;
             float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
-            float NormalizedHumidity = static_cast<float>(InHumidityMap[y * MapResolution.X + x]) / 65535.f;
+            float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
             float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
-            if (y == MapResolution.Y / 2 && x == MapResolution.X / 2)
+            if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
                 UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
-            FOCGBiomeSettings* CurrentBiome = nullptr;
+            const FOCGBiomeSettings* CurrentBiome = nullptr;
             if (Height <= SeaLevelHeight)
             {
-                CurrentBiome = Biomes.Find(TEXT("Water"));
+                CurrentBiome = MapPreset->Biomes.Find(TEXT("Water"));
             }
             else
             {
                 float MinDist = TNumericLimits<float>::Max();
-                for (auto& Biome : Biomes)
+                for (auto& Biome : MapPreset->Biomes)
                 {
                     if (Biome.Value.BiomeName == TEXT("Water"))
                         continue;
                     float TempDiff = FMath::Abs(Biome.Value.Temperature - Temp);
                     float HumidityDiff = FMath::Abs(Biome.Value.Humidity - Humidity);
-                    HumidityDiff = (MaxTemp - MinTemp) * HumidityDiff;
+                    HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
                     if (Dist < MinDist)
                     {
@@ -454,34 +493,55 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                     }
                 }
             }
+            
             if(CurrentBiome)
             {
-                CurrentBiome->WeightLayer[Index] = 255;
+                WeightLayers[CurrentBiome->BiomeName][Index] = 255;
+                // CurrentBiome->WeightLayer[Index] = 255;
                 BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
                 BiomeMap[Index] = CurrentBiome->BiomeName;
             }
         }
     }
-    MapDataUtils::ExportMap(BiomeColorMap, MapResolution, "BiomeMap.png");
+    MapDataUtils::ExportMap(BiomeColorMap, CurResolution, "BiomeMap0.png");
     BelndBiome(BiomeMap);
 }
 
 void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
 {
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+
+    const FIntPoint CurResolution = MapPreset->MapResolution;
      // 초기화 및 원본 맵 복사
     TMap<FName, TArray<uint8>> OriginalWeightMaps;
-    for (auto& Biome : Biomes) {
-        Biome.Value.WeightLayer.Init(0, MapResolution.X * MapResolution.Y); // 최종 결과를 저장할 배열 초기화
+    for (auto& Layer : WeightLayers)
+    {
+        Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
         
         TArray<uint8> InitialWeights;
-        InitialWeights.Init(0, MapResolution.X * MapResolution.Y);
-        OriginalWeightMaps.Add(Biome.Value.BiomeName, InitialWeights);
+        InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
+
+        OriginalWeightMaps.FindOrAdd(Layer.Key, InitialWeights);
     }
+    
+    // for (auto& Biome : Biomes)
+    // {
+    //     Biome.Value.WeightLayer.Init(0, CurResolution.X * CurResolution.Y); // 최종 결과를 저장할 배열 초기화
+    //     
+    //     TArray<uint8> InitialWeights;
+    //     InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
+    //     OriginalWeightMaps.Add(Biome.Value.BiomeName, InitialWeights);
+    // }
 
     // 칼같이 나뉘는 초기 웨이트맵 생성 (복사본에)
-    for (int32 i = 0; i < MapResolution.X * MapResolution.Y; ++i)
+    for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
     {
-        if (OriginalWeightMaps.Contains(InBiomeMap[i])) {
+        if (OriginalWeightMaps.Contains(InBiomeMap[i]))
+        {
             OriginalWeightMaps[InBiomeMap[i]][i] = 255;
         }
     }
@@ -489,12 +549,13 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     // 경계 처리를 포함한 블러 필터 적용
     // 수평 블러 결과를 저장할 임시 맵
     TMap<FName, TArray<float>> HorizontalPassMaps;
-    for (const auto& Elem : OriginalWeightMaps) {
+    for (const auto& Elem : OriginalWeightMaps)
+    {
         HorizontalPassMaps.Add(Elem.Key, TArray<float>());
-        HorizontalPassMaps.FindChecked(Elem.Key).Init(0.f, MapResolution.X * MapResolution.Y);
+        HorizontalPassMaps.FindChecked(Elem.Key).Init(0.f, CurResolution.X * CurResolution.Y);
     }
     
-    const int32 BlendRadius = BiomeBlendRadius;
+    const int32 BlendRadius = MapPreset->BiomeBlendRadius;
 
     // 수평 블러 (슬라이딩 윈도우)
     for (const auto& Elem : OriginalWeightMaps)
@@ -503,22 +564,24 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         const TArray<uint8>& OriginalLayer = Elem.Value;
         TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(BiomeName);
 
-        for (int32 y = 0; y < MapResolution.Y; ++y)
+        for (int32 y = 0; y < CurResolution.Y; ++y)
         {
             float Sum = 0;
             // 첫 픽셀의 윈도우 합계 계산
-            for (int32 i = -BlendRadius; i <= BlendRadius; ++i) {
-                int32 SampleX = FMath::Clamp(i, 0, MapResolution.Y - 1);
-                Sum += OriginalLayer[y * MapResolution.X  + SampleX];
+            for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
+            {
+                int32 SampleX = FMath::Clamp(i, 0, CurResolution.Y - 1);
+                Sum += OriginalLayer[y * CurResolution.X  + SampleX];
             }
-            HorizontalPassLayer[y * MapResolution.X  + 0] = Sum;
+            HorizontalPassLayer[y * CurResolution.X  + 0] = Sum;
 
             // 슬라이딩 윈도우
-            for (int32 x = 1; x < MapResolution.X ; ++x) {
-                int32 OldX = FMath::Clamp(x - BlendRadius - 1, 0, MapResolution.X  - 1);
-                int32 NewX = FMath::Clamp(x + BlendRadius, 0, MapResolution.X  - 1);
-                Sum += OriginalLayer[y * MapResolution.X  + NewX] - OriginalLayer[y * MapResolution.X + OldX];
-                HorizontalPassLayer[y * MapResolution.X  + x] = Sum;
+            for (int32 x = 1; x < CurResolution.X ; ++x)
+            {
+                int32 OldX = FMath::Clamp(x - BlendRadius - 1, 0, CurResolution.X  - 1);
+                int32 NewX = FMath::Clamp(x + BlendRadius, 0, CurResolution.X  - 1);
+                Sum += OriginalLayer[y * CurResolution.X  + NewX] - OriginalLayer[y * CurResolution.X + OldX];
+                HorizontalPassLayer[y * CurResolution.X  + x] = Sum;
             }
         }
     }
@@ -529,43 +592,45 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     {
         const FName& BiomeName = Elem.Key;
         const TArray<float>& HorizontalPassLayer = Elem.Value;
-        TArray<uint8>& FinalLayer = Biomes.Find(BiomeName)->WeightLayer;
+        TArray<uint8>& FinalLayer = *WeightLayers.Find(BiomeName);
 
-        for (int32 x = 0; x < MapResolution.X; ++x)
+        for (int32 x = 0; x < CurResolution.X; ++x)
         {
             float Sum = 0;
             // 첫 픽셀의 윈도우 합계 계산
-            for (int32 i = -BlendRadius; i <= BlendRadius; ++i) {
-                int32 SampleY = FMath::Clamp(i, 0, MapResolution.X - 1);
-                Sum += HorizontalPassLayer[SampleY * MapResolution.X  + x];
+            for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
+            {
+                int32 SampleY = FMath::Clamp(i, 0, CurResolution.X - 1);
+                Sum += HorizontalPassLayer[SampleY * CurResolution.X  + x];
             }
             FinalLayer[x] = FMath::RoundToInt(Sum * BlendFactor);
 
             // 슬라이딩 윈도우
-            for (int32 y = 1; y < MapResolution.Y; ++y) {
-                int32 OldY = FMath::Clamp(y - BlendRadius - 1, 0, MapResolution.X - 1);
-                int32 NewY = FMath::Clamp(y + BlendRadius, 0, MapResolution.X - 1);
-                Sum += HorizontalPassLayer[NewY * MapResolution.X + x] - HorizontalPassLayer[OldY * MapResolution.X + x];
-                FinalLayer[y * MapResolution.X + x] = FMath::RoundToInt(Sum * BlendFactor);
+            for (int32 y = 1; y < CurResolution.Y; ++y)
+            {   
+                int32 OldY = FMath::Clamp(y - BlendRadius - 1, 0, CurResolution.X - 1);
+                int32 NewY = FMath::Clamp(y + BlendRadius, 0, CurResolution.X - 1);
+                Sum += HorizontalPassLayer[NewY * CurResolution.X + x] - HorizontalPassLayer[OldY * CurResolution.X + x];
+                FinalLayer[y * CurResolution.X + x] = FMath::RoundToInt(Sum * BlendFactor);
             }
         }
     }
     
     // 각 픽셀에 대해 모든 바이옴의 블러링된 웨이트 합이 255가 되도록 보정
-    for (int32 i = 0; i < MapResolution.X * MapResolution.Y; ++i)
+    for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
     {
         float TotalWeight = 0;
-        for (auto& Biome : Biomes)
+        for (auto& Layer : WeightLayers)
         {
-            TotalWeight += Biome.Value.WeightLayer[i];
+            TotalWeight += Layer.Value[i];
         }
 
         if (TotalWeight > 0)
         {
             float NormalizationFactor = 255.f / TotalWeight;
-            for (auto& Biome : Biomes)
+            for (auto& Layer : WeightLayers)
             {
-                Biome.Value.WeightLayer[i] = FMath::RoundToInt(Biome.Value.WeightLayer[i] * NormalizationFactor);
+                Layer.Value[i] = FMath::RoundToInt(Layer.Value[i] * NormalizationFactor);
             }
         }
     }
@@ -574,6 +639,14 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
 void UOCGMapGenerateComponent::ExportMap(const TArray<uint16>& InMap, const FString& FileName) const
 {
 #if WITH_EDITOR
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+
+    const FIntPoint CurResolution = MapPreset->MapResolution;
+    
      // 1. 저장할 파일 경로를 동적으로 생성합니다.
     // 프로젝트의 콘텐츠 폴더 경로를 가져옵니다. (예: "C:/MyProject/Content/")
     const FString ContentDir = FPaths::ProjectContentDir();
@@ -614,7 +687,7 @@ void UOCGMapGenerateComponent::ExportMap(const TArray<uint16>& InMap, const FStr
 
     // 3. 이미지 래퍼에 데이터 설정
     // 16비트 그레이스케일(G16) 형식으로 데이터를 설정합니다.
-    if (ImageWrapper->SetRaw(InMap.GetData(), InMap.GetAllocatedSize(), MapResolution.X, MapResolution.Y, ERGBFormat::Gray, 16))
+    if (ImageWrapper->SetRaw(InMap.GetData(), InMap.GetAllocatedSize(), CurResolution.X, CurResolution.Y, ERGBFormat::Gray, 16))
     {
         // 4. 데이터를 압축하여 TArray<uint8> 버퍼로 가져옵니다.
         const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);

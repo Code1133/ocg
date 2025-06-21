@@ -57,6 +57,11 @@ void FMapPresetViewportClient::Tick(float DeltaSeconds)
 {
 	FEditorViewportClient::Tick(DeltaSeconds);
 
+	if (MapPresetEditorWorld.IsValid())
+	{
+		MapPresetEditorWorld->Tick(LEVELTICK_All, DeltaSeconds);
+	}
+	
 	if (PreviewScene)
 	{
 		PreviewScene->GetWorld()->Tick(LEVELTICK_All, DeltaSeconds);

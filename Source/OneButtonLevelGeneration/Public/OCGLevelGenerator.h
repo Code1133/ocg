@@ -29,6 +29,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 	UFUNCTION(CallInEditor, Category = "Actions")
+	void Generate();
+	
+	UFUNCTION(CallInEditor, Category = "Actions")
 	void OnClickGenerate(UWorld* InWorld);
 	
 	TObjectPtr<UOCGMapGenerateComponent> GetMapGenerateComponent() { return MapGenerateComponent; }
@@ -37,22 +40,20 @@ public:
 	const TArray<uint16>& GetHeightMapData() const;
 	const TArray<uint16>& GetTemperatureMapData() const;
 	const TArray<uint16>& GetHumidityMapData() const;
-
-	const TMap<FName, FOCGBiomeSettings>& GetBiomes() const;
-
-	const FIntPoint& GetMapResolution() const;
+	const TMap<FName, TArray<uint8>>& GetWeightLayers() const;
 
 	void SetMapPreset(class UMapPreset* InMapPreset);
 
 	const class UMapPreset* GetMapPreset() const { return MapPreset; }
 	
 private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UMapPreset> MapPreset;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LandsacpeGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGLandscapeGenerateComponent> LandscapeGenerateComponent;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TerrainGenerator", meta = (AllowPrivateAccess = "true"))

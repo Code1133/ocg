@@ -37,20 +37,10 @@ private:
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
 	ALandscape* TargetLandscape;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_QuadsPerSection = 63;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_SectionsPerComponent = 1;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_ComponentCountX = 8;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 Landscape_ComponentCountY = 8;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
 	int32 WorldPartitionGridSize = 2;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
 	int32 WorldPartitionRegionSize = 16;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
-	int32 LandscapeSize = 1009;
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscapeInEditor();
