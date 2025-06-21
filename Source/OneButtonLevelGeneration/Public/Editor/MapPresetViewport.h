@@ -11,20 +11,22 @@ class SMapPresetViewport : public SEditorViewport
 {
 public:
 	SLATE_BEGIN_ARGS(SMapPresetViewport) {}
-	SLATE_ARGUMENT(TWeakPtr<FMapPresetEditorToolkit>, MapPresetEditorToolkit)
+		SLATE_ARGUMENT(TWeakPtr<FMapPresetEditorToolkit>, MapPresetEditorToolkit)
+		SLATE_ARGUMENT(UWorld*, World)
 	SLATE_END_ARGS()
 
-	void Construct(const FArguments& InArgs, TSharedPtr<FAdvancedPreviewScene> InPreviewScene);
+	void Construct(const FArguments& InArgs);
 	virtual ~SMapPresetViewport() override;
 
+	UWorld* GetWorld() const override;
 protected:
 	// SEditorViewport의 순수 가상 함수를 오버라이드합니다.
 	virtual TSharedRef<FEditorViewportClient> MakeEditorViewportClient() override;
 
 private:
-	// 이 뷰포트가 참조할 프리뷰 씬
-	TSharedPtr<FAdvancedPreviewScene> PreviewScene;
-
+	// 이 뷰포트가 참조할 월드 (옵션)
+	TWeakObjectPtr<UWorld> MapPresetEditorWorld;
+	
 	// 이 뷰포트를 소유하는 툴킷
 	TWeakPtr<FMapPresetEditorToolkit> ToolkitPtr;
 

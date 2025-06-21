@@ -31,7 +31,7 @@ public:
 	UMapPreset* GetMapPreset() const { return EditingPreset; }
 
 	virtual ~FMapPresetEditorToolkit();
-	UWorld* GetPreviewWorld() const;
+	UPackage* GetPackage() const;
 	
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 protected:
@@ -59,6 +59,8 @@ private:
 	static const FName DetailsTabId;
 
 private:
+
+	void SetupDefaultActors();
 	/** 툴바에 버튼을 추가하는 함수 */
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
 
@@ -74,4 +76,8 @@ private:
 public:
 	FOnGenerateButtonClicked OnGenerateButtonClicked;
 	FOnExportToLevelButtonClicked OnExportToLevelButtonClicked;
+
+private:
+	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
+	TObjectPtr<UPackage> MapPresetEditorPackage;
 };

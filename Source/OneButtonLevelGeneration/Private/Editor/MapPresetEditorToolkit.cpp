@@ -1,12 +1,18 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
-#include "AdvancedPreviewScene.h"
-#include "SEditorViewport.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/VolumetricCloudComponent.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
 #include "Editor/MapPresetViewport.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Engine/SkyLight.h"
 
+class ADirectionalLight;
 const FName FMapPresetEditorToolkit::ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName FMapPresetEditorToolkit::DetailsTabId(TEXT("MapPresetEditor_Details"));
 
@@ -18,12 +24,6 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 {
 	// 커맨드 리스트 및 액션 바인드
 	FMapPresetEditorCommands::Register();
-	// ToolkitCommands = MakeShareable(new FUICommandList);
-	//
-	// ToolkitCommands->MapAction(
-	// 		FMapPresetEditorCommands::Get().GenerateAction,
-	// 		FExecuteAction::CreateSP(this, &FMapPresetEditorToolkit::OnGenerateClicked)
-	// 	);
 
 	// 툴바 확장 기능 생성
 	TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
@@ -36,17 +36,30 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	
 	EditingPreset = MapPreset;
 
-	// 프리뷰 씬 생성
-	PreviewScene = MakeShareable(new FAdvancedPreviewScene(FPreviewScene::ConstructionValues()));
-	// 월드 바운드 체크 비활성화
-	if (PreviewScene->GetWorld() && PreviewScene->GetWorld()->GetWorldSettings())
+	MapPresetEditorPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
+	MapPresetEditorWorld = UWorld::CreateWorld(
+		EWorldType::Editor,
+		true,
+		TEXT("MapPresetEditorWorld"),
+		MapPresetEditorPackage,
+		true
+		);
+	
+	if (MapPresetEditorWorld)
 	{
-		PreviewScene->GetWorld()->GetWorldSettings()->bEnableWorldBoundsChecks = false;
+		FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Editor);
+		Context.SetCurrentWorld(MapPresetEditorWorld);
+		// 월드 바운드 체크 비활성화
+		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
 	}
 
-	// 뷰포트 위젯 생성
-	ViewportWidget = SNew(SMapPresetViewport, PreviewScene).MapPresetEditorToolkit(SharedThis(this));
+	SetupDefaultActors();
 
+	// 뷰포트 위젯 생성
+	ViewportWidget = SNew(SMapPresetViewport)
+		.MapPresetEditorToolkit(SharedThis(this))
+		.World(MapPresetEditorWorld); // .World 인자로 EditorWorld 전달
+	
 	// 에디터 모드 추가
 	AddApplicationMode(
 		TEXT("DefaultMode"),
@@ -56,7 +69,15 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	const bool bCreateDefaultStandaloneMenu = true;
 	const bool bCreateDefaultToolbar = true;
 
-	InitAssetEditor(Mode, InitToolkitHost, FName("MapPresetEditor"), FTabManager::FLayout::NullLayout, bCreateDefaultStandaloneMenu, bCreateDefaultToolbar, EditingPreset);
+	InitAssetEditor(
+		Mode,
+		InitToolkitHost,
+		FName("MapPresetEditor"),
+		FTabManager::FLayout::NullLayout,
+		bCreateDefaultStandaloneMenu,
+		bCreateDefaultToolbar,
+		EditingPreset
+		);
 
 	// 확장 기능을 에디터에 추가
 	AddToolbarExtender(ToolbarExtender);
@@ -87,11 +108,19 @@ FLinearColor FMapPresetEditorToolkit::GetWorldCentricTabColorScale() const
 
 FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
+	if (MapPresetEditorWorld)
+	{
+		MapPresetEditorWorld->ClearFlags(RF_Standalone);
+		GEngine->DestroyWorldContext(MapPresetEditorWorld);
+		MapPresetEditorWorld->DestroyWorld(true);
+		
+		MapPresetEditorWorld = nullptr;
+	}
 }
 
-UWorld* FMapPresetEditorToolkit::GetPreviewWorld() const
+UPackage* FMapPresetEditorToolkit::GetPackage() const
 {
-	return PreviewScene.IsValid() ? PreviewScene->GetWorld() : nullptr;
+	return	MapPresetEditorPackage.Get();
 }
 
 void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
@@ -158,6 +187,29 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 		[
 			DetailsView
 		];
+}
+
+void FMapPresetEditorToolkit::SetupDefaultActors()
+{
+	if (!MapPresetEditorWorld)
+		return;
+
+	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
+	ASkyLight* SkyLight = Cast<ASkyLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyLight::StaticClass(), Transform));
+	SkyLight->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+	SkyLight->GetLightComponent()->SetRealTimeCaptureEnabled(true);
+
+	ADirectionalLight* DirectionalLight = Cast<ADirectionalLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ADirectionalLight::StaticClass(), Transform));
+	DirectionalLight->GetComponent()->bAtmosphereSunLight = 1;
+	DirectionalLight->GetComponent()->AtmosphereSunLightIndex = 0;
+	// The render proxy is create right after AddActor, so we need to mark the render state as dirty again to get the new values set on the render side too.
+	DirectionalLight->MarkComponentsRenderStateDirty();
+
+	ASkyAtmosphere* SkyAtmosphere = Cast<ASkyAtmosphere>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), Transform));
+
+	AVolumetricCloud* VolumetricCloud = Cast<AVolumetricCloud>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AVolumetricCloud::StaticClass(), Transform));
+
+	AExponentialHeightFog* ExponentialHeightFog = Cast<AExponentialHeightFog>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), Transform));
 }
 
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
