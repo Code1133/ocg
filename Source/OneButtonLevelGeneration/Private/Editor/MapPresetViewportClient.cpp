@@ -73,6 +73,10 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
 	
 	UWorld* SourceWorld = GetWorld();
 	bool bSuccess = FEditorFileUtils::SaveLevelAs(SourceWorld->GetCurrentLevel());
+	if (bSuccess)
+	{
+		
+	}
 }
 
 UWorld* FMapPresetViewportClient::GetWorld() const

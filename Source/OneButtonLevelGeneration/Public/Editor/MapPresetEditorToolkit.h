@@ -31,7 +31,6 @@ public:
 	UMapPreset* GetMapPreset() const { return EditingPreset; }
 
 	virtual ~FMapPresetEditorToolkit();
-	UPackage* GetPackage() const;
 	
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 protected:
@@ -79,5 +78,4 @@ public:
 
 private:
 	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
-	TObjectPtr<UPackage> MapPresetEditorPackage;
 };

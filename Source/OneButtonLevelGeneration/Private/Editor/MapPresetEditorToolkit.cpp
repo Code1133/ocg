@@ -36,7 +36,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	
 	EditingPreset = MapPreset;
 
-	MapPresetEditorPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
+	UPackage* MapPresetEditorPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
 	MapPresetEditorWorld = UWorld::CreateWorld(
 		EWorldType::Editor,
 		true,
@@ -110,17 +110,24 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
 	if (MapPresetEditorWorld)
 	{
-		MapPresetEditorWorld->ClearFlags(RF_Standalone);
+		UPackage* MapPresetEditorPackage = MapPresetEditorWorld->GetPackage();
+		
 		GEngine->DestroyWorldContext(MapPresetEditorWorld);
 		MapPresetEditorWorld->DestroyWorld(true);
+		//MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
+		MapPresetEditorWorld->MarkAsGarbage();
+		MapPresetEditorWorld->SetFlags(RF_Transient);
 		
 		MapPresetEditorWorld = nullptr;
-	}
-}
 
-UPackage* FMapPresetEditorToolkit::GetPackage() const
-{
-	return	MapPresetEditorPackage.Get();
+		if (MapPresetEditorPackage)
+		{
+			MapPresetEditorPackage->SetFlags(RF_Transient);
+			MapPresetEditorPackage->MarkAsGarbage();
+
+			MapPresetEditorPackage = nullptr;
+		}
+	}
 }
 
 void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
