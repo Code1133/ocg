@@ -7,6 +7,7 @@
 #include "FileHelpers.h"
 #include "IDesktopPlatform.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Components/ModelComponent.h"
 #include "Editor/MapPresetEditorToolkit.h"
 #include "UObject/SavePackage.h"
 #include "ViewportToolbar/UnrealEdViewportToolbar.h"
@@ -72,10 +73,43 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
     }
 	
 	UWorld* SourceWorld = GetWorld();
-	bool bSuccess = FEditorFileUtils::SaveLevelAs(SourceWorld->GetCurrentLevel());
+	
+	// 월드 복제
+	UPackage* DestWorldPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
+	FObjectDuplicationParameters Parameters(SourceWorld, DestWorldPackage);
+	Parameters.DestName = SourceWorld->GetFName();
+	Parameters.DestClass = SourceWorld->GetClass();
+	Parameters.DuplicateMode = EDuplicateMode::World;
+	Parameters.PortFlags = PPF_Duplicate;
+
+	UWorld* DuplicatedWorld = CastChecked<UWorld>(StaticDuplicateObjectEx(Parameters));
+	DuplicatedWorld->SetFeatureLevel(SourceWorld->GetFeatureLevel());
+
+	ULevel* SourceLevel = SourceWorld->PersistentLevel;
+	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
+
+	if (DuplicatedLevel->Model != NULL
+		&& DuplicatedLevel->Model == SourceLevel->Model
+		&& DuplicatedLevel->ModelComponents.Num() == SourceLevel->ModelComponents.Num())
+	{
+		DuplicatedLevel->Model->ClearLocalMaterialIndexBuffersData();
+		for (int32 ComponentIndex = 0; ComponentIndex < DuplicatedLevel->ModelComponents.Num(); ++ComponentIndex)
+		{
+			UModelComponent* SrcComponent = SourceLevel->ModelComponents[ComponentIndex];
+			UModelComponent* DstComponent = DuplicatedLevel->ModelComponents[ComponentIndex];
+			DstComponent->CopyElementsFrom(SrcComponent);
+		}
+	}
+	
+	bool bSuccess = FEditorFileUtils::SaveLevelAs(DuplicatedWorld->GetCurrentLevel());
+
 	if (bSuccess)
 	{
-		
+		GEngine->DestroyWorldContext(DuplicatedWorld);
+    	DuplicatedWorld->DestroyWorld(true);
+    	DuplicatedWorld->MarkAsGarbage();
+    	DuplicatedWorld->SetFlags(RF_Transient);
+    	DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 	}
 }
 

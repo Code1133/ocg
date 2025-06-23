@@ -36,12 +36,11 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	
 	EditingPreset = MapPreset;
 
-	UPackage* MapPresetEditorPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
 	MapPresetEditorWorld = UWorld::CreateWorld(
 		EWorldType::Editor,
 		true,
 		TEXT("MapPresetEditorWorld"),
-		MapPresetEditorPackage,
+		GetTransientPackage(),
 		true
 		);
 	
@@ -108,25 +107,16 @@ FLinearColor FMapPresetEditorToolkit::GetWorldCentricTabColorScale() const
 
 FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
+	// 패키지가 이미 TransientPackage이기 때문에 패키지 관련 작업 필요 없음
 	if (MapPresetEditorWorld)
 	{
-		UPackage* MapPresetEditorPackage = MapPresetEditorWorld->GetPackage();
-		
 		GEngine->DestroyWorldContext(MapPresetEditorWorld);
 		MapPresetEditorWorld->DestroyWorld(true);
-		//MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 		MapPresetEditorWorld->MarkAsGarbage();
 		MapPresetEditorWorld->SetFlags(RF_Transient);
+		MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 		
 		MapPresetEditorWorld = nullptr;
-
-		if (MapPresetEditorPackage)
-		{
-			MapPresetEditorPackage->SetFlags(RF_Transient);
-			MapPresetEditorPackage->MarkAsGarbage();
-
-			MapPresetEditorPackage = nullptr;
-		}
 	}
 }
 
