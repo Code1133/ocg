@@ -111,6 +111,7 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
     	DuplicatedWorld->SetFlags(RF_Transient);
     	DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 	}
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
 UWorld* FMapPresetViewportClient::GetWorld() const

@@ -117,6 +117,8 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 		MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 		
 		MapPresetEditorWorld = nullptr;
+		
+		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 }
 
