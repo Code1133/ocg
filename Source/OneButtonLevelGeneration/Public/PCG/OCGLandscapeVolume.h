@@ -6,11 +6,13 @@
 #include "GameFramework/Actor.h"
 #include "OCGLandscapeVolume.generated.h"
 
+class UPCGGraph;
 class UOCGHierarchyDataAsset;
 class UPCGComponent;
 class UBoxComponent;
 
-UCLASS()
+
+UCLASS(Abstract, Blueprintable)
 class ONEBUTTONLEVELGENERATION_API AOCGLandscapeVolume : public AActor
 {
 	GENERATED_BODY()
@@ -29,12 +31,12 @@ public:
 	TObjectPtr<UOCGHierarchyDataAsset> DataAsset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OneClickGeneration")
-	bool bShowDebugPoints;
+	bool bShowDebugPoints = false;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> BoxComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UPCGComponent> PCGComponent;
 };

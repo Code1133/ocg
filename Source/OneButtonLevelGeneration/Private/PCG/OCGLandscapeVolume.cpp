@@ -3,6 +3,8 @@
 #include "PCG/OCGLandscapeVolume.h"
 
 #include "PCGComponent.h"
+#include "PCGGraph.h"
+#include "PCGSubsystem.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -18,6 +20,23 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 	RootComponent = BoxComponent;
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
+	PCGComponent->SetIsPartitioned(false);
+
+#if WITH_EDITOR
+	PCGComponent->bForceGenerateOnBPAddedToWorld = true;
+#endif
+
+	// if (UPCGSubsystem* Subsystem = GetSubsystem())
+	// {
+	// 	if (bGenerated)
+	// 	{
+	// 		CleanupLocalImmediate(/*bRemoveComponents=*/true);
+	// 	}
+	//
+	// 	// Update the component on the subsystem
+	// 	bIsComponentPartitioned = bIsNowPartitioned;
+	// 	Subsystem->RegisterOrUpdatePCGComponent(this, bDoActorMapping);
+	// }
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
