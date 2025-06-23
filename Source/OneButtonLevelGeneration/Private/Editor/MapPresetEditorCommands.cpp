@@ -1,11 +1,11 @@
 #include "Editor/MapPresetEditorCommands.h"
 
 FMapPresetEditorCommands::FMapPresetEditorCommands()
-:TCommands<FMapPresetEditorCommands>(
+	: TCommands(
 		TEXT("MapPresetEditor"),
 		FText::FromString(TEXT("Map Preset Editor")),
 		NAME_None,
-		FEditorStyle::GetStyleSetName()
+		FAppStyle::GetAppStyleSetName()
 	)
 {
 }
