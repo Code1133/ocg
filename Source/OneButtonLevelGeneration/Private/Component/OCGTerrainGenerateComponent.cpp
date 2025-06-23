@@ -5,10 +5,10 @@
 
 #include "Landscape.h"
 #include "OCGLevelGenerator.h"
-#include "OCGTerrainVolume.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
 #include "Data/MapPreset.h"
+#include "PCG/OCGLandscapeVolume.h"
 
 
 // Sets default values for this component's properties
@@ -17,7 +17,7 @@ UOCGTerrainGenerateComponent::UOCGTerrainGenerateComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	TargetVolumeClass = AOCGTerrainVolume::StaticClass();
+	TargetVolumeClass = AOCGLandscapeVolume::StaticClass();
 }
 
 
@@ -56,7 +56,7 @@ void UOCGTerrainGenerateComponent::GenerateTerrainInEditor()
 	
 	if (TargetVolumeClass)
 	{
-		TargetTerrainVolume = Cast<AOCGTerrainVolume>(GetWorld()->SpawnActor(TargetVolumeClass));
+		TargetTerrainVolume = Cast<AOCGLandscapeVolume>(GetWorld()->SpawnActor(TargetVolumeClass));
 	}
 	
 	if (TargetTerrainVolume)
@@ -95,7 +95,7 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 
 	if (TargetVolumeClass)
 	{
-		TargetTerrainVolume = Cast<AOCGTerrainVolume>(World->SpawnActor(TargetVolumeClass));
+		TargetTerrainVolume = Cast<AOCGLandscapeVolume>(World->SpawnActor(TargetVolumeClass));
 	}
 
 	if (TargetTerrainVolume)

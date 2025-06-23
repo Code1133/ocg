@@ -10,7 +10,7 @@
  * 
  */
 
-class AOCGTerrainVolume;
+class AOCGLandscapeVolume;
 class UPCGGraph;
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
 UENUM(BlueprintType)
@@ -35,7 +35,7 @@ public:
 	int32 Seed = 1337;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
-	TSubclassOf<AOCGTerrainVolume> TargetVolumeClass;
+	TSubclassOf<AOCGLandscapeVolume> TargetVolumeClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	uint8 bUseOwnMaterMaterial = false;

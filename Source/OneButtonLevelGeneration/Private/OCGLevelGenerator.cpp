@@ -3,11 +3,11 @@
 
 #include "OCGLevelGenerator.h"
 
-#include "OCGTerrainVolume.h"
 #include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "Component/OCGTerrainGenerateComponent.h"
 #include "Data/MapPreset.h"
+#include "PCG/OCGLandscapeVolume.h"
 
 // Sets default values
 AOCGLevelGenerator::AOCGLevelGenerator()
