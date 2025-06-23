@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGTerrainGenerateComponent.generated.h"
 
+class UOCGHierarchyDataAsset;
 class AOCGTerrainVolume;
 class AOCGLevelGenerator;
 
@@ -33,14 +34,17 @@ public:
 
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateTerrain(UWorld* World);
+
+	UFUNCTION()
+	void SetTargetVolumeClass(const TSubclassOf<AOCGTerrainVolume>& InClass) { TargetVolumeClass = InClass; }
 	
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Volume", meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
 	TObjectPtr<AOCGTerrainVolume> TargetTerrainVolume;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Volume", meta = (AllowPrivateAccess="true"))
-	TSubclassOf<AActor> TargetVolumeClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	TSubclassOf<AOCGTerrainVolume> TargetVolumeClass;
 };

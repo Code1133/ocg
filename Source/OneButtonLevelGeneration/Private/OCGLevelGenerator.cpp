@@ -2,9 +2,12 @@
 
 
 #include "OCGLevelGenerator.h"
+
+#include "OCGTerrainVolume.h"
 #include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "Component/OCGTerrainGenerateComponent.h"
+#include "Data/MapPreset.h"
 
 // Sets default values
 AOCGLevelGenerator::AOCGLevelGenerator()
@@ -63,7 +66,11 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (TerrainGenerateComponent)
 	{
-		
+		if (MapPreset && MapPreset->TargetVolumeClass)
+		{
+			TerrainGenerateComponent->SetTargetVolumeClass(MapPreset->TargetVolumeClass);
+		}
+		TerrainGenerateComponent->GenerateTerrain(InWorld);
 	}
 }
 

@@ -6,6 +6,8 @@
 #include "Landscape.h"
 #include "OCGLevelGenerator.h"
 #include "OCGTerrainVolume.h"
+#include "PCGComponent.h"
+#include "PCGGraph.h"
 #include "Data/MapPreset.h"
 
 
@@ -15,8 +17,6 @@ UOCGTerrainGenerateComponent::UOCGTerrainGenerateComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// 일단 CPP로 작성된 Class로 지정
 	TargetVolumeClass = AOCGTerrainVolume::StaticClass();
 }
 
@@ -49,13 +49,31 @@ void UOCGTerrainGenerateComponent::GenerateTerrainInEditor()
     
 	const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
 
-	AActor* SpawnedVolume = GetWorld()->SpawnActor(TargetVolumeClass);
-
-	if (AOCGTerrainVolume* TerrainVolume = Cast<AOCGTerrainVolume>(SpawnedVolume))
+	if (TargetTerrainVolume)
+	{
+		TargetTerrainVolume->Destroy();
+	}
+	
+	if (TargetVolumeClass)
+	{
+		TargetTerrainVolume = Cast<AOCGTerrainVolume>(GetWorld()->SpawnActor(TargetVolumeClass));
+	}
+	
+	if (TargetTerrainVolume)
 	{
 		if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
 		{
-			TerrainVolume->AdjustVolumeToBoundsOfActor(Landscape);
+			TargetTerrainVolume->AdjustVolumeToBoundsOfActor(Landscape);
+		}
+
+		if (UPCGGraph* PCGGraph = MapPreset->PCGGraph)
+		{
+			UPCGComponent* PCGComponent = TargetTerrainVolume->GetPCGComponent();
+			if (PCGComponent)
+			{
+				PCGComponent->SetGraph(PCGGraph);
+				PCGComponent->Generate(true);
+			}
 		}
 	}
 #endif
@@ -70,13 +88,31 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
     
 	const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
 
-	AActor* SpawnedVolume = World->SpawnActor(TargetVolumeClass);
+	if (TargetTerrainVolume)
+	{
+		TargetTerrainVolume->Destroy();
+	}
 
-	if (AOCGTerrainVolume* TerrainVolume = Cast<AOCGTerrainVolume>(SpawnedVolume))
+	if (TargetVolumeClass)
+	{
+		TargetTerrainVolume = Cast<AOCGTerrainVolume>(World->SpawnActor(TargetVolumeClass));
+	}
+
+	if (TargetTerrainVolume)
 	{
 		if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
 		{
-			TerrainVolume->AdjustVolumeToBoundsOfActor(Landscape);
+			TargetTerrainVolume->AdjustVolumeToBoundsOfActor(Landscape);
+		}
+
+		if (UPCGGraph* PCGGraph = MapPreset->PCGGraph)
+		{
+			UPCGComponent* PCGComponent = TargetTerrainVolume->GetPCGComponent();
+			if (PCGComponent)
+			{
+				PCGComponent->SetGraph(PCGGraph);
+				PCGComponent->Generate(true);
+			}
 		}
 	}
 #endif

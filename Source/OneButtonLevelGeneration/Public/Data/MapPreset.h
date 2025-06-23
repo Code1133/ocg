@@ -10,6 +10,8 @@
  * 
  */
 
+class AOCGTerrainVolume;
+class UPCGGraph;
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
 UENUM(BlueprintType)
 enum class ELandscapeQuadsPerSection : uint8
@@ -31,12 +33,18 @@ class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	TSubclassOf<AOCGTerrainVolume> TargetVolumeClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	uint8 bUseOwnMaterMaterial = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TMap<FName, FOCGBiomeSettings> Biomes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	TObjectPtr<UPCGGraph> PCGGraph;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = 0.f))
 	float LandscapeScale = 1;
