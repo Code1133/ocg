@@ -87,6 +87,11 @@ const TMap<FName, TArray<uint8>>& AOCGLevelGenerator::GetWeightLayers() const
 	return MapGenerateComponent->GetWeightLayers();
 }
 
+const ALandscape* AOCGLevelGenerator::GetLandscape() const
+{
+	return LandscapeGenerateComponent->GetLandscape();
+}
+
 void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;

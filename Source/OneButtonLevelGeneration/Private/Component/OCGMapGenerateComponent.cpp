@@ -135,13 +135,13 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
 	// ==========================================================
     //            1. 대륙의 기반이 되는 저주파 노이즈 생성
     // ==========================================================
-    const float ContinentNoiseInputX = InX * MapPreset->ContinentNoiseScale + NoiseOffset.X;
-    const float ContinentNoiseInputY = InY * MapPreset->ContinentNoiseScale + NoiseOffset.Y;
+    float NoiseScale = 1;
+    if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
+        NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
+    const float ContinentNoiseInputX = InX * MapPreset->ContinentNoiseScale * NoiseScale + NoiseOffset.X;
+    const float ContinentNoiseInputY = InY * MapPreset->ContinentNoiseScale * NoiseScale + NoiseOffset.Y;
     // ContinentNoise는 0~1 사이의 값으로, 평야(0)와 산맥 기반(1)을 나눈다.
     const float ContinentNoise = FMath::PerlinNoise2D(FVector2D(ContinentNoiseInputX, ContinentNoiseInputY)) * 0.5f + 0.5f;
-    
-    //return MinHeight + (ContinentNoise) * HeightRange;
-
     // ==========================================================
     //            2. 지형 디테일을 위한 프랙탈 노이즈 생성
     // ==========================================================
@@ -226,6 +226,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             //       ★ 1. 노이즈 기반으로 기본 온도 설정 ★
             // ==========================================================
             // 매우 낮은 주파수의 노이즈를 사용하여 따뜻한 지역과 추운 지역의 큰 덩어리를 만듭니다.
+            // TODO : 0.002f Property로 빼기
             float TempNoiseInputX = x * 0.002f + NoiseOffset.X;
             float TempNoiseInputY = y * 0.002f + NoiseOffset.Y;
 
@@ -246,23 +247,19 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             {
                 BaseTemp -= (WorldHeight / 1000.0f) * MapPreset->TempDropPer1000Units;
             }
-            else
-            {
-                BaseTemp += (WorldHeight / 1000.0f) * MapPreset->TempDropPer1000Units;
-            }
 
             float NormalizedBaseTemp = (BaseTemp - MapPreset->MinTemp) / TempRange;
             if (MapPreset->RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
             {
-                float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
-                float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
+                const float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
+                const float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
                 NormalizedBaseTemp = PowX/(PowX + Pow1_X);
             }
             BaseTemp = MapPreset->MinTemp + NormalizedBaseTemp * TempRange;
             // ==========================================================
             //          3. 최종 온도 값 저장
             // ==========================================================
-            float FinalTemp = FMath::Clamp(BaseTemp, MapPreset->MinTemp, MapPreset->MaxTemp);
+            const float FinalTemp = FMath::Clamp(BaseTemp, MapPreset->MinTemp, MapPreset->MaxTemp);
             
             TempMapFloat[Index] = FinalTemp;
 
@@ -281,12 +278,15 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
     //      4. float 온도맵을 uint16 이미지 데이터로 변환
     // ==========================================================
     TempRange = GlobalMaxTemp - GlobalMinTemp;
-    if (TempRange < KINDA_SMALL_NUMBER) TempRange = 1.0f; // 0으로 나누기 방지
+    if (TempRange < KINDA_SMALL_NUMBER)
+    {
+        TempRange = 1.0f; // 0으로 나누기 방지
+    }
 
     for (int32 i = 0; i < TempMapFloat.Num(); ++i)
     {
         // 각 픽셀의 온도를 0~1 사이로 정규화합니다.
-        float NormalizedTemp = (TempMapFloat[i] - GlobalMinTemp) / TempRange;
+        const float NormalizedTemp = (TempMapFloat[i] - GlobalMinTemp) / TempRange;
         
         // 0~1 값을 0~65535 범위의 uint16 값으로 변환합니다.
         OutTempMap[i] = static_cast<uint16>(NormalizedTemp * 65535.0f);
@@ -449,11 +449,6 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
         WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
         WeightLayers.Add(Biome.Key, WeightLayer);
     }
-    
-    // for (auto& Biome : Biomes)
-    // {
-    //     Biome.Value.WeightLayer.Init(0, CurResolution.X * CurResolution.Y);
-    // }
 
     const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
     
@@ -465,9 +460,9 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             float Height = static_cast<float>(InHeightMap[Index]);
             Height -= 32768.f;
             float NormalizedTemp = static_cast<float>(InTempMap[y * CurResolution.X + x]) / 65535.f;
-            float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
+            const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
-            float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
+            const float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
             if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
                 UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
@@ -478,6 +473,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             else
             {
                 float MinDist = TNumericLimits<float>::Max();
+                float TempRange = MapPreset->MaxTemp - MapPreset->MinTemp;
                 for (auto& Biome : MapPreset->Biomes)
                 {
                     if (Biome.Value.BiomeName == TEXT("Water"))

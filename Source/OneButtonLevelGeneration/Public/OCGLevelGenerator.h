@@ -6,10 +6,12 @@
 #include "GameFramework/Actor.h"
 #include "OCGLevelGenerator.generated.h"
 
+class ALandscape;
 struct FOCGBiomeSettings;
 class UOCGLandscapeGenerateComponent;
 class UOCGTerrainGenerateComponent;
 class UOCGMapGenerateComponent;
+class UMapPreset;
 
 UCLASS()
 class ONEBUTTONLEVELGENERATION_API AOCGLevelGenerator : public AActor
@@ -34,21 +36,22 @@ public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void OnClickGenerate(UWorld* InWorld);
 	
-	TObjectPtr<UOCGMapGenerateComponent> GetMapGenerateComponent() { return MapGenerateComponent; }
-	TObjectPtr<UOCGTerrainGenerateComponent> GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
+	UOCGMapGenerateComponent* GetMapGenerateComponent() { return MapGenerateComponent; }
+	UOCGTerrainGenerateComponent* GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
 
 	const TArray<uint16>& GetHeightMapData() const;
 	const TArray<uint16>& GetTemperatureMapData() const;
 	const TArray<uint16>& GetHumidityMapData() const;
 	const TMap<FName, TArray<uint8>>& GetWeightLayers() const;
+	const ALandscape* GetLandscape() const;
 
-	void SetMapPreset(class UMapPreset* InMapPreset);
+	void SetMapPreset(UMapPreset* InMapPreset);
 
-	const class UMapPreset* GetMapPreset() const { return MapPreset; }
+	const UMapPreset* GetMapPreset() const { return MapPreset; }
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UMapPreset> MapPreset;
+	TObjectPtr<UMapPreset> MapPreset;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;

@@ -34,10 +34,16 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	uint8 bUseOwnMaterMaterial = false;
-	 
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TMap<FName, FOCGBiomeSettings> Biomes;
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = 0.f))
+	float LandscapeScale = 1;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = 0.f))
+	bool ApplyScaleToNoise = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings", meta = (ClampMin = -32768.f, AllowPrivateAccess="true"))
 	float MinHeight = -15000.0f;
 
@@ -107,5 +113,5 @@ public:
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
-	UMaterialInstance* LandscapeMaterial;
+	TObjectPtr<UMaterialInstance> LandscapeMaterial;
 };

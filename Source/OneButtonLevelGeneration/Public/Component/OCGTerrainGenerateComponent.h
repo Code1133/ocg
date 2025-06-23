@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGTerrainGenerateComponent.generated.h"
 
+class AOCGTerrainVolume;
 class AOCGLevelGenerator;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -26,6 +27,20 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
+public:
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateTerrainInEditor();
+
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateTerrain(UWorld* World);
+	
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Volume", meta = (AllowPrivateAccess="true"))
+	TObjectPtr<AOCGTerrainVolume> TargetTerrainVolume;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Volume", meta = (AllowPrivateAccess="true"))
+	TSubclassOf<AActor> TargetVolumeClass;
 };
