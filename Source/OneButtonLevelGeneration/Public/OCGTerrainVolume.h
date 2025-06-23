@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "OCGTerrainVolume.generated.h"
 
+class UOCGHierarchyDataAsset;
 class UBoxComponent;
 class UPCGComponent;
 
@@ -31,6 +32,11 @@ public:
 	
 	UBoxComponent* GetBoxComponent() const { return BoxComponent; }
 	UPCGComponent* GetPCGComponent() const { return PCGComponent; }
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	TObjectPtr<UOCGHierarchyDataAsset> DataAsset;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	bool DebugPoints;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UBoxComponent> BoxComponent;
