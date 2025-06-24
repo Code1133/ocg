@@ -3,6 +3,7 @@
 
 extern const FName GMapPresetEditor_ViewportTabId;
 extern const FName GMapPresetEditor_DetailsTabId;
+extern const FName GMapPresetEditor_MaterialDetailsTabId;
 
 FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit)
 	:FApplicationMode(TEXT("DefaultMode")), MyToolkit(InEditorToolkit)
@@ -14,6 +15,7 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditor
 		// 이 모드에섯 사용할 탭 팩토리들을 등록
 		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_ViewportTabId, MyToolkit.Pin()));
 		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_DetailsTabId, MyToolkit.Pin()));
+		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_MaterialDetailsTabId, MyToolkit.Pin()));
 	}
 
 	TabLayout = FTabManager::NewLayout("Standalone_MapPresetEditor_Layout_v2")
@@ -33,6 +35,13 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditor
 				->SetSizeCoefficient(0.3f)
 				->AddTab(GMapPresetEditor_DetailsTabId, ETabState::OpenedTab)
 		)
+		->Split
+		(
+			FTabManager::NewStack()
+				->SetSizeCoefficient(0.3f)
+				->AddTab(GMapPresetEditor_MaterialDetailsTabId, ETabState::OpenedTab)
+		)
+		
 	);
 }
 

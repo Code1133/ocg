@@ -5,12 +5,13 @@
 #include "Toolkits/AssetEditorToolkit.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
 
+class UMaterialEditorInstanceConstant;
 class UMapPreset;
 
 DECLARE_MULTICAST_DELEGATE(FOnGenerateButtonClicked);
 DECLARE_MULTICAST_DELEGATE(FOnExportToLevelButtonClicked);
 
-class FMapPresetEditorToolkit : public FWorkflowCentricApplication
+class FMapPresetEditorToolkit : public FWorkflowCentricApplication, public FNotifyHook
 {
 public:
 	/**
@@ -41,6 +42,8 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	// 디테일 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
+	// 머티리얼 탭 생성 함수
+	TSharedRef<SDockTab> SpawnTab_MaterialDetails(const FSpawnTabArgs& Args);
 	// 탭의 본문 위젯 생성 함수
 	TSharedRef<SWidget> CreateTabBody();
 	
@@ -53,9 +56,20 @@ private:
 	// 뷰포트 위젯
 	TSharedPtr<class SMapPresetViewport> ViewportWidget;
 
-	// 탭 식별을 위한 고유 FName
-	static const FName ViewportTabId;
-	static const FName DetailsTabId;
+	//머티리얼 디테일 띄우기 위한 프로퍼티들
+	TSharedPtr<IDetailsView> MaterialInstanceDetails;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialEditorInstanceConstant> MaterialEditorInstance;
+
+	void GetShowHiddenParameters(bool& bShowHiddenParameters) const;
+	
+	/** Whether or not we should be displaying all the material parameters */
+	bool bShowAllMaterialParameters = false;
+
+	// 헬퍼 함수
+	void CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance);
+	void FilterOverriddenProperties();
 
 private:
 
@@ -68,7 +82,7 @@ private:
 
 	/** "Export to Level" 버튼 클릭 시 실행될 함수 */
 	FReply OnExportToLevelClicked();
-
+	
 	/** 툴킷의 UI 커맨드 리스트 */
 	TSharedPtr<FUICommandList> ToolkitCommands;
 

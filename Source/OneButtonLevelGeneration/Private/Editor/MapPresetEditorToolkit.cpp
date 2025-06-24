@@ -1,5 +1,6 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/SkyLightComponent.h"
@@ -8,16 +9,19 @@
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
 #include "Editor/MapPresetViewport.h"
+#include "Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
+#include "Factories/MaterialInstanceConstantFactoryNew.h"
+#include "MaterialEditor/MaterialEditorInstanceConstant.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 class ADirectionalLight;
-const FName FMapPresetEditorToolkit::ViewportTabId(TEXT("MapPresetEditor_Viewport"));
-const FName FMapPresetEditorToolkit::DetailsTabId(TEXT("MapPresetEditor_Details"));
 
 const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
+const FName GMapPresetEditor_MaterialDetailsTabId(TEXT("MapPresetEditor_MaterialDetails"));
 
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
                                          const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
@@ -35,6 +39,8 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		);
 	
 	EditingPreset = MapPreset;
+
+	CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(EditingPreset->LandscapeMaterial));
 
 	MapPresetEditorWorld = UWorld::CreateWorld(
 		EWorldType::Editor,
@@ -129,19 +135,21 @@ void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabMan
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_DetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Details))
 		.SetDisplayName(FText::FromString(TEXT("Details")));
+	
+	InTabManager->RegisterTabSpawner(GMapPresetEditor_MaterialDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_MaterialDetails))
+		.SetDisplayName(FText::FromString(TEXT("Material Details")));
 }
 
 void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
 	FWorkflowCentricApplication::UnregisterTabSpawners(InTabManager);
 
-	InTabManager->UnregisterTabSpawner(ViewportTabId);
-	InTabManager->UnregisterTabSpawner(DetailsTabId);
+	InTabManager->UnregisterAllTabSpawners();
 }
 
 TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Viewport(const FSpawnTabArgs& Args)
 {
-	check(Args.GetTabId() == ViewportTabId);
+	check(Args.GetTabId() == GMapPresetEditor_ViewportTabId);
 
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Viewport")))
@@ -154,13 +162,36 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Viewport(const FSpawnTabA
 TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
 	// 탭에 표시할 Slate UI 생성
-	check(Args.GetTabId() == DetailsTabId);
+	check(Args.GetTabId() == GMapPresetEditor_DetailsTabId);
 
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Details")))
 		[
 			// FMapPresetEditorTabFactory를 통해 디테일 뷰를 생성합니다.
 			CreateTabBody()
+		];
+}
+
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_MaterialDetails(const FSpawnTabArgs& Args)
+{
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.bHideSelectionTip = true;
+	DetailsViewArgs.NotifyHook = this;
+	DetailsViewArgs.bShowModifiedPropertiesOption = false;
+
+	MaterialInstanceDetails = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+	MaterialInstanceDetails->SetObject(MaterialEditorInstance.Get());
+
+	// 사용자 정의 필터 로직은 그대로 사용할 수 있습니다.
+	MaterialInstanceDetails->SetCustomFilterDelegate(FSimpleDelegate::CreateSP(this, &FMapPresetEditorToolkit::FilterOverriddenProperties));
+	MaterialEditorInstance->DetailsView = MaterialInstanceDetails;
+
+	return SNew(SDockTab)
+		.Label(FText::FromString("Landscape Material Parameters"))
+		[
+			MaterialInstanceDetails.ToSharedRef()
 		];
 }
 
@@ -186,6 +217,36 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 		[
 			DetailsView
 		];
+}
+
+void FMapPresetEditorToolkit::GetShowHiddenParameters(bool& bShowHiddenParameters) const
+{
+	bShowHiddenParameters = bShowAllMaterialParameters;
+}
+
+void FMapPresetEditorToolkit::CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance)
+{
+	// 기존에 존재하는 MaterialEditorInstanceWrapper가 있다면 유효하지 않도록 설정
+	if (MaterialEditorInstance)
+	{
+		MaterialEditorInstance->SetSourceInstance(nullptr);
+	}
+
+	if (InMaterialInstance)
+	{
+		MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>();
+		MaterialEditorInstance->SetSourceInstance(InMaterialInstance);
+	}
+	else
+	{
+		MaterialEditorInstance = nullptr;
+	}
+}
+
+void FMapPresetEditorToolkit::FilterOverriddenProperties()
+{
+	MaterialEditorInstance->bShowOnlyOverrides = !MaterialEditorInstance->bShowOnlyOverrides;
+	MaterialInstanceDetails->ForceRefresh();
 }
 
 void FMapPresetEditorToolkit::SetupDefaultActors()
@@ -278,3 +339,4 @@ FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 	
 	return FReply::Handled();
 }
+

@@ -36,19 +36,18 @@ public class OneButtonLevelGeneration : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"AdvancedPreviewScene",
 				"AssetTools",
 				"EditorStyle",
 				"Engine",
 				"Landscape",
 				"LandscapeEditor",
-				"MaterialEditor",
 				"PCGEditor",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
 				"UnrealEd",
 				"WorkspaceMenuStructure",
+				"MaterialEditor",
 			}
 			);
 		
