@@ -26,10 +26,9 @@ public class OneButtonLevelGeneration : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject",
 				"PCG",
-				"PCGEditor",
-				"PCGGeometryScriptInterop", 
-				// ... add other public dependencies that you statically link with here ...
+				"PCGGeometryScriptInterop",
 			}
 			);
 			
@@ -37,21 +36,19 @@ public class OneButtonLevelGeneration : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"CoreUObject",
+				"AdvancedPreviewScene",
+				"AssetTools",
+				"EditorStyle",
 				"Engine",
-				"Slate",
-				"SlateCore",
-				"UnrealEd",
 				"Landscape",
 				"LandscapeEditor",
 				"MaterialEditor",
+				"PCGEditor",
 				"PropertyEditor",
-				"AssetTools",
-				"AdvancedPreviewScene", 
-				"WorkspaceMenuStructure", 
-				"EditorStyle"
-				
-				// ... add private dependencies that you statically link with here ...	
+				"Slate",
+				"SlateCore",
+				"UnrealEd",
+				"WorkspaceMenuStructure",
 			}
 			);
 		
