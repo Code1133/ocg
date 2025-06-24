@@ -13,7 +13,7 @@ void FOneButtonLevelGenerationModule::StartupModule()
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
 	// 생성한 에셋 타입 액션을 등록합니다.
-	TSharedRef<IAssetTypeActions> Action = MakeShareable(new FMapPresetAssetTypeActions());
+	TSharedRef<IAssetTypeActions> Action = MakeShared<FMapPresetAssetTypeActions>();
 	AssetTools.RegisterAssetTypeActions(Action);
 
 	// 등록된 액션을 나중에 ShutdownModule에서 해제할 수 있도록 저장합니다.
