@@ -59,10 +59,28 @@ void UOCGMapGenerateComponent::GenerateMaps()
     //     Biomes.Add(Biome.BiomeName, Biome);
     // }
 
-	const FRandomStream Stream(MapPreset->Seed);
+	Stream.Initialize(MapPreset->Seed);
     
-	NoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-	NoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    PlainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    PlainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    MountainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    MountainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    
+    BlendNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    BlendNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    DetailNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    DetailNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    PlainHeight = MapPreset->SeaLevel * 1.005f;
+    
+    NoiseScale = 1;
+    if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
+        NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
 
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
     HeightMapData.AddUninitialized(CurMapResolution.X * CurMapResolution.Y);
@@ -78,6 +96,8 @@ void UOCGMapGenerateComponent::GenerateMaps()
             HeightMapData[y * CurMapResolution.X + x] = HeightValue;
         }
     }
+    //침식 진행
+    ErosionPass(HeightMapData);
     ExportMap(HeightMapData, "HeightMap.png");
     
     GenerateTempMap(HeightMapData, TemperatureMapData);
@@ -133,66 +153,291 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
 
 	const float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
 	// ==========================================================
-    //            1. 대륙의 기반이 되는 저주파 노이즈 생성
+    //            1. 낮은 주파수로 거대한 산맥 생성
     // ==========================================================
-    float NoiseScale = 1;
-    if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
-        NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
-    const float ContinentNoiseInputX = InX * MapPreset->ContinentNoiseScale * NoiseScale + NoiseOffset.X;
-    const float ContinentNoiseInputY = InY * MapPreset->ContinentNoiseScale * NoiseScale + NoiseOffset.Y;
-    // ContinentNoise는 0~1 사이의 값으로, 평야(0)와 산맥 기반(1)을 나눈다.
-    const float ContinentNoise = FMath::PerlinNoise2D(FVector2D(ContinentNoiseInputX, ContinentNoiseInputY)) * 0.5f + 0.5f;
+    float MountainNoiseX = InX * MapPreset->ContinentNoiseScale * NoiseScale + MountainNoiseOffset.X;
+    float MountainNoiseY = InY * MapPreset->ContinentNoiseScale * NoiseScale + MountainNoiseOffset.Y;
+    //-1~1 범위
+    float MountainHeight = FMath::PerlinNoise2D(FVector2D(MountainNoiseX, MountainNoiseY));
+    MountainHeight *= 2.f;
+    MountainHeight = FMath::Clamp(MountainHeight, -1.f, 1.f);
+
     // ==========================================================
-    //            2. 지형 디테일을 위한 프랙탈 노이즈 생성
+    //            2. 산맥 지형 디테일 추가
     // ==========================================================
     float Amplitude = 1.0f;
     float Frequency = 1.0f;
     float TerrainNoise = 0.0f;
     float MaxPossibleAmplitude = 0.0f;
-    
+
     for (int32 i = 0; i < MapPreset->Octaves; ++i)
     {
-        const float NoiseInputX = (InX * MapPreset->HeightNoiseScale * Frequency) + NoiseOffset.X;
-        const float NoiseInputY = (InY * MapPreset->HeightNoiseScale * Frequency) + NoiseOffset.Y;
-        const float PerlinValue = FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)); // -1 ~ 1
+        float NoiseInputX = (InX * MapPreset->HeightNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
+        float NoiseInputY = (InY * MapPreset->HeightNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.Y;
+        float PerlinValue = FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)); // -1 ~ 1
         TerrainNoise += PerlinValue * Amplitude;
         MaxPossibleAmplitude += Amplitude;
         Amplitude *= MapPreset->Persistence;
         Frequency *= MapPreset->Lacunarity;
     }
-    
     // 지형 노이즈를 -1 ~ 1 사이로 정규화
     TerrainNoise /= MaxPossibleAmplitude;
+    TerrainNoise *= 0.3f;
+    MountainHeight += TerrainNoise;
     
     // ==========================================================
-    //         3. 두 노이즈를 지능적으로 결합
+    //            3. 평야와 산맥을 결합할 블렌드 마스크 생성
     // ==========================================================
-    // 대륙 노이즈 값이 클수록(산맥 기반 지역), 지형 노이즈의 영향을 더 많이 받도록 한다.
-    // ContinentInfluence로 그 강도를 조절.
-    const float CombinedNoise = TerrainNoise * FMath::Pow(ContinentNoise, MapPreset->ContinentInfluence);
-    
-    // 최종 노이즈 값을 0~1 범위로 변환
-    const float FinalNoiseValue = CombinedNoise * 0.5f + 0.5f;
-    
-    // 최종 높이 계산
-    float Height = FinalNoiseValue;
-
-    if (MapPreset->RedistributionFactor > 1.f && Height > 0.f && Height < 1.f)
+    float BlendNoiseX = InX * MapPreset->ContinentNoiseScale * NoiseScale + BlendNoiseOffset.X;
+    float BlendNoiseY = InY * MapPreset->ContinentNoiseScale * NoiseScale + BlendNoiseOffset.Y;
+    //0~1 범위
+    float BlendNoise = FMath::PerlinNoise2D(FVector2D(BlendNoiseX, BlendNoiseY)) * 0.5f + 0.5f;
+    //분포를 양쪽 끝으로 확산
+    if (MapPreset->RedistributionFactor > 1.f && BlendNoise > 0.f && BlendNoise < 1.f)
     {
-        const float PowX = FMath::Pow(Height, MapPreset->RedistributionFactor);
-        const float Pow1_X = FMath::Pow(1-Height, MapPreset->RedistributionFactor);
-        Height = PowX/(PowX + Pow1_X);
+        float PowX = FMath::Pow(BlendNoise, MapPreset->RedistributionFactor);
+        float Pow1_X = FMath::Pow(1-BlendNoise, MapPreset->RedistributionFactor);
+        BlendNoise = PowX/(PowX + Pow1_X);
     }
-    
-    Height = FMath::Clamp(Height, 0.0f, 1.0f);
-    
-    // ==========================================================
-    //         4. 최종 월드 높이로 변환
-    // ==========================================================
 
-    const float FinalWorldHeight = MapPreset->MinHeight + (Height * HeightRange);
+    // ==========================================================
+    //            4. 블렌드 마스크에 따라 최종 높이 결정
+    // ==========================================================
+    MountainHeight = MountainHeight * 0.5f + 0.5f;
+    float Height = FMath::Lerp(PlainHeight, MountainHeight, BlendNoise);
+    if (!MapPreset->bIsland)
+        return MapPreset->MinHeight + (Height * HeightRange);
+
+    // ==========================================================
+    //            5. 섬 모양 적용
+    // ==========================================================
+    //중앙에서의 거리 계산
+    float nx = (static_cast<float>(InX) / MapPreset->MapResolution.X) * 2.f - 1.f;
+    float ny = (static_cast<float>(InY) / MapPreset->MapResolution.Y) * 2.f - 1.f;
+    float Distance = FMath::Sqrt(nx * nx + ny * ny);
+    //해안선 노이즈 생성
+    float IslandNoiseX = InX * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;
+    float IslandNoiseY = InY * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.Y;
+    //-1~1 범위
+    float IslandNoise = FMath::PerlinNoise2D(FVector2D(IslandNoiseX, IslandNoiseY));
+    //거리 왜곡
+    float DistortedDistance = Distance + IslandNoise * MapPreset->IslandShapeNoiseStrength;
+    //최종 섬 마스크 생성
+    float IslandMask = 1.f - DistortedDistance;
+    IslandMask *= 3.f;
+    IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
+    IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFaloffExponent);
+    IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
+    Height *= IslandMask;
+    Height = FMath::Clamp(Height, 0.f, 1.f);
+    return MapPreset->MinHeight + (Height * HeightRange);
+}
+
+void UOCGMapGenerateComponent::ErosionPass(TArray<uint16>& InOutHeightMap)
+{
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    if (MapPreset->NumErosionIterations <= 0) return;
+
+    // 1. 침식 브러시 인덱스 미리 계산 (최적화)
+    InitializeErosionBrush();
     
-    return FinalWorldHeight;
+    // 2. 계산을 위해 uint16 맵을 float 맵으로 변환
+    TArray<float> HeightMapFloat;
+    HeightMapFloat.SetNumUninitialized(InOutHeightMap.Num());
+    for (int i = 0; i < InOutHeightMap.Num(); ++i) {
+        HeightMapFloat[i] = static_cast<float>(InOutHeightMap[i]);
+    }
+
+    float SeaLevelHeight = 32768.f + MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+
+    // 3. 메인 시뮬레이션 루프
+    for (int i = 0; i < MapPreset->NumErosionIterations; ++i)
+    {
+        // --- 물방울 초기화 ---
+        float PosX = Stream.RandRange(1.f, MapPreset->MapResolution.X - 2.f);
+        float PosY = Stream.RandRange(1.f, MapPreset->MapResolution.Y - 2.f);
+        float DirX = 0, DirY = 0;
+        float Speed = MapPreset->InitialSpeed;
+        float Water = MapPreset->InitialWaterVolume;
+        float Sediment = 0;
+
+        // --- 한 물방울의 생명주기 루프 ---
+        for (int Lifetime = 0; Lifetime <MapPreset-> MaxDropletLifetime; ++Lifetime)
+        {
+            int32 NodeX = static_cast<int32>(PosX);
+            int32 NodeY = static_cast<int32>(PosY);
+            int32 DropletIndex = NodeY * MapPreset->MapResolution.X + NodeX;
+
+            // 맵 경계를 벗어나면 종료
+            if (NodeX < 0 || NodeX >= MapPreset->MapResolution.X - 1 || NodeY < 0 || NodeY >= MapPreset->MapResolution.Y - 1) {
+                break;
+            }
+
+            // 현재 위치의 높이와 경사 계산
+            FVector2D Gradient;
+            float CurrentHeight = CalculateHeightAndGradient(HeightMapFloat, PosX, PosY, Gradient);
+
+            // 관성을 적용하여 새로운 방향 계산
+            DirX = (DirX * MapPreset->DropletInertia) - (Gradient.X * (1 - MapPreset->DropletInertia));
+            DirY = (DirY * MapPreset->DropletInertia) - (Gradient.Y * (1 - MapPreset->DropletInertia));
+            
+            // 방향 벡터 정규화
+            float Len = FMath::Sqrt(DirX * DirX + DirY * DirY);
+            if (Len > KINDA_SMALL_NUMBER) {
+                DirX /= Len;
+                DirY /= Len;
+            }
+            
+            // 새로운 위치로 이동
+            PosX += DirX;
+            PosY += DirY;
+
+            if (PosX <= 0 || PosX >= MapPreset->MapResolution.X - 1 ||
+                PosY <= 0 || PosY >= MapPreset->MapResolution.Y - 1)
+            {
+                break;
+            }
+
+            // 이동 후 높이와 높이 차이 계산
+            float NewHeight = CalculateHeightAndGradient(HeightMapFloat, PosX, PosY, Gradient);
+            if (NewHeight <= SeaLevelHeight)
+                break;
+            float HeightDifference = NewHeight - CurrentHeight;
+
+            // 흙 운반 용량 계산
+            float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * MapPreset->SedimentCapacityFactor, MapPreset->MinSedimentCapacity);
+            
+            // 침식 또는 퇴적
+            if (Sediment > SedimentCapacity || HeightDifference > 0)
+            {
+                // 퇴적
+                float AmountToDeposit = (HeightDifference > 0) ? FMath::Min(Sediment, HeightDifference) : (Sediment - SedimentCapacity) * MapPreset->DepositSpeed;
+                Sediment -= AmountToDeposit;
+
+                // 미리 계산된 브러시를 사용하여 주변에 흙을 쌓음
+                const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
+                const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
+                for (int j = 0; j < Indices.Num(); j++) {
+                    HeightMapFloat[Indices[j]] += AmountToDeposit * Weights[j];
+                }
+            }
+            else
+            {
+                // 침식
+                float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * MapPreset->ErodeSpeed;
+                
+                // 미리 계산된 브러시를 사용하여 주변 땅을 깎음
+                const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
+                const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
+                for (int j = 0; j < Indices.Num(); j++) {
+                    HeightMapFloat[Indices[j]] -= AmountToErode * Weights[j];
+                }
+                Sediment += AmountToErode;
+            }
+            
+            // 속도 및 물 업데이트
+            Speed = FMath::Sqrt(FMath::Max(0.f, Speed * Speed - HeightDifference * MapPreset->Gravity));
+            Water *= (1.0f - MapPreset->EvaporateSpeed);
+        }
+    }
+
+    // 4. float 맵을 다시 uint16 맵으로 변환
+    for (int i = 0; i < HeightMapFloat.Num(); ++i) {
+        InOutHeightMap[i] = FMath::Clamp(FMath::RoundToInt(HeightMapFloat[i]), 0, 65535);
+    }
+}
+
+void UOCGMapGenerateComponent::InitializeErosionBrush()
+{
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    // 이미 현재 반경으로 초기화했다면 다시 하지 않음
+    int NewSize = MapPreset->MapResolution.X * MapPreset->MapResolution.Y;
+    if (CurrentErosionRadius == MapPreset->ErosionRadius && ErosionBrushIndices.Num() == NewSize)
+    {
+        return;
+    }
+
+    ErosionBrushIndices.SetNum(MapPreset->MapResolution.X * MapPreset->MapResolution.Y);
+    ErosionBrushWeights.SetNum(MapPreset->MapResolution.X * MapPreset->MapResolution.Y);
+
+    for (int32 i = 0; i < MapPreset->MapResolution.X * MapPreset->MapResolution.Y; i++)
+    {
+        int32 CenterX = i % MapPreset->MapResolution.X;
+        int32 CenterY = i / MapPreset->MapResolution.Y;
+
+        float WeightSum = 0;
+        TArray<int32>& Indices = ErosionBrushIndices[i];
+        TArray<float>& Weights = ErosionBrushWeights[i];
+
+        for (int32 y = -MapPreset->ErosionRadius; y <= MapPreset->ErosionRadius; y++)
+        {
+            for (int32 x = -MapPreset->ErosionRadius; x <= MapPreset->ErosionRadius; x++)
+            {
+                float DistSquared = x * x + y * y;
+                float Dist = FMath::Sqrt(DistSquared);
+                if (Dist <= MapPreset->ErosionRadius)
+                {
+                    int32 CoordX = CenterX + x;
+                    int32 CoordY = CenterY + y;
+                    if (CoordX >= 0 && CoordX < MapPreset->MapResolution.X && CoordY >= 0 && CoordY < MapPreset->MapResolution.Y)
+                    {
+                        float Weight = 1.0f - (Dist / MapPreset->ErosionRadius);
+                        WeightSum += Weight;
+                        Indices.Add(CoordY * MapPreset->MapResolution.X + CoordX);
+                        Weights.Add(Weight);
+                    }
+                }
+            }
+        }
+        
+        // 가중치 정규화 (총합이 1이 되도록)
+        if (WeightSum > 0)
+        {
+            for (int32 j = 0; j < Weights.Num(); j++)
+            {
+                Weights[j] /= WeightSum;
+            }
+        }
+    }
+    CurrentErosionRadius = MapPreset->ErosionRadius;
+}
+
+float UOCGMapGenerateComponent::CalculateHeightAndGradient(const TArray<float>& HeightMap, float PosX, float PosY,
+    FVector2D& OutGradient)
+{
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    
+    int32 CoordX = static_cast<int32>(PosX);
+    int32 CoordY = static_cast<int32>(PosY);
+
+    // 보간을 위한 가중치 계산
+    float x = PosX - CoordX;
+    float y = PosY - CoordY;
+
+    // 4개의 주변 셀 인덱스
+    int32 Index_00 = CoordY * MapPreset->MapResolution.X + CoordX;
+    int32 Index_10 = Index_00 + 1;
+    int32 Index_01 = Index_00 + MapPreset->MapResolution.X;
+    int32 Index_11 = Index_01 + 1;
+
+    // 4개 셀의 높이
+    float Height_00 = HeightMap[Index_00];
+    float Height_10 = HeightMap[Index_10];
+    float Height_01 = HeightMap[Index_01];
+    float Height_11 = HeightMap[Index_11];
+
+    // 경사(Gradient) 계산
+    OutGradient.X = (Height_10 - Height_00) * (1 - y) + (Height_11 - Height_01) * y;
+    OutGradient.Y = (Height_01 - Height_00) * (1 - x) + (Height_11 - Height_10) * x;
+
+    // 높이(Bilinear Interpolation) 계산
+    return Height_00 * (1 - x) * (1 - y) + Height_10 * x * (1 - y) + Height_01 * (1 - x) * y + Height_11 * x * y;
 }
 
 void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
@@ -227,8 +472,8 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             // ==========================================================
             // 매우 낮은 주파수의 노이즈를 사용하여 따뜻한 지역과 추운 지역의 큰 덩어리를 만듭니다.
             // TODO : 0.002f Property로 빼기
-            float TempNoiseInputX = x * 0.002f + NoiseOffset.X;
-            float TempNoiseInputY = y * 0.002f + NoiseOffset.Y;
+            float TempNoiseInputX = x * 0.002f + PlainNoiseOffset.X;
+            float TempNoiseInputY = y * 0.002f + PlainNoiseOffset.Y;
 
             // PerlinNoise2D는 -1~1, 이를 0~1로 변환하여 보간의 알파 값으로 사용합니다.
             float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;

@@ -46,7 +46,18 @@ public:
 
 private:
 	UPROPERTY()
-	FVector2D NoiseOffset;
+	FVector2D PlainNoiseOffset;
+	FVector2D MountainNoiseOffset;
+	FVector2D BlendNoiseOffset;
+	FVector2D DetailNoiseOffset;
+	FVector2D IslandNoiseOffset;
+	float NoiseScale;
+	float PlainHeight;
+	FRandomStream Stream;
+	//침식 관련 변수
+	TArray<TArray<int32>> ErosionBrushIndices;
+	TArray<TArray<float>> ErosionBrushWeights;
+	int32 CurrentErosionRadius = 0;
 
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
@@ -62,6 +73,9 @@ private:
 	void DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap);
 	void BelndBiome(const TArray<FName>& InBiomeMap);
 	void ExportMap(const TArray<uint16>& InMap, const FString& FileName) const;
+	void ErosionPass(TArray<uint16>& InOutHeightMap);
+	void InitializeErosionBrush();
+	float CalculateHeightAndGradient(const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);
 
 private:
 	float CachedGlobalMinTemp;
