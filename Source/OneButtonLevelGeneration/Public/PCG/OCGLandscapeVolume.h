@@ -12,8 +12,8 @@ class UPCGComponent;
 class UBoxComponent;
 
 
-UCLASS(Abstract, Blueprintable)
-class ONEBUTTONLEVELGENERATION_API AOCGLandscapeVolume : public AActor
+UCLASS()
+class ONEBUTTONLEVELGENERATION_API AOCGLandscapeVolume: public AActor
 {
 	GENERATED_BODY()
 

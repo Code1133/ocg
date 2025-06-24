@@ -19,15 +19,6 @@ public:
 	// Sets default values for this component's properties
 	UOCGTerrainGenerateComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
-
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateTerrainInEditor();
@@ -35,9 +26,6 @@ public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateTerrain(UWorld* World);
 
-	UFUNCTION()
-	void SetTargetVolumeClass(const TSubclassOf<AOCGLandscapeVolume>& InClass) { TargetVolumeClass = InClass; }
-	
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
 

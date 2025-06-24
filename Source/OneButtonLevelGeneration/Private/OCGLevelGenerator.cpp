@@ -66,10 +66,6 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (TerrainGenerateComponent)
 	{
-		if (MapPreset && MapPreset->TargetVolumeClass)
-		{
-			TerrainGenerateComponent->SetTargetVolumeClass(MapPreset->TargetVolumeClass);
-		}
 		TerrainGenerateComponent->GenerateTerrain(InWorld);
 	}
 }

@@ -3,8 +3,6 @@
 #include "PCG/OCGLandscapeVolume.h"
 
 #include "PCGComponent.h"
-#include "PCGGraph.h"
-#include "PCGSubsystem.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -20,10 +18,6 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 	RootComponent = BoxComponent;
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
-
-#if WITH_EDITOR
-	PCGComponent->bForceGenerateOnBPAddedToWorld = true;
-#endif
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
@@ -45,5 +39,5 @@ void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
 
 	// 3. 이 액터의 BoxComponent의 Extent를 대상 액터 경계의 Extent와 동일하게 설정합니다.
 	// BoxComponent의 크기를 직접 조절합니다.
-	// BoxComponent->SetBoxExtent(BoxExtent);
+	BoxComponent->SetBoxExtent(BoxExtent);
 }
