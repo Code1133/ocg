@@ -18,6 +18,7 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 	RootComponent = BoxComponent;
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
+	PCGComponent->SetIsPartitioned(true);
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
