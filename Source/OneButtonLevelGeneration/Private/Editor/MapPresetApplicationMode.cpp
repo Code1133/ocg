@@ -12,8 +12,8 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditor
 	if (ToolkitPin.IsValid())
 	{
 		// 이 모드에섯 사용할 탭 팩토리들을 등록
-		TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_ViewportTabId, MyToolkit.Pin())));
-		TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_DetailsTabId, MyToolkit.Pin())));
+		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_ViewportTabId, MyToolkit.Pin()));
+		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_DetailsTabId, MyToolkit.Pin()));
 	}
 
 	TabLayout = FTabManager::NewLayout("Standalone_MapPresetEditor_Layout_v2")

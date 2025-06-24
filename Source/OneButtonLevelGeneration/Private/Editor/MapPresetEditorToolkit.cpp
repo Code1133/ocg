@@ -26,7 +26,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	FMapPresetEditorCommands::Register();
 
 	// 툴바 확장 기능 생성
-	TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
+	TSharedPtr<FExtender> ToolbarExtender = MakeShared<FExtender>();
 	ToolbarExtender->AddToolBarExtension(
 			"Asset",
 			EExtensionHook::After,
@@ -62,7 +62,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	// 에디터 모드 추가
 	AddApplicationMode(
 		TEXT("DefaultMode"),
-		MakeShareable(new FMapPresetApplicationMode(SharedThis(this)))
+		MakeShared<FMapPresetApplicationMode>(SharedThis(this))
 	);
 
 	const bool bCreateDefaultStandaloneMenu = true;

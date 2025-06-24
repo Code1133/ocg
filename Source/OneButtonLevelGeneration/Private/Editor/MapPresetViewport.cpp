@@ -21,6 +21,6 @@ UWorld* SMapPresetViewport::GetWorld() const
 TSharedRef<FEditorViewportClient> SMapPresetViewport::MakeEditorViewportClient()
 {
 	// 여기서 ViewportClient를 생성하고 SEditorViewport의 베이스 클래스로 전달.
-	ViewportClient = MakeShareable(new FMapPresetViewportClient(ToolkitPtr.Pin(), MapPresetEditorWorld.Get(), SharedThis(this)));
+	ViewportClient = MakeShared<FMapPresetViewportClient>(ToolkitPtr.Pin(), MapPresetEditorWorld.Get(), SharedThis(this));
 	return ViewportClient.ToSharedRef();
 }
