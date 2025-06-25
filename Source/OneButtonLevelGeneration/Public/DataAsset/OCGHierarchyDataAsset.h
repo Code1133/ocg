@@ -76,6 +76,17 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	int32 EndCullDistance = 0;
 
+	/** Affect Distance Field Lighting을 설정합니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bAffectDistanceFieldLighting = true;
+
+	/**
+	 * Static Mesh 생성 작업을 GPU에서 처리할지 여부 입니다.
+	 * @warning GPU에서 처리된 Mesh는 Culling과 Collision 기능이 작동하지 않습니다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bExecuteOnGPU = false;
+
 	/** 포인트 생성을 위한 랜덤 시드입니다. 동일한 시드는 동일한 결과를 생성합니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	int32 Seed;
