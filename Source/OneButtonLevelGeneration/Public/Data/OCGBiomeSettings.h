@@ -34,12 +34,6 @@ struct FOCGBiomeSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
 	FLinearColor Color;
 	
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
-    float MinHeight = -100.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
-    float MaxHeight = 1000.0f;
-	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome|StaticMesh", meta = (AllowPrivate))
     TArray<FOCGBiomeStaticMesh> StaticMeshSettings;
 

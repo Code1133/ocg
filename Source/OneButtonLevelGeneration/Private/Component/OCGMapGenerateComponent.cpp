@@ -713,7 +713,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = MapPreset->Biomes.FindByPredicate([](const FOCGBiomeSettings& Settings)
                     {return Settings.BiomeName == TEXT("Water");});
-            if (WaterBiome && Height <= SeaLevelHeight)
+            if (WaterBiome && Height < SeaLevelHeight)
             {
                 CurrentBiome = WaterBiome;
             }
@@ -725,7 +725,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 {
                     if (Biome.BiomeName == TEXT("Water"))
                         continue;
-                    float TempDiff = FMath::Abs(Biome.Temperature - Temp);
+                    float TempDiff = FMath::Abs(Biome.Temperature - Temp) / TempRange;
                     float HumidityDiff = FMath::Abs(Biome.Humidity - Humidity);
                     HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
@@ -787,8 +787,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     TMap<FName, TArray<float>> HorizontalPassMaps;
     for (const auto& Elem : OriginalWeightMaps)
     {
-        if (Elem.Key == TEXT("Water"))
-            continue;
         HorizontalPassMaps.Add(Elem.Key, TArray<float>());
         HorizontalPassMaps.FindChecked(Elem.Key).Init(0.f, CurResolution.X * CurResolution.Y);
     }
@@ -798,8 +796,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     // 수평 블러 (슬라이딩 윈도우)
     for (const auto& Elem : OriginalWeightMaps)
     {
-        if (Elem.Key == TEXT("Water"))
-            continue;
         const FName& BiomeName = Elem.Key;
         const TArray<uint8>& OriginalLayer = Elem.Value;
         TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(BiomeName);
@@ -830,8 +826,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
     for (const auto& Elem : HorizontalPassMaps)
     {
-        if (Elem.Key == TEXT("Water"))
-            continue;
         const FName& BiomeName = Elem.Key;
         const TArray<float>& HorizontalPassLayer = Elem.Value;
         TArray<uint8>& FinalLayer = *WeightLayers.Find(BiomeName);
