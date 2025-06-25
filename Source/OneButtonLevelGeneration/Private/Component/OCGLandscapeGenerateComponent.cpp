@@ -114,8 +114,8 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     for (const auto& Biome : LevelGenerator->GetMapPreset()->Biomes)
     {
         FLandscapeImportLayerInfo LayerInfo;
-        LayerInfo.LayerName = Biome.Key;
-        LayerInfo.LayerData = WeightLayers.FindChecked(Biome.Key);
+        LayerInfo.LayerName = Biome.BiomeName;
+        LayerInfo.LayerData = WeightLayers.FindChecked(Biome.BiomeName);
 
         // TODO : Material의 Layer의 이름도 맞춰야 함
         

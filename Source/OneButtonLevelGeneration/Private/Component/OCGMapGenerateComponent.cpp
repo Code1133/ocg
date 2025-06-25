@@ -692,7 +692,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
     {
         TArray<uint8> WeightLayer;
         WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
-        WeightLayers.Add(Biome.Key, WeightLayer);
+        WeightLayers.Add(Biome.BiomeName, WeightLayer);
     }
 
     const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
@@ -711,9 +711,11 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
                 UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
-            if (Height <= SeaLevelHeight)
+            const FOCGBiomeSettings* WaterBiome = MapPreset->Biomes.FindByPredicate([](const FOCGBiomeSettings& Settings)
+                    {return Settings.BiomeName == TEXT("Water");});
+            if (WaterBiome && Height <= SeaLevelHeight)
             {
-                CurrentBiome = MapPreset->Biomes.Find(TEXT("Water"));
+                CurrentBiome = WaterBiome;
             }
             else
             {
@@ -721,16 +723,16 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 float TempRange = MapPreset->MaxTemp - MapPreset->MinTemp;
                 for (auto& Biome : MapPreset->Biomes)
                 {
-                    if (Biome.Value.BiomeName == TEXT("Water"))
+                    if (Biome.BiomeName == TEXT("Water"))
                         continue;
-                    float TempDiff = FMath::Abs(Biome.Value.Temperature - Temp);
-                    float HumidityDiff = FMath::Abs(Biome.Value.Humidity - Humidity);
+                    float TempDiff = FMath::Abs(Biome.Temperature - Temp);
+                    float HumidityDiff = FMath::Abs(Biome.Humidity - Humidity);
                     HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
                     if (Dist < MinDist)
                     {
                         MinDist = Dist;
-                        CurrentBiome = &Biome.Value;
+                        CurrentBiome = &Biome;
                     }
                 }
             }

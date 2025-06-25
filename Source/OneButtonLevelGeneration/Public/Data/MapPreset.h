@@ -43,7 +43,7 @@ public:
 	bool bUseOwnMaterMaterial = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	TMap<FName, FOCGBiomeSettings> Biomes;
+	TArray<FOCGBiomeSettings> Biomes;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
@@ -180,6 +180,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+
 #if WITH_EDITOR
 public:
 	UPROPERTY()
@@ -187,5 +188,4 @@ public:
 
 	class FMapPresetEditorToolkit* EditorToolkit = nullptr;
 #endif
-	
 };

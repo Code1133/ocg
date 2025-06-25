@@ -23,7 +23,7 @@ struct FOCGBiomeSettings
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
-    FName BiomeName;
+    FName BiomeName = TEXT("LayerName");
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
 	float Temperature;
