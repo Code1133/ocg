@@ -99,6 +99,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (AllowPrivateAccess="true"))
 	int32 BiomeBlendRadius = 10;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (AllowPrivateAccess="true"))
+	int32 WaterBlendRadius = 10;
+
 public:
 	// --- Noise Settings ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))

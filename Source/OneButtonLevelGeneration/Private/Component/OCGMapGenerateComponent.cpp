@@ -763,8 +763,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     TMap<FName, TArray<uint8>> OriginalWeightMaps;
     for (auto& Layer : WeightLayers)
     {
-        if (Layer.Key == TEXT("Water"))
-            continue;
         Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
         
         TArray<uint8> InitialWeights;
@@ -790,8 +788,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         HorizontalPassMaps.Add(Elem.Key, TArray<float>());
         HorizontalPassMaps.FindChecked(Elem.Key).Init(0.f, CurResolution.X * CurResolution.Y);
     }
-    
-    const int32 BlendRadius = MapPreset->BiomeBlendRadius;
 
     // 수평 블러 (슬라이딩 윈도우)
     for (const auto& Elem : OriginalWeightMaps)
@@ -800,6 +796,7 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         const TArray<uint8>& OriginalLayer = Elem.Value;
         TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(BiomeName);
 
+        int32 BlendRadius = (BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
         for (int32 y = 0; y < CurResolution.Y; ++y)
         {
             float Sum = 0;
@@ -823,13 +820,16 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     }
 
     // 수직 블러 (슬라이딩 윈도우)
-    const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
     for (const auto& Elem : HorizontalPassMaps)
     {
         const FName& BiomeName = Elem.Key;
         const TArray<float>& HorizontalPassLayer = Elem.Value;
         TArray<uint8>& FinalLayer = *WeightLayers.Find(BiomeName);
 
+        int32 BlendRadius = (BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
+
+        const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
+        
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             float Sum = 0;
@@ -851,6 +851,20 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
             }
         }
     }
+    //물 바이옴 블렌드 영향 제거
+    //for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
+    //{
+    //    if (InBiomeMap[i] == TEXT("Water"))
+    //    {
+    //        for (auto& Layer : WeightLayers)
+    //        {
+    //            if (Layer.Key == TEXT("Water"))
+    //                Layer.Value[i] = 255;
+    //            else
+    //                Layer.Value[i] = 0;
+    //        }
+    //    }
+    //}
     
     // 각 픽셀에 대해 모든 바이옴의 블러링된 웨이트 합이 255가 되도록 보정
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
