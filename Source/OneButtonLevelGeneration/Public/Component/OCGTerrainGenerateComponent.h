@@ -30,9 +30,9 @@ private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
 	TObjectPtr<AOCGLandscapeVolume> TargetTerrainVolume;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
 	TSubclassOf<AOCGLandscapeVolume> TargetVolumeClass;
 };
