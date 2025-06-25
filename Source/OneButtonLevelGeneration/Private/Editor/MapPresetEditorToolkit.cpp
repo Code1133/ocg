@@ -332,6 +332,17 @@ FReply FMapPresetEditorToolkit::OnGenerateClicked()
 		// 오류가 발생했으므로 여기서 함수를 종료합니다.
 		return FReply::Handled();
 	}
+	for (const auto& Biome : EditingPreset->Biomes)
+	{
+		if (Biome.BiomeName == NAME_None)
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Biome name cannot be empty. Please set a valid name for each biome."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return FReply::Handled();
+		}
+	}
 	OnGenerateButtonClicked.Broadcast();
 
 	return FReply::Handled();
