@@ -320,6 +320,18 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 
 FReply FMapPresetEditorToolkit::OnGenerateClicked()
 {
+	if (!EditingPreset || EditingPreset->Biomes.IsEmpty())
+	{
+		// 에러 메시지 정의
+		const FText DialogTitle = FText::FromString(TEXT("Error"));
+		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
+
+		// FMessageDialog::Open을 호출하여 다이얼로그를 엽니다.
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+        
+		// 오류가 발생했으므로 여기서 함수를 종료합니다.
+		return FReply::Handled();
+	}
 	OnGenerateButtonClicked.Broadcast();
 
 	return FReply::Handled();
