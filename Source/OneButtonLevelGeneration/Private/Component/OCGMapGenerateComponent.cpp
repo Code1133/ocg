@@ -688,12 +688,20 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
     TArray<FName> BiomeMap;
     BiomeMap.AddUninitialized(CurResolution.X * CurResolution.Y);
 
-    for (auto& Biome : MapPreset->Biomes)
+    for (int Index = 0; Index < MapPreset->Biomes.Num(); ++Index)
     {
         TArray<uint8> WeightLayer;
         WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
-        WeightLayers.Add(Biome.BiomeName, WeightLayer);
+        FString LayerNameStr = FString::Printf(TEXT("Layer%d"), Index);
+        FName LayerName(LayerNameStr);
+        WeightLayers.Add(LayerName, WeightLayer);
     }
+    // for (auto& Biome : MapPreset->Biomes)
+    // {
+    //     TArray<uint8> WeightLayer;
+    //     WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
+    //     WeightLayers.Add(Biome.BiomeName, WeightLayer);
+    // }
 
     const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
     
@@ -712,7 +720,11 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = MapPreset->Biomes.FindByPredicate([](const FOCGBiomeSettings& Settings)
-                    {return Settings.BiomeName == TEXT("Water");});
+            {
+                return Settings.BiomeName == TEXT("Water");
+            });
+            
+            uint32 CurrentBiomeIndex = INDEX_NONE;
             if (WaterBiome && Height < SeaLevelHeight)
             {
                 CurrentBiome = WaterBiome;
@@ -721,28 +733,54 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             {
                 float MinDist = TNumericLimits<float>::Max();
                 float TempRange = MapPreset->MaxTemp - MapPreset->MinTemp;
-                for (auto& Biome : MapPreset->Biomes)
+                
+                for (int32 BiomeIndex = 0; BiomeIndex < MapPreset->Biomes.Num(); ++BiomeIndex)
                 {
-                    if (Biome.BiomeName == TEXT("Water"))
+                    const FOCGBiomeSettings BiomeSettings = MapPreset->Biomes[BiomeIndex];
+                    if (BiomeSettings.BiomeName == TEXT("Water"))
                         continue;
-                    float TempDiff = FMath::Abs(Biome.Temperature - Temp) / TempRange;
-                    float HumidityDiff = FMath::Abs(Biome.Humidity - Humidity);
+                    float TempDiff = FMath::Abs(BiomeSettings.Temperature - Temp) / TempRange;
+                    float HumidityDiff = FMath::Abs(BiomeSettings.Humidity - Humidity);
                     HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
                     if (Dist < MinDist)
                     {
                         MinDist = Dist;
-                        CurrentBiome = &Biome;
+                        CurrentBiome = &BiomeSettings;
+                        CurrentBiomeIndex = BiomeIndex;
                     }
                 }
+                // for (auto& Biome : MapPreset->Biomes)
+                // {
+                //     if (Biome.BiomeName == TEXT("Water"))
+                //         continue;
+                //     float TempDiff = FMath::Abs(Biome.Temperature - Temp) / TempRange;
+                //     float HumidityDiff = FMath::Abs(Biome.Humidity - Humidity);
+                //     HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
+                //     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
+                //     if (Dist < MinDist)
+                //     {
+                //         MinDist = Dist;
+                //         CurrentBiome = &Biome;
+                //     }
+                // }
             }
             
             if(CurrentBiome)
             {
-                WeightLayers[CurrentBiome->BiomeName][Index] = 255;
+                FName LayerName;
+                if (CurrentBiomeIndex != INDEX_NONE)
+                {
+                    FString LayerNameStr = FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
+                    LayerName = FName(LayerNameStr);
+                    WeightLayers[LayerName][Index] = 255;
+                    BiomeMap[Index] = LayerName;
+                }
+                // WeightLayers[CurrentBiome->BiomeName][Index] = 255;
                 // CurrentBiome->WeightLayer[Index] = 255;
                 BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
-                BiomeMap[Index] = CurrentBiome->BiomeName;
+                BiomeMap[Index] = LayerName;
+                //BiomeMap[Index] = CurrentBiome->BiomeName;
             }
         }
     }
@@ -761,15 +799,35 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     const FIntPoint CurResolution = MapPreset->MapResolution;
      // 초기화 및 원본 맵 복사
     TMap<FName, TArray<uint8>> OriginalWeightMaps;
-    for (auto& Layer : WeightLayers)
+
+    for (int32 LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
     {
-        Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
+        if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
+        {
+            continue;
+        }
+        
+        FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+        FName LayerName(LayerNameStr);
+        WeightLayers[LayerName].Init(0, CurResolution.X * CurResolution.Y);
         
         TArray<uint8> InitialWeights;
         InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
 
-        OriginalWeightMaps.FindOrAdd(Layer.Key, InitialWeights);
+        OriginalWeightMaps.FindOrAdd(LayerName, InitialWeights);
     }
+    //
+    // for (auto& Layer : WeightLayers)
+    // {
+    //     if (Layer.Key == TEXT("Water"))
+    //         continue;
+    //     Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
+    //     
+    //     TArray<uint8> InitialWeights;
+    //     InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
+    //
+    //     OriginalWeightMaps.FindOrAdd(Layer.Key, InitialWeights);
+    // }
 
     // 칼같이 나뉘는 초기 웨이트맵 생성 (복사본에)
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
@@ -790,13 +848,14 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     }
 
     // 수평 블러 (슬라이딩 윈도우)
+    int32 LayerIndex = 0;
     for (const auto& Elem : OriginalWeightMaps)
     {
-        const FName& BiomeName = Elem.Key;
+        const FName& LayerName = Elem.Key;
         const TArray<uint8>& OriginalLayer = Elem.Value;
-        TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(BiomeName);
+        TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(LayerName);
 
-        int32 BlendRadius = (BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
+        int32 BlendRadius = (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
         for (int32 y = 0; y < CurResolution.Y; ++y)
         {
             float Sum = 0;
@@ -817,16 +876,18 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
                 HorizontalPassLayer[y * CurResolution.X  + x] = Sum;
             }
         }
+        ++LayerIndex;
     }
 
+    LayerIndex = 0;
     // 수직 블러 (슬라이딩 윈도우)
     for (const auto& Elem : HorizontalPassMaps)
     {
-        const FName& BiomeName = Elem.Key;
+        const FName& LayerName = Elem.Key;
         const TArray<float>& HorizontalPassLayer = Elem.Value;
-        TArray<uint8>& FinalLayer = *WeightLayers.Find(BiomeName);
+        TArray<uint8>& FinalLayer = *WeightLayers.Find(LayerName);
 
-        int32 BlendRadius = (BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
+        int32 BlendRadius = (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
 
         const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
         
@@ -850,6 +911,7 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
                 FinalLayer[y * CurResolution.X + x] = FMath::RoundToInt(Sum * BlendFactor);
             }
         }
+        ++LayerIndex;
     }
     //물 바이옴 블렌드 영향 제거
     //for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
@@ -870,22 +932,52 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
     {
         float TotalWeight = 0;
-        for (auto& Layer : WeightLayers)
+        // TODO : 리팩토링
+        for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
         {
-            if (Layer.Key == TEXT("Water"))
+            if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
+            {
                 continue;
-            TotalWeight += Layer.Value[i];
+            }
+            FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+            FName LayerName(LayerNameStr);
+            TotalWeight += WeightLayers[LayerName][i];
         }
-
+        // for (auto& Layer : WeightLayers)
+        // {
+        //     if (MapPreset->Biomes[Index++].BiomeName == TEXT("Water"))
+        //     {
+        //         continue;
+        //     }
+        //     // if (Layer.Key == TEXT("Water"))
+        //     //     continue;
+        //     TotalWeight += Layer.Value[i];
+        // }
+        
         if (TotalWeight > 0)
         {
             float NormalizationFactor = 255.f / TotalWeight;
-            for (auto& Layer : WeightLayers)
+            for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
             {
-                if (Layer.Key == TEXT("Water"))
+                if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
+                {
                     continue;
-                Layer.Value[i] = FMath::RoundToInt(Layer.Value[i] * NormalizationFactor);
+                }
+                
+                FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+                FName LayerName(LayerNameStr);
+                 WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
             }
+            // for (auto& Layer : WeightLayers)
+            // {
+            //     if (MapPreset->Biomes[Index++].BiomeName == TEXT("Water"))
+            //     {
+            //         continue;
+            //     }
+            //     // if (Layer.Key == TEXT("Water"))
+            //     //     continue;
+            //     Layer.Value[i] = FMath::RoundToInt(Layer.Value[i] * NormalizationFactor);
+            // }
         }
     }
 }
