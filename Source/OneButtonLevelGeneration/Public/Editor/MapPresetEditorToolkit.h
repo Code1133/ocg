@@ -32,6 +32,8 @@ public:
 	UMapPreset* GetMapPreset() const { return EditingPreset; }
 
 	virtual ~FMapPresetEditorToolkit();
+
+	void CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance);
 	
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 protected:
@@ -59,7 +61,6 @@ private:
 	//머티리얼 디테일 띄우기 위한 프로퍼티들
 	TSharedPtr<IDetailsView> MaterialInstanceDetails;
 
-	UPROPERTY()
 	TObjectPtr<UMaterialEditorInstanceConstant> MaterialEditorInstance;
 
 	void GetShowHiddenParameters(bool& bShowHiddenParameters) const;
@@ -68,7 +69,6 @@ private:
 	bool bShowAllMaterialParameters = false;
 
 	// 헬퍼 함수
-	void CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance);
 	void FilterOverriddenProperties();
 
 private:

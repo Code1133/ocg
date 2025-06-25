@@ -1,6 +1,5 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/SkyLightComponent.h"
@@ -9,11 +8,9 @@
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
 #include "Editor/MapPresetViewport.h"
-#include "Editor/MaterialEditor/Private/MaterialEditorInstanceDetailCustomization.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
-#include "Factories/MaterialInstanceConstantFactoryNew.h"
 #include "MaterialEditor/MaterialEditorInstanceConstant.h"
 #include "Materials/MaterialInstanceConstant.h"
 
@@ -39,6 +36,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		);
 	
 	EditingPreset = MapPreset;
+	EditingPreset->EditorToolkit = this;
 
 	CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(EditingPreset->LandscapeMaterial));
 
@@ -49,13 +47,15 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		GetTransientPackage(),
 		true
 		);
-	
+
 	if (MapPresetEditorWorld)
 	{
 		FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Editor);
 		Context.SetCurrentWorld(MapPresetEditorWorld);
 		// 월드 바운드 체크 비활성화
 		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
+
+		EditingPreset->OwnerWorld = MapPresetEditorWorld;
 	}
 
 	SetupDefaultActors();
@@ -226,21 +226,13 @@ void FMapPresetEditorToolkit::GetShowHiddenParameters(bool& bShowHiddenParameter
 
 void FMapPresetEditorToolkit::CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance)
 {
-	// 기존에 존재하는 MaterialEditorInstanceWrapper가 있다면 유효하지 않도록 설정
-	if (MaterialEditorInstance)
-	{
-		MaterialEditorInstance->SetSourceInstance(nullptr);
-	}
-
-	if (InMaterialInstance)
+	if (!MaterialEditorInstance)
 	{
 		MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>();
+	}
+	// 기존에 존재하는 MaterialEditorInstanceWrapper가 있다면 유효하지 않도록 설정
+	if (InMaterialInstance)
 		MaterialEditorInstance->SetSourceInstance(InMaterialInstance);
-	}
-	else
-	{
-		MaterialEditorInstance = nullptr;
-	}
 }
 
 void FMapPresetEditorToolkit::FilterOverriddenProperties()

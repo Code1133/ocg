@@ -180,4 +180,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+#if WITH_EDITOR
+public:
+	UPROPERTY()
+	UWorld* OwnerWorld = nullptr;
+
+	class FMapPresetEditorToolkit* EditorToolkit = nullptr;
+#endif
+	
 };
