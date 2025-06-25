@@ -761,6 +761,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     TMap<FName, TArray<uint8>> OriginalWeightMaps;
     for (auto& Layer : WeightLayers)
     {
+        if (Layer.Key == TEXT("Water"))
+            continue;
         Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
         
         TArray<uint8> InitialWeights;
@@ -768,15 +770,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
 
         OriginalWeightMaps.FindOrAdd(Layer.Key, InitialWeights);
     }
-    
-    // for (auto& Biome : Biomes)
-    // {
-    //     Biome.Value.WeightLayer.Init(0, CurResolution.X * CurResolution.Y); // 최종 결과를 저장할 배열 초기화
-    //     
-    //     TArray<uint8> InitialWeights;
-    //     InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
-    //     OriginalWeightMaps.Add(Biome.Value.BiomeName, InitialWeights);
-    // }
 
     // 칼같이 나뉘는 초기 웨이트맵 생성 (복사본에)
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
@@ -792,6 +785,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     TMap<FName, TArray<float>> HorizontalPassMaps;
     for (const auto& Elem : OriginalWeightMaps)
     {
+        if (Elem.Key == TEXT("Water"))
+            continue;
         HorizontalPassMaps.Add(Elem.Key, TArray<float>());
         HorizontalPassMaps.FindChecked(Elem.Key).Init(0.f, CurResolution.X * CurResolution.Y);
     }
@@ -801,6 +796,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     // 수평 블러 (슬라이딩 윈도우)
     for (const auto& Elem : OriginalWeightMaps)
     {
+        if (Elem.Key == TEXT("Water"))
+            continue;
         const FName& BiomeName = Elem.Key;
         const TArray<uint8>& OriginalLayer = Elem.Value;
         TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(BiomeName);
@@ -831,6 +828,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
     const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
     for (const auto& Elem : HorizontalPassMaps)
     {
+        if (Elem.Key == TEXT("Water"))
+            continue;
         const FName& BiomeName = Elem.Key;
         const TArray<float>& HorizontalPassLayer = Elem.Value;
         TArray<uint8>& FinalLayer = *WeightLayers.Find(BiomeName);
@@ -863,6 +862,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         float TotalWeight = 0;
         for (auto& Layer : WeightLayers)
         {
+            if (Layer.Key == TEXT("Water"))
+                continue;
             TotalWeight += Layer.Value[i];
         }
 
@@ -871,6 +872,8 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
             float NormalizationFactor = 255.f / TotalWeight;
             for (auto& Layer : WeightLayers)
             {
+                if (Layer.Key == TEXT("Water"))
+                    continue;
                 Layer.Value[i] = FMath::RoundToInt(Layer.Value[i] * NormalizationFactor);
             }
         }
