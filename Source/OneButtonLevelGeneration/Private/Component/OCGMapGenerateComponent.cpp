@@ -789,14 +789,14 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 
                 for (int32 BiomeIndex = 1; BiomeIndex <= MapPreset->Biomes.Num(); ++BiomeIndex)
                 {
-                    const FOCGBiomeSettings BiomeSettings = MapPreset->Biomes[BiomeIndex - 1];
-                    float TempDiff = FMath::Abs(BiomeSettings.Temperature - Temp) / TempRange;
-                    float HumidityDiff = FMath::Abs(BiomeSettings.Humidity - Humidity);
+                    const FOCGBiomeSettings* BiomeSettings = &MapPreset->Biomes[BiomeIndex - 1];
+                    float TempDiff = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
+                    float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
                     if (Dist < MinDist)
                     {
                         MinDist = Dist;
-                        CurrentBiome = &BiomeSettings;
+                        CurrentBiome = BiomeSettings;
                         CurrentBiomeIndex = BiomeIndex;
                     }
                 }
@@ -821,11 +821,18 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 FName LayerName;
                 if (CurrentBiomeIndex != INDEX_NONE)
                 {
+                    if (CurrentBiomeIndex == 1)
+                        int g=0;
+                    if (CurrentBiomeIndex == 2)
+                        int s=0;
+                    if (CurrentBiomeIndex == 3)
+                        int i=0;
                     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
                     LayerName = FName(LayerNameStr);
                     WeightLayers[LayerName][Index] = 255;
                     BiomeNameMap[Index] = LayerName;
                     OutBiomeMap[Index] = CurrentBiome;
+                    BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
                 }
                 else
                 {
@@ -833,7 +840,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 }
                 // WeightLayers[CurrentBiome->BiomeName][Index] = 255;
                 // CurrentBiome->WeightLayer[Index] = 255;
-                BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
+                // BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
                 // BiomeNameMap[Index] = LayerName;
                 // BiomeMap[Index] = CurrentBiome->BiomeName;
             }
