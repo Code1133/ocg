@@ -4,6 +4,7 @@
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
 #include "OCGLevelGenerator.h"
+#include "OCGMaterialEditTool.h"
 #include "VisualizeTexture.h"
 #include "Components/SkyLightComponent.h"
 #include "Data/MapPreset.h"
@@ -112,16 +113,17 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
 
     TMap<FName, TArray<uint8>> WeightLayers = LevelGenerator->GetWeightLayers();
-
+    TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(MapPreset->LandscapeMaterial->Parent));
+    
     for (int32 Index = 0; Index < LevelGenerator->GetMapPreset()->Biomes.Num(); ++Index)
     {
         FLandscapeImportLayerInfo LayerInfo;
         
         FString LayerNameStr = FString::Printf(TEXT("Layer%d"), Index);
         FName LayerName(LayerNameStr);
-
-        LayerInfo.LayerName = LayerName;
+        
         LayerInfo.LayerData = WeightLayers.FindChecked(LayerName);
+        LayerInfo.LayerName = LayerNames[Index];
         
         //LayerInfo.LayerName = Biome.BiomeName;
         //LayerInfo.LayerData = WeightLayers.FindChecked(Biome.BiomeName);

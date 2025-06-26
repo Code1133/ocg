@@ -21,4 +21,10 @@ public:
 	static UMaterialExpression* GetResultNodeFromMaterialAttributes(UMaterial* TargetMaterial);
 
 	static void SaveMaterialAsset(UMaterial* TargetMaterial);
+
+	static TArray<FName> ExtractLandscapeLayerName(UMaterial* TargetMaterial);
+
+	static void CollectUsedExpressions(UMaterial* TargetMaterial, TSet<UMaterialExpression*>& OutUsedExpressions);
+
+	static void AddAttributeInput(const FExpressionInput& Input, TSet<UMaterialExpression*>& OutUsedExpressions, TArray<UMaterialExpression*>& ExpressionsToProcess);
 };

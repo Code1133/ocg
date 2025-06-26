@@ -217,3 +217,97 @@ void OCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
 	);
 #endif
 }
+
+TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMaterial)
+{
+#if WITH_EDITOR
+	TArray<FName> LayerNames;
+	if (!TargetMaterial) return LayerNames;
+
+	// 사용 중인 모든 표현식을 수집합니다.
+	TSet<UMaterialExpression*> UsedExpressions;
+	CollectUsedExpressions(TargetMaterial, UsedExpressions);
+
+	UMaterialExpressionLandscapeLayerBlend* UsedBlendNode = nullptr;
+	
+	// 머티리얼이 "Material Attributes" 모드를 사용하는지 확인합니다.
+	for (UMaterialExpression* Expr : TargetMaterial->GetExpressions())
+	{
+		if (UsedBlendNode == nullptr)
+		{
+			UMaterialExpressionLandscapeLayerBlend* CurBlendNode = Cast<UMaterialExpressionLandscapeLayerBlend>(Expr);
+			if (CurBlendNode && UsedExpressions.Contains(CurBlendNode))
+			{
+				UsedBlendNode =  CurBlendNode;
+				break;
+			}
+		}
+	}
+
+	for (FLayerBlendInput LayerInput : UsedBlendNode->Layers)
+	{
+		LayerNames.Add(LayerInput.LayerName);
+	}
+
+	return LayerNames;
+#endif
+}
+
+void OCGMaterialEditTool::CollectUsedExpressions(UMaterial* TargetMaterial,	TSet<UMaterialExpression*>& OutUsedExpressions)
+{
+	if (!TargetMaterial)
+	{
+		return;
+	}
+
+	// 탐색을 위한 큐(Queue)와 이미 방문한 표현식을 추적하기 위한 셋(Set)
+	TQueue<UMaterialExpression*> ExpressionsToProcess;
+
+	// 1. 탐색 시작점(Seed) 설정: 머티리얼의 최종 출력 속성들
+	//    머티리얼의 모든 속성 입력을 순회하며 시작 노드를 큐에 추가합니다.
+	for (int32 PropertyId = 0; PropertyId < MP_MAX; ++PropertyId)
+	{
+		const FExpressionInput* Input = TargetMaterial->GetExpressionInputForProperty(static_cast<EMaterialProperty>(PropertyId));
+		if (Input)
+		{
+			// GetTracedInput()을 사용하여 Reroute 노드를 건너뛰고 실제 소스 표현식을 가져옵니다.
+			UMaterialExpression* RootExpr = Input->GetTracedInput().Expression;
+			if (RootExpr && !OutUsedExpressions.Contains(RootExpr))
+			{
+				OutUsedExpressions.Add(RootExpr);
+				ExpressionsToProcess.Enqueue(RootExpr);
+			}
+		}
+	}
+
+	// 2. 역방향 탐색 (너비 우선 탐색 - BFS)
+	UMaterialExpression* CurrentExpr = nullptr;
+	while (ExpressionsToProcess.Dequeue(CurrentExpr))
+	{
+		// FExpressionInputIterator를 사용하여 현재 표현식의 모든 입력을 순회합니다.
+		for (FExpressionInputIterator It{CurrentExpr}; It; ++It)
+		{
+			// 반복자가 자동으로 Reroute를 포함한 모든 유효한 입력을 찾아줍니다.
+			UMaterialExpression* InputExpr = It.Expression;
+			if (InputExpr && !OutUsedExpressions.Contains(InputExpr))
+			{
+				OutUsedExpressions.Add(InputExpr);
+				ExpressionsToProcess.Enqueue(InputExpr);
+			}
+		}
+	}
+}
+
+void OCGMaterialEditTool::AddAttributeInput(const FExpressionInput& Input,
+	TSet<UMaterialExpression*>& OutUsedExpressions, TArray<UMaterialExpression*>& ExpressionsToProcess)
+{
+	// GetTracedInput()은 Reroute 및 Named Reroute 노드를 자동으로 해석하여 실제 소스 표현식을 반환합니다.
+	if (UMaterialExpression* RootExpr = Input.GetTracedInput().Expression)
+	{
+		if (!OutUsedExpressions.Contains(RootExpr))
+		{
+			OutUsedExpressions.Add(RootExpr);
+			ExpressionsToProcess.Add(RootExpr);
+		}
+	}
+}
