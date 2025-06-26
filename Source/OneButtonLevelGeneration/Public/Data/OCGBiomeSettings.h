@@ -33,12 +33,12 @@ struct FOCGBiomeSettings
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
 	FLinearColor Color;
-	
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome|StaticMesh", meta = (AllowPrivate))
-    TArray<FOCGBiomeStaticMesh> StaticMeshSettings;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
     int Weight = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
+	float MountainRatio = 0.5f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivate))
 	UMaterialFunctionInterface* BiomeMaterialFunc;

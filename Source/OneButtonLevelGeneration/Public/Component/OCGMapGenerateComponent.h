@@ -70,12 +70,15 @@ private:
 	float CalculateHeightForCoordinate(const int32 InX, const int32 InY) const;
 	void GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
 	void GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
-	void DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap);
-	void BelndBiome(const TArray<FName>& InBiomeMap);
+	void DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
+	void BlendBiome(const TArray<FName>& InBiomeMap);
 	void ExportMap(const TArray<uint16>& InMap, const FString& FileName) const;
 	void ErosionPass(TArray<uint16>& InOutHeightMap);
 	void InitializeErosionBrush();
 	float CalculateHeightAndGradient(const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);
+	void ApplyBiome(TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
+	void CaculateBiomeAverageHeights(const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutAverageHeights);
+	void GetBiomeStats(FIntPoint MapSize, uint32 x, uint32 y, uint32 RegionID, float& OutTotalHeight, uint32& OutTotalPixel, TArray<uint32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<FOCGBiomeSettings*>& InBiomeMap);
 
 private:
 	float CachedGlobalMinTemp;

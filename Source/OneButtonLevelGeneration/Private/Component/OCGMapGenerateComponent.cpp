@@ -103,8 +103,11 @@ void UOCGMapGenerateComponent::GenerateMaps()
     GenerateTempMap(HeightMapData, TemperatureMapData);
 
     GenerateHumidityMap(HeightMapData, TemperatureMapData, HumidityMapData);
-    
-    DecideBiome(HeightMapData, TemperatureMapData, HumidityMapData);
+
+    TArray<const FOCGBiomeSettings*> BiomeMap; 
+    DecideBiome(HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
+
+    ApplyBiome(HeightMapData, BiomeMap);
 }
 
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
@@ -440,6 +443,50 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const TArray<float>& 
     return Height_00 * (1 - x) * (1 - y) + Height_10 * x * (1 - y) + Height_01 * (1 - x) * y + Height_11 * x * y;
 }
 
+void UOCGMapGenerateComponent::ApplyBiome(TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
+{
+    return;
+    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator)
+        return;
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    if (!MapPreset)
+        return;
+    for (int32 index = 0; index < InBiomeMap.Num(); index++)
+    {
+        const FOCGBiomeSettings* CurrentBiome = InBiomeMap[index];
+        if (!CurrentBiome)
+            continue;
+        float CurrentHeight = static_cast<float>(InOutHeightMap[index]-32768);
+        float MtoPRatio = CurrentBiome->MountainRatio;
+    }
+}
+
+void UOCGMapGenerateComponent::CaculateBiomeAverageHeights(const TArray<const FOCGBiomeSettings*>& InBiomeMap,
+    TArray<float>& OutAverageHeights)
+{
+    
+}
+
+void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, uint32 x, uint32 y, uint32 RegionID, float& OutTotalHeight, uint32& OutTotalPixel,
+    TArray<uint32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<FOCGBiomeSettings*>& InBiomeMap)
+{
+    TQueue<FIntPoint> Queue;
+    Queue.Enqueue(FIntPoint(x, y));
+
+    const FOCGBiomeSettings* TargetBiome = InBiomeMap[y*MapSize.X + x];
+    RegionIDMap[y*MapSize.X + x] = RegionID;
+
+    OutTotalHeight = 0.f;
+    OutTotalPixel = 0.f;
+
+    FIntPoint CurrentPoint;
+    while (Queue.Dequeue(CurrentPoint))
+    {
+        uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
+    }
+}
+
 void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
 {
     const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
@@ -674,7 +721,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
 }
 
 void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
-    const TArray<uint16>& InHumidityMap)
+    const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
     const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator || !LevelGenerator->GetMapPreset())
@@ -685,10 +732,11 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
     
     TArray<FColor> BiomeColorMap;
     BiomeColorMap.AddUninitialized(CurResolution.X * CurResolution.Y);
-    TArray<FName> BiomeMap;
-    BiomeMap.AddUninitialized(CurResolution.X * CurResolution.Y);
+    TArray<FName> BiomeNameMap;
+    BiomeNameMap.AddUninitialized(CurResolution.X * CurResolution.Y);
+    OutBiomeMap.AddUninitialized(CurResolution.X * CurResolution.Y);
 
-    for (int Index = 0; Index < MapPreset->Biomes.Num(); ++Index)
+    for (int Index = 1; Index <= MapPreset->Biomes.Num(); ++Index)
     {
         TArray<uint8> WeightLayer;
         WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
@@ -696,6 +744,13 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
         FName LayerName(LayerNameStr);
         WeightLayers.Add(LayerName, WeightLayer);
     }
+    //물 따로 처리
+    TArray<uint8> WaterWeightLayer;
+    WaterWeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
+    FString WaterLayerNameStr = FString::Printf(TEXT("Layer%d"), 0);
+    FName WaterLayerName(WaterLayerNameStr);
+    WeightLayers.Add(WaterLayerName, WaterWeightLayer);
+    
     // for (auto& Biome : MapPreset->Biomes)
     // {
     //     TArray<uint8> WeightLayer;
@@ -719,29 +774,24 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
                 UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
-            const FOCGBiomeSettings* WaterBiome = MapPreset->Biomes.FindByPredicate([](const FOCGBiomeSettings& Settings)
-            {
-                return Settings.BiomeName == TEXT("Water");
-            });
-            
+            const FOCGBiomeSettings* WaterBiome = &MapPreset->WaterBiome;
             uint32 CurrentBiomeIndex = INDEX_NONE;
             if (WaterBiome && Height < SeaLevelHeight)
             {
                 CurrentBiome = WaterBiome;
+                //일단 물 바이옴을 마지막 레이어로 설정
+                CurrentBiomeIndex = 0;
             }
             else
             {
                 float MinDist = TNumericLimits<float>::Max();
                 float TempRange = MapPreset->MaxTemp - MapPreset->MinTemp;
                 
-                for (int32 BiomeIndex = 0; BiomeIndex < MapPreset->Biomes.Num(); ++BiomeIndex)
+                for (int32 BiomeIndex = 1; BiomeIndex <= MapPreset->Biomes.Num(); ++BiomeIndex)
                 {
-                    const FOCGBiomeSettings BiomeSettings = MapPreset->Biomes[BiomeIndex];
-                    if (BiomeSettings.BiomeName == TEXT("Water"))
-                        continue;
+                    const FOCGBiomeSettings BiomeSettings = MapPreset->Biomes[BiomeIndex - 1];
                     float TempDiff = FMath::Abs(BiomeSettings.Temperature - Temp) / TempRange;
                     float HumidityDiff = FMath::Abs(BiomeSettings.Humidity - Humidity);
-                    HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
                     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
                     if (Dist < MinDist)
                     {
@@ -774,21 +824,26 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
                     LayerName = FName(LayerNameStr);
                     WeightLayers[LayerName][Index] = 255;
-                    BiomeMap[Index] = LayerName;
+                    BiomeNameMap[Index] = LayerName;
+                    OutBiomeMap[Index] = CurrentBiome;
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Display, TEXT("Current Biome index is invalid"));
                 }
                 // WeightLayers[CurrentBiome->BiomeName][Index] = 255;
                 // CurrentBiome->WeightLayer[Index] = 255;
                 BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
-                BiomeMap[Index] = LayerName;
-                //BiomeMap[Index] = CurrentBiome->BiomeName;
+                // BiomeNameMap[Index] = LayerName;
+                // BiomeMap[Index] = CurrentBiome->BiomeName;
             }
         }
     }
     MapDataUtils::ExportMap(BiomeColorMap, CurResolution, "BiomeMap0.png");
-    BelndBiome(BiomeMap);
+    BlendBiome(BiomeNameMap);
 }
 
-void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
+void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
 {
     const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator || !LevelGenerator->GetMapPreset())
@@ -802,11 +857,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
 
     for (int32 LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
     {
-        if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
-        {
-            continue;
-        }
-        
         FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
         FName LayerName(LayerNameStr);
         WeightLayers[LayerName].Init(0, CurResolution.X * CurResolution.Y);
@@ -855,7 +905,7 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         const TArray<uint8>& OriginalLayer = Elem.Value;
         TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(LayerName);
 
-        int32 BlendRadius = (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
+        int32 BlendRadius = (LayerIndex == 0) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
         for (int32 y = 0; y < CurResolution.Y; ++y)
         {
             float Sum = 0;
@@ -887,7 +937,7 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         const TArray<float>& HorizontalPassLayer = Elem.Value;
         TArray<uint8>& FinalLayer = *WeightLayers.Find(LayerName);
 
-        int32 BlendRadius = (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water")) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
+        int32 BlendRadius = (LayerIndex == 0) ? MapPreset->WaterBlendRadius : MapPreset->BiomeBlendRadius;
 
         const float BlendFactor = 1.f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
         
@@ -935,10 +985,6 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
         // TODO : 리팩토링
         for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
         {
-            if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
-            {
-                continue;
-            }
             FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
             FName LayerName(LayerNameStr);
             TotalWeight += WeightLayers[LayerName][i];
@@ -959,14 +1005,9 @@ void UOCGMapGenerateComponent::BelndBiome(const TArray<FName>& InBiomeMap)
             float NormalizationFactor = 255.f / TotalWeight;
             for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
             {
-                if (MapPreset->Biomes[LayerIndex].BiomeName == TEXT("Water"))
-                {
-                    continue;
-                }
-                
                 FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
                 FName LayerName(LayerNameStr);
-                 WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
+                WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
             }
             // for (auto& Layer : WeightLayers)
             // {

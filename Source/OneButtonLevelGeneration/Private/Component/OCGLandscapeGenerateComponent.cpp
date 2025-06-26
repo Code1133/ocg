@@ -115,7 +115,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     TMap<FName, TArray<uint8>> WeightLayers = LevelGenerator->GetWeightLayers();
     TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(MapPreset->LandscapeMaterial->Parent));
     
-    for (int32 Index = 0; Index < LevelGenerator->GetMapPreset()->Biomes.Num(); ++Index)
+    for (int32 Index = 0; Index < WeightLayers.Num(); ++Index)
     {
         FLandscapeImportLayerInfo LayerInfo;
         
@@ -162,10 +162,10 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "LandscapeEditor_CreateLandscape", "Create Landscape"));
 
     // 랜드스케이프의 기본 속성 설정
-    float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f;
-    float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f;
+    float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
+    float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
-    TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f));
+    TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f) * MapPreset->LandscapeScale);
     
     // Import 함수 호출 (변경된 시그니처에 맞춰서)
     TargetLandscape->Import(
