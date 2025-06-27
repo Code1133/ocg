@@ -105,12 +105,13 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
 
 	if (bSuccess)
 	{
-		GEngine->DestroyWorldContext(DuplicatedWorld);
-    	DuplicatedWorld->DestroyWorld(true);
-    	DuplicatedWorld->MarkAsGarbage();
-    	DuplicatedWorld->SetFlags(RF_Transient);
-    	DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
+
 	}
+	GEngine->DestroyWorldContext(DuplicatedWorld);
+	DuplicatedWorld->DestroyWorld(true);
+	DuplicatedWorld->MarkAsGarbage();
+	DuplicatedWorld->SetFlags(RF_Transient);
+	DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 }
 
