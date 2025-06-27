@@ -53,29 +53,10 @@ void UOCGMapGenerateComponent::GenerateMaps()
         return;
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    
-    // Biomes.Empty();
-    // for (const FOCGBiomeSettings& Biome : BiomesArr)
-    // {
-    //     Biomes.Add(Biome.BiomeName, Biome);
-    // }
 
 	Stream.Initialize(MapPreset->Seed);
     
-    PlainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    PlainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-
-    MountainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    MountainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    
-    BlendNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    BlendNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-
-    DetailNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    DetailNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-
-    IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    InitializeNoiseOffsets(MapPreset);
 
     PlainHeight = MapPreset->SeaLevel * 1.005f;
     
@@ -121,6 +102,24 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
     return FIntPoint(Fix(InResolution.X), Fix(InResolution.Y));
 }
 
+void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPreset)
+{
+    PlainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    PlainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    MountainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    MountainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    
+    BlendNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    BlendNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    DetailNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    DetailNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+}
+
 void UOCGMapGenerateComponent::GenerateHeightMap(TArray<uint16>& OutHeightMap) const
 {
     const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
@@ -129,7 +128,7 @@ void UOCGMapGenerateComponent::GenerateHeightMap(TArray<uint16>& OutHeightMap) c
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     
-    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    const FIntPoint CurResolution = MapPreset->MapResolution;
     OutHeightMap.AddZeroed(CurResolution.X * CurResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
@@ -997,7 +996,7 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
             // 첫 픽셀의 윈도우 합계 계산
             for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
             {
-                int32 SampleX = FMath::Clamp(i, 0, CurResolution.Y - 1);
+                int32 SampleX = FMath::Clamp(i, 0, CurResolution.X - 1);
                 Sum += OriginalLayer[y * CurResolution.X  + SampleX];
             }
             HorizontalPassLayer[y * CurResolution.X  + 0] = Sum;
@@ -1032,7 +1031,7 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
             // 첫 픽셀의 윈도우 합계 계산
             for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
             {
-                int32 SampleY = FMath::Clamp(i, 0, CurResolution.X - 1);
+                int32 SampleY = FMath::Clamp(i, 0, CurResolution.Y - 1);
                 Sum += HorizontalPassLayer[SampleY * CurResolution.X  + x];
             }
             FinalLayer[x] = FMath::RoundToInt(Sum * BlendFactor);
@@ -1040,8 +1039,8 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
             // 슬라이딩 윈도우
             for (int32 y = 1; y < CurResolution.Y; ++y)
             {   
-                int32 OldY = FMath::Clamp(y - BlendRadius - 1, 0, CurResolution.X - 1);
-                int32 NewY = FMath::Clamp(y + BlendRadius, 0, CurResolution.X - 1);
+                int32 OldY = FMath::Clamp(y - BlendRadius - 1, 0, CurResolution.Y - 1);
+                int32 NewY = FMath::Clamp(y + BlendRadius, 0, CurResolution.Y - 1);
                 Sum += HorizontalPassLayer[NewY * CurResolution.X + x] - HorizontalPassLayer[OldY * CurResolution.X + x];
                 FinalLayer[y * CurResolution.X + x] = FMath::RoundToInt(Sum * BlendFactor);
             }

@@ -206,7 +206,7 @@ public:
 	int32 Landscape_SectionsPerComponent = 1;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
-	FIntPoint Landscape_ComponentCount = FIntPoint(8, 8);
+	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129", AllowPrivateAccess="true"))
 	FIntPoint MapResolution = FIntPoint(1009, 1009);

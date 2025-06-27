@@ -66,6 +66,7 @@ public:
 private:
 	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
 
+	void InitializeNoiseOffsets(const UMapPreset* MapPreset);
 	void GenerateHeightMap(TArray<uint16>& OutHeightMap) const;
 	float CalculateHeightForCoordinate(const int32 InX, const int32 InY) const;
 	void GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
