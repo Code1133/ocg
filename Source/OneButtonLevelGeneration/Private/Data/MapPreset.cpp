@@ -34,13 +34,9 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	}
 
 	// Update Volume Actor
-	if (AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
+	if (const AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
 	{
-		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGHierarchyData))
-		{
-			VolumeActor->DataAsset = PCGHierarchyData;
-		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
 		{
 			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
 		}
@@ -51,7 +47,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		EditorToolkit->CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(LandscapeMaterial));
 	}
 
-	//Update Landscape Settings
+	// Update Landscape Settings
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Landscape_QuadsPerSection) ||
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Landscape_ComponentCount) ||
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Landscape_SectionsPerComponent) ||
@@ -81,7 +77,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			MapResolution = NewMapResolution;
 		}
 	}
-	
+
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
 	{
 		if (bContainWater)

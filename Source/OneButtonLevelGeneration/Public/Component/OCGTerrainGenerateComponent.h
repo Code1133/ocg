@@ -31,7 +31,7 @@ private:
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
-	TObjectPtr<AOCGLandscapeVolume> TargetTerrainVolume;
+	TObjectPtr<AOCGLandscapeVolume> OCGVolumeInstance;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
 	TSubclassOf<AOCGLandscapeVolume> TargetVolumeClass;

@@ -2,6 +2,10 @@
 
 #include "DataAsset/OCGHierarchyDataAsset.h"
 
+#include "Structure/OCGHierarchyDataStructure.h"
+
+
+struct FMeshAndWeight;
 
 void UOCGHierarchyDataAsset::PostLoad()
 {

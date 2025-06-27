@@ -3,7 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OCGBiomeSettings.h" 
+#include "OCGBiomeSettings.h"
+#include "Structure/OCGHierarchyDataStructure.h"
 #include "MapPreset.generated.h"
 
 /**
@@ -44,13 +45,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;
-	
+
 	FOCGBiomeSettings WaterBiome{TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f};
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	TObjectPtr<UOCGHierarchyDataAsset> PCGHierarchyData;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
 
@@ -213,6 +211,10 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hierarchy Data Settings")
+	TArray<FLandscapeHierarchyData> HierarchiesData;
 
 #if WITH_EDITOR
 public:

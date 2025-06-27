@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "OCGLandscapeVolume.generated.h"
 
+class UMapPreset;
 class UPCGGraph;
 class UOCGHierarchyDataAsset;
 class UPCGComponent;
@@ -28,10 +29,7 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
-	TObjectPtr<UOCGHierarchyDataAsset> DataAsset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OneClickGeneration")
-	bool bShowDebugPoints = false;
+	const UMapPreset* MapPreset;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

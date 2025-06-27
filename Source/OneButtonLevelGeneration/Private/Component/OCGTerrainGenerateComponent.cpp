@@ -34,28 +34,28 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 
 	const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
 
-	if (TargetTerrainVolume)
+	if (OCGVolumeInstance)
 	{
-		TargetTerrainVolume->Destroy();
+		OCGVolumeInstance->Destroy();
 	}
 
 	if (TargetVolumeClass)
 	{
-		TargetTerrainVolume = World->SpawnActor<AOCGLandscapeVolume>(TargetVolumeClass);
+		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>(TargetVolumeClass);
 	}
 
-	if (TargetTerrainVolume)
+	if (OCGVolumeInstance)
 	{
 		if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
 		{
-			TargetTerrainVolume->AdjustVolumeToBoundsOfActor(Landscape);
+			OCGVolumeInstance->AdjustVolumeToBoundsOfActor(Landscape);
 		}
 
-		TargetTerrainVolume->DataAsset = MapPreset->PCGHierarchyData;
+		OCGVolumeInstance->MapPreset = MapPreset;
 
 		if (UPCGGraph* PCGGraph = MapPreset->PCGGraph)
 		{
-			if (UPCGComponent* PCGComponent = TargetTerrainVolume->GetPCGComponent())
+			if (UPCGComponent* PCGComponent = OCGVolumeInstance->GetPCGComponent())
 			{
 				PCGComponent->SetGraph(PCGGraph);
 				PCGComponent->Generate(true);
