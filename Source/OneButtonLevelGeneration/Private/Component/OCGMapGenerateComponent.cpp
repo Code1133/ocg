@@ -176,8 +176,8 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
 
     for (int32 i = 0; i < MapPreset->Octaves; ++i)
     {
-        float NoiseInputX = (InX * MapPreset->HeightNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
-        float NoiseInputY = (InY * MapPreset->HeightNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.Y;
+        float NoiseInputX = (InX * MapPreset->TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
+        float NoiseInputY = (InY * MapPreset->TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.Y;
         float PerlinValue = FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)); // -1 ~ 1
         TerrainNoise += PerlinValue * Amplitude;
         MaxPossibleAmplitude += Amplitude;

@@ -16,14 +16,4 @@ UOCGComponent::UOCGComponent()
 	// ...
 }
 
-void UOCGComponent::EditMasterMaterial()
-{
-	TArray<UMaterialFunctionInterface*> FuncToInsert;
-	for (FOCGBiomeSettings Biome : Biomes)
-	{
-		FuncToInsert.Add(Biome.BiomeMaterialFunc);
-	}
-	OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(Cast<UMaterial>(LandscapeMaterialInstance->Parent), FuncToInsert);
-}
-
 

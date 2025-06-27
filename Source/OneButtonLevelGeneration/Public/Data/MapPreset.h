@@ -55,14 +55,22 @@ public:
 	TObjectPtr<UPCGGraph> PCGGraph;
 
 public:
-	//Decides Landscape Size
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = 0.f))
+	//Decides Landscape Size(Changes Landscape Actor Scale)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = 0.1f))
 	float LandscapeScale = 1;
 
-	//Decides whether scale affects noise or not
+	//If true changing LandscapeScale changes the terrain formation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = 0.f))
-	bool ApplyScaleToNoise = false;
+	bool ApplyScaleToNoise = true;
+	
+	//Decides the Blend radius(pixel) between different biomes
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = "0", AllowPrivateAccess="true"))
+	int32 BiomeBlendRadius = 10;
 
+	//Decides the Blend radius(pixel) between water and other biomes
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = "0", AllowPrivateAccess="true"))
+	int32 WaterBlendRadius = 10;
+	
 	//Landscapes Minimum Height
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = -32768.f, AllowPrivateAccess="true"))
 	float MinHeight = -15000.0f;
@@ -80,15 +88,15 @@ public:
 	bool bIsland = true;
 
 	//Decides the sharpness of island edge and island's size
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.1))
 	float IslandFaloffExponent = 2.0f;
 
 	//Decides irregularity of island shape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.0))
 	float IslandShapeNoiseScale = 0.0025f;
 
 	//Decides irregularity of island edge
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.0))
 	float IslandShapeNoiseStrength = 0.5f;
 
 	//Landscapes Minimum Temperature
@@ -108,93 +116,86 @@ public:
 	float MoistureFalloffRate = 0.0005f;
 
 	//Decides the amount of change in humidity caused by temperature
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Humidity", meta = (ClampMin = "0.0", AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true"))
 	float TemperatureInfluenceOnHumidity = 0.7f;
-
-	//Decides the smoothness of Biome boundary
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (AllowPrivateAccess="true"))
-	int32 BiomeBlendRadius = 10;
-
-	//Decides the smoothness of Water boundary
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (AllowPrivateAccess="true"))
-	int32 WaterBlendRadius = 10;
 
 public:
 	// --- Noise Settings ---
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))
+	//Decides the difference between different noises (larger value gives more randomness)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0",AllowPrivateAccess="true"))
 	float StandardNoiseOffset = 10000.f;
 
 	//Decides how much the noise is spread out
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0",AllowPrivateAccess="true"))
 	float RedistributionFactor = 2.5f;
 	
 	//Decides the frequency of Mountains
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true")) 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0",AllowPrivateAccess="true")) 
 	float ContinentNoiseScale = 0.003f;
 
-	//Decides the height of Mountains
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (DisplayName = "Terrain Noise Scale", AllowPrivateAccess="true"))
-	float HeightNoiseScale = 0.01f;
+	//Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", AllowPrivateAccess="true"))
+	float TerrainNoiseScale = 0.01f;
 
 	//Larger Octaves gives more detail to the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0",AllowPrivateAccess="true"))
 	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
 
 	//Larger Lancunarity gives more tight detail
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (ClampMin = "0.01", AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.01", AllowPrivateAccess="true"))
 	float Lacunarity = 2.0f; // 주파수 변화율 (클수록 더 작고 촘촘한 노이즈 추가)
 
 	//Larger Persistence give more height change detail
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Procedural Settings|Noise", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true"))
 	float Persistence = 0.5f; // 진폭 변화율 (작을수록 추가되는 노이즈의 높이가 낮아짐)
 
 public:
 	//More Iteration gives more erosion details
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	int32 NumErosionIterations = 100000;
 
 	//Decides the size of erosion
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion", meta = (ClampMin = "2"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "1"))
 	int32 ErosionRadius = 2;
 
 	//Larger Inertia gives more smooth flow of erosion droplets
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion", meta = (ClampMin = "0.0", ClampMax = "0.99"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0", ClampMax = "0.99"))
 	float DropletInertia = 0.25f; //1에 가까울 수록 직진 성향 강해짐 0에 가까울수록 기울기에 따른 무작위 움직임
 
 	//Decides the capacity of sediment one droplet can have
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float SedimentCapacityFactor = 10.0f; // 흙 운반 용량 계수
 
 	//Decides the minimum capacity of sediment one droplet can have
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float MinSedimentCapacity = 0.01f; // 최소 운반 용량
 
 	//Decides the speed of erosion
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float ErodeSpeed = 0.3f; // 침식 속도
 
 	//Decides the speed of deposit
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float DepositSpeed = 0.3f; // 퇴적 속도
 
 	//Decides how fast the droplet evaporates
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float EvaporateSpeed = 0.01f; // 증발 속도
 
 	//Decides the gravity effect on droplets
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float Gravity = 9.8f;
 
 	//Decides the maximum lifetime of droplets 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	int32 MaxDropletLifetime = 50;
 
 	//Decides the initial water volume of droplets
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float InitialWaterVolume = 0.5f;
 
 	//Decides the initial speed of droplets
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Erosion")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Erosion", meta = (ClampMin = "0.0"))
 	float InitialSpeed = 2.0f;
 
 public:

@@ -24,7 +24,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	UMaterialInstance* LandscapeMaterialInstance;
-
-	UFUNCTION(CallInEditor, Category = "OCG")
-	void EditMasterMaterial();
 };
