@@ -81,5 +81,14 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			MapResolution = NewMapResolution;
 		}
 	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
+	{
+		if (constexpr int32 MaxCount = 7; Biomes.Num() > MaxCount)
+		{
+			Biomes.SetNum(MaxCount);
+			UE_LOG(LogTemp, Warning, TEXT("Biomes 배열은 최대 %d개까지 허용됩니다. 초과 항목을 삭제했습니다."), MaxCount);
+		}
+	}
 }
 #endif
