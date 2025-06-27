@@ -9,6 +9,7 @@
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values for this component's properties
@@ -107,7 +108,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     TArray<const FOCGBiomeSettings*> BiomeMap; 
     DecideBiome(HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
 
-    ApplyBiome(HeightMapData, BiomeMap);
+    //ApplyBiome(HeightMapData, BiomeMap);
 }
 
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
@@ -445,31 +446,87 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const TArray<float>& 
 
 void UOCGMapGenerateComponent::ApplyBiome(TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
-    return;
     const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator)
         return;
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     if (!MapPreset)
         return;
-    for (int32 index = 0; index < InBiomeMap.Num(); index++)
+
+    TArray<float> AverageHeights;
+    CalculateBiomeAverageHeights(InOutHeightMap, InBiomeMap, AverageHeights, MapPreset);
+    
+    for (int32 y = 0; y<MapPreset->MapResolution.Y; y++)
     {
-        const FOCGBiomeSettings* CurrentBiome = InBiomeMap[index];
-        if (!CurrentBiome)
-            continue;
-        float CurrentHeight = static_cast<float>(InOutHeightMap[index]-32768);
-        float MtoPRatio = CurrentBiome->MountainRatio;
+        for (int32 x = 0; x<MapPreset->MapResolution.X; x++)
+        {
+            int32 Index = y * MapPreset->MapResolution.X + x;
+            const FOCGBiomeSettings* CurrentBiome = InBiomeMap[Index];
+            if (!CurrentBiome || CurrentBiome->BiomeName == TEXT("Water"))
+                continue;
+            uint16 CurrentHeight = InOutHeightMap[Index];
+            float MtoPRatio = CurrentBiome->MountainRatio;
+            float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * 0.002f) * 0.15f + 0.15f;
+            float MountainHeight = MapPreset->MinHeight + (DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight));
+            uint16 AverageHeight = static_cast<uint16>(AverageHeights[Index] + 32768.f);
+            InOutHeightMap[Index] = FMath::Lerp(AverageHeight, CurrentHeight + MountainHeight, MtoPRatio);
+        }
     }
 }
 
-void UOCGMapGenerateComponent::CaculateBiomeAverageHeights(const TArray<const FOCGBiomeSettings*>& InBiomeMap,
-    TArray<float>& OutAverageHeights)
+void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap,
+    TArray<float>& OutAverageHeights, const UMapPreset* MapPreset)
 {
-    
+    FIntPoint MapSize = MapPreset->MapResolution;
+    const int32 TotalPixels = MapSize.X * MapSize.Y;
+    TArray<int32> RegionIDMap;
+    RegionIDMap.Init(0, TotalPixels);
+    OutAverageHeights.Init(0, TotalPixels);
+
+    TMap<int32, float> RegionTotalHeights;
+    TMap<int32, int32> RegionTotalPixel;
+
+    int32 CurrentRegionID = 1;
+
+    for (int32 y = 0; y<MapSize.Y; y++)
+    {
+        for (int32 x = 0; x<MapSize.X; x++)
+        {
+            if (RegionIDMap[y*MapSize.X + x] == 0)
+            {
+                float TotalHeight;
+                int32 TotalPixel;
+                GetBiomeStats(MapSize, x, y, CurrentRegionID, TotalHeight, TotalPixel, RegionIDMap, InHeightMap, InBiomeMap);
+
+                RegionTotalHeights.Add(CurrentRegionID, TotalHeight);
+                RegionTotalPixel.Add(CurrentRegionID, TotalPixel);
+
+                CurrentRegionID++;
+            }
+        }
+    }
+
+    TMap<int32, float> RegionAverageHeights;
+    for (const auto& Region : RegionTotalHeights)
+    {
+        int32 RegionID = Region.Key;
+        float PixelNum = static_cast<float>(RegionTotalPixel[RegionID]);
+        if (PixelNum>0)
+        {
+            float AverageHeight = RegionTotalHeights[RegionID] / PixelNum;
+            RegionAverageHeights.Add(RegionID, AverageHeight);
+        }
+    }
+
+    for (int32 i=0; i<TotalPixels; i++)
+    {
+        int32 RegionID = RegionIDMap[i];
+        OutAverageHeights[i] = RegionAverageHeights.FindRef(RegionID);
+    }
 }
 
-void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, uint32 x, uint32 y, uint32 RegionID, float& OutTotalHeight, uint32& OutTotalPixel,
-    TArray<uint32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<FOCGBiomeSettings*>& InBiomeMap)
+void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel,
+    TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
     TQueue<FIntPoint> Queue;
     Queue.Enqueue(FIntPoint(x, y));
@@ -484,6 +541,27 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, uint32 x, uint32
     while (Queue.Dequeue(CurrentPoint))
     {
         uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
+        OutTotalHeight += static_cast<float>(InHeightMap[CurrentIndex] - 32768);
+        OutTotalPixel++;
+
+        const FIntPoint Neighbors[] =
+        {
+            FIntPoint(CurrentPoint.X + 1, CurrentPoint.Y), FIntPoint(CurrentPoint.X - 1, CurrentPoint.Y),
+            FIntPoint(CurrentPoint.X, CurrentPoint.Y + 1), FIntPoint(CurrentPoint.X, CurrentPoint.Y - 1),
+        };
+
+        for (const FIntPoint& Neighbor : Neighbors)
+        {
+            if (Neighbor.X >= 0 && Neighbor.X < MapSize.X && Neighbor.Y >= 0 && Neighbor.Y < MapSize.Y)
+            {
+                int32 NeighborIndex = Neighbor.Y * MapSize.X + Neighbor.X;
+                if (RegionIDMap[NeighborIndex] == 0 && InBiomeMap[NeighborIndex] == TargetBiome)
+                {
+                    RegionIDMap[NeighborIndex] = RegionID;
+                    Queue.Enqueue(Neighbor);
+                }
+            }
+        }
     }
 }
 
