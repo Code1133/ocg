@@ -40,11 +40,11 @@ public:
 	int32 Seed = 1337;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	bool bUseOwnMaterMaterial = false;
+	bool bContainWater = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;
-
+	
 	FOCGBiomeSettings WaterBiome{TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f};
 
 public:

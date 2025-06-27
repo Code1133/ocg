@@ -53,12 +53,18 @@ void UOCGMapGenerateComponent::GenerateMaps()
         return;
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-
 	Stream.Initialize(MapPreset->Seed);
     
     InitializeNoiseOffsets(MapPreset);
 
-    PlainHeight = MapPreset->SeaLevel * 1.005f;
+    if (MapPreset->bContainWater)
+    {
+        PlainHeight = MapPreset->SeaLevel * 1.005f;
+    }
+    else
+    {
+        PlainHeight = 0.f;
+    }
     
     NoiseScale = 1;
     if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
@@ -255,7 +261,15 @@ void UOCGMapGenerateComponent::ErosionPass(TArray<uint16>& InOutHeightMap)
         HeightMapFloat[i] = static_cast<float>(InOutHeightMap[i]);
     }
 
-    float SeaLevelHeight = 32768.f + MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    float SeaLevelHeight;
+    if (MapPreset->bContainWater)
+    {
+        SeaLevelHeight = 32768.f + MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    }
+    else
+    {
+        SeaLevelHeight = 32768.f + MapPreset->MinHeight;
+    }
 
     // 3. 메인 시뮬레이션 루프
     for (int i = 0; i < MapPreset->NumErosionIterations; ++i)
@@ -610,7 +624,15 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             // ==========================================================
             const uint16 Height16 = InHeightMap[Index];
             const float WorldHeight = static_cast<float>(Height16) - 32768.0f;
-            const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+            float SeaLevelHeight;
+            if (MapPreset->bContainWater)
+            {
+                SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+            }
+            else
+            {
+                SeaLevelHeight = MapPreset->MinHeight;
+            }
             
             if (WorldHeight > SeaLevelHeight)
             {
@@ -680,7 +702,15 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
     }
     
     // --- 사전 준비 ---
-    const float SeaLevelWorldHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    float SeaLevelWorldHeight;
+    if (MapPreset->bContainWater)
+    {
+        SeaLevelWorldHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    }
+    else
+    {
+        SeaLevelWorldHeight = MapPreset->MinHeight;
+    }
 
     // 임시 float 배열들을 사용하여 중간 계산 결과를 저장합니다.
     TArray<float> HumidityMapFloat;
@@ -835,7 +865,15 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
     //     WeightLayers.Add(Biome.BiomeName, WeightLayer);
     // }
 
-    const float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    float SeaLevelHeight;
+    if (MapPreset->bContainWater)
+    {
+        SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    }
+    else
+    {
+        SeaLevelHeight = MapPreset->MinHeight;
+    }
     
     for (int32 y = 0; y < CurResolution.Y; ++y)
     {
