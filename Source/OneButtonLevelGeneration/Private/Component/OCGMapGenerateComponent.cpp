@@ -586,7 +586,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
 
-    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    const FIntPoint CurResolution = MapPreset->MapResolution;
 	if (OutTempMap.Num() != CurResolution.X * CurResolution.Y)
     {
         OutTempMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
@@ -606,21 +606,20 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             const int32 Index = y * CurResolution.X + x;
             
             // ==========================================================
-            //       ★ 1. 노이즈 기반으로 기본 온도 설정 ★
+            //       1. 노이즈 기반으로 기본 온도 설정
             // ==========================================================
             // 매우 낮은 주파수의 노이즈를 사용하여 따뜻한 지역과 추운 지역의 큰 덩어리를 만듭니다.
             // TODO : 0.002f Property로 빼기
             float TempNoiseInputX = x * 0.002f + PlainNoiseOffset.X;
             float TempNoiseInputY = y * 0.002f + PlainNoiseOffset.Y;
-
-            // PerlinNoise2D는 -1~1, 이를 0~1로 변환하여 보간의 알파 값으로 사용합니다.
+            
             float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;
 
             // 노이즈 값에 따라 MinTemp와 MaxTemp 사이의 기본 온도를 결정합니다.
             float BaseTemp = FMath::Lerp(MapPreset->MinTemp, MapPreset->MaxTemp, TempNoiseAlpha);
 
             // ==========================================================
-            //                 2. 고도에 따른 온도 감쇠 (그대로 유지)
+            //        2. 고도에 따른 온도 감쇠 (그대로 유지)
             // ==========================================================
             const uint16 Height16 = InHeightMap[Index];
             const float WorldHeight = static_cast<float>(Height16) - 32768.0f;
@@ -653,9 +652,6 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
             const float FinalTemp = FMath::Clamp(BaseTemp, MapPreset->MinTemp, MapPreset->MaxTemp);
             
             TempMapFloat[Index] = FinalTemp;
-
-            //if (FinalTemp > MinTemp + TempRange * 0.8f || FinalTemp < MinTemp + TempRange * 0.2f)
-            //    UE_LOG(LogTemp, Log, TEXT("Temperature: %f"), FinalTemp);
             
             if (FinalTemp < GlobalMinTemp) GlobalMinTemp = FinalTemp;
             if (FinalTemp > GlobalMaxTemp) GlobalMaxTemp = FinalTemp;
@@ -666,7 +662,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
     CachedGlobalMaxTemp = GlobalMaxTemp;
 
     // ==========================================================
-    //      4. float 온도맵을 uint16 이미지 데이터로 변환
+    //        4. float 온도맵을 uint16 이미지 데이터로 변환
     // ==========================================================
     TempRange = GlobalMaxTemp - GlobalMinTemp;
     if (TempRange < KINDA_SMALL_NUMBER)
@@ -695,13 +691,12 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
         return;
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    const FIntPoint CurResolution = MapPreset->MapResolution;
     if (OutHumidityMap.Num() != CurResolution.X * CurResolution.Y)
     {
         OutHumidityMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
     }
     
-    // --- 사전 준비 ---
     float SeaLevelWorldHeight;
     if (MapPreset->bContainWater)
     {
@@ -731,7 +726,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             const int32 Index = y * CurResolution.X  + x;
-            const float WorldHeight = (static_cast<float>(InHeightMap[Index]) - 32768.0f); // Z스케일 문제 무시
+            const float WorldHeight = (static_cast<float>(InHeightMap[Index]) - 32768.0f);
 
             if (WorldHeight <= SeaLevelWorldHeight)
             {
@@ -835,7 +830,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
         return;
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    const FIntPoint CurResolution = MapPreset->MapResolution;//FixToNearestValidResolution(MapResolution);
+    const FIntPoint CurResolution = MapPreset->MapResolution;
     
     TArray<FColor> BiomeColorMap;
     BiomeColorMap.AddUninitialized(CurResolution.X * CurResolution.Y);
@@ -857,13 +852,6 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
     FString WaterLayerNameStr = FString::Printf(TEXT("Layer%d"), 0);
     FName WaterLayerName(WaterLayerNameStr);
     WeightLayers.Add(WaterLayerName, WaterWeightLayer);
-    
-    // for (auto& Biome : MapPreset->Biomes)
-    // {
-    //     TArray<uint8> WeightLayer;
-    //     WeightLayer.SetNumZeroed(CurResolution.X * CurResolution.Y);
-    //     WeightLayers.Add(Biome.BiomeName, WeightLayer);
-    // }
 
     float SeaLevelHeight;
     if (MapPreset->bContainWater)
@@ -894,7 +882,7 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
             if (WaterBiome && Height < SeaLevelHeight)
             {
                 CurrentBiome = WaterBiome;
-                //일단 물 바이옴을 마지막 레이어로 설정
+                //물 바이옴은 첫번째 레이어
                 CurrentBiomeIndex = 0;
             }
             else
@@ -915,20 +903,6 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                         CurrentBiomeIndex = BiomeIndex;
                     }
                 }
-                // for (auto& Biome : MapPreset->Biomes)
-                // {
-                //     if (Biome.BiomeName == TEXT("Water"))
-                //         continue;
-                //     float TempDiff = FMath::Abs(Biome.Temperature - Temp) / TempRange;
-                //     float HumidityDiff = FMath::Abs(Biome.Humidity - Humidity);
-                //     HumidityDiff = (MapPreset->MaxTemp - MapPreset->MinTemp) * HumidityDiff;
-                //     float Dist = FVector2D(TempDiff, HumidityDiff).Length();
-                //     if (Dist < MinDist)
-                //     {
-                //         MinDist = Dist;
-                //         CurrentBiome = &Biome;
-                //     }
-                // }
             }
             
             if(CurrentBiome)
@@ -953,11 +927,6 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
                 {
                     UE_LOG(LogTemp, Display, TEXT("Current Biome index is invalid"));
                 }
-                // WeightLayers[CurrentBiome->BiomeName][Index] = 255;
-                // CurrentBiome->WeightLayer[Index] = 255;
-                // BiomeColorMap[Index] = CurrentBiome->Color.ToFColor(true);
-                // BiomeNameMap[Index] = LayerName;
-                // BiomeMap[Index] = CurrentBiome->BiomeName;
             }
         }
     }
@@ -988,18 +957,6 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
 
         OriginalWeightMaps.FindOrAdd(LayerName, InitialWeights);
     }
-    //
-    // for (auto& Layer : WeightLayers)
-    // {
-    //     if (Layer.Key == TEXT("Water"))
-    //         continue;
-    //     Layer.Value.Init(0, CurResolution.X * CurResolution.Y);
-    //     
-    //     TArray<uint8> InitialWeights;
-    //     InitialWeights.Init(0, CurResolution.X * CurResolution.Y);
-    //
-    //     OriginalWeightMaps.FindOrAdd(Layer.Key, InitialWeights);
-    // }
 
     // 칼같이 나뉘는 초기 웨이트맵 생성 (복사본에)
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
@@ -1085,20 +1042,6 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
         }
         ++LayerIndex;
     }
-    //물 바이옴 블렌드 영향 제거
-    //for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
-    //{
-    //    if (InBiomeMap[i] == TEXT("Water"))
-    //    {
-    //        for (auto& Layer : WeightLayers)
-    //        {
-    //            if (Layer.Key == TEXT("Water"))
-    //                Layer.Value[i] = 255;
-    //            else
-    //                Layer.Value[i] = 0;
-    //        }
-    //    }
-    //}
     
     // 각 픽셀에 대해 모든 바이옴의 블러링된 웨이트 합이 255가 되도록 보정
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
@@ -1111,16 +1054,6 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
             FName LayerName(LayerNameStr);
             TotalWeight += WeightLayers[LayerName][i];
         }
-        // for (auto& Layer : WeightLayers)
-        // {
-        //     if (MapPreset->Biomes[Index++].BiomeName == TEXT("Water"))
-        //     {
-        //         continue;
-        //     }
-        //     // if (Layer.Key == TEXT("Water"))
-        //     //     continue;
-        //     TotalWeight += Layer.Value[i];
-        // }
         
         if (TotalWeight > 0)
         {
@@ -1131,16 +1064,6 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
                 FName LayerName(LayerNameStr);
                 WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
             }
-            // for (auto& Layer : WeightLayers)
-            // {
-            //     if (MapPreset->Biomes[Index++].BiomeName == TEXT("Water"))
-            //     {
-            //         continue;
-            //     }
-            //     // if (Layer.Key == TEXT("Water"))
-            //     //     continue;
-            //     Layer.Value[i] = FMath::RoundToInt(Layer.Value[i] * NormalizationFactor);
-            // }
         }
     }
 }
