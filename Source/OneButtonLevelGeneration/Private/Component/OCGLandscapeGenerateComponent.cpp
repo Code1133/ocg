@@ -113,7 +113,11 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
 
     TMap<FName, TArray<uint8>> WeightLayers = LevelGenerator->GetWeightLayers();
-    TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(MapPreset->LandscapeMaterial->Parent));
+    TArray<FName> LayerNames;
+    if (MapPreset->LandscapeMaterial)
+    {
+        LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(MapPreset->LandscapeMaterial->Parent));
+    }
     
     for (int32 Index = 0; Index < WeightLayers.Num(); ++Index)
     {
@@ -123,7 +127,16 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         FName LayerName(LayerNameStr);
         
         LayerInfo.LayerData = WeightLayers.FindChecked(LayerName);
-        LayerInfo.LayerName = LayerNames[Index];
+        
+        if (LayerNames.IsValidIndex(Index))
+        {
+            LayerInfo.LayerName = LayerNames[Index];
+        }
+        else
+        {
+            LayerInfo.LayerName = LayerName;
+            UE_LOG(LogTemp, Warning, TEXT("Layer %d not found In Material Names"), Index);
+        }
         
         //LayerInfo.LayerName = Biome.BiomeName;
         //LayerInfo.LayerData = WeightLayers.FindChecked(Biome.BiomeName);
@@ -139,23 +152,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         LayerInfo.LayerInfo = LayerInfoObject;
         ImportLayerDataPerLayer.Add(LayerInfo);
     }
-    // for (const auto& Biome : LevelGenerator->GetMapPreset()->Biomes)
-    // {
-    //     FLandscapeImportLayerInfo LayerInfo;
-    //     LayerInfo.LayerName = Biome.BiomeName;
-    //     LayerInfo.LayerData = WeightLayers.FindChecked(Biome.BiomeName);
-    //
-    //     // TODO : Material의 Layer의 이름도 맞춰야 함
-    //     
-    //     ULandscapeLayerInfoObject * LayerInfoObject = TargetLandscape->CreateLayerInfo(*LayerInfo.LayerName.ToString(), DefaultLayerInfo);
-    //     if (LayerInfoObject != nullptr)
-    //     {
-    //         LayerInfoObject->LayerUsageDebugColor = LayerInfoObject->GenerateLayerUsageDebugColor();
-    //         LayerInfoObject->MarkPackageDirty();
-    //     }
-    //     LayerInfo.LayerInfo = LayerInfoObject;
-    //     ImportLayerDataPerLayer.Add(LayerInfo);
-    // }
     MaterialLayerDataPerLayer.Add(LayerGuid, ImportLayerDataPerLayer);
     
     // 트랜잭션 시작 (Undo/Redo를 위함)
