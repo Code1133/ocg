@@ -1,4 +1,4 @@
-#include "Editor/MapPresetViewport.h"
+#include "Editor/SMapPresetViewport.h"
 #include "Editor/MapPresetViewportClient.h"
 
 void SMapPresetViewport::Construct(const FArguments& InArgs)

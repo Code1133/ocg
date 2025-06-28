@@ -2,24 +2,24 @@
 
 #include <OCGLevelGenerator.h>
 
-#include "AdvancedPreviewScene.h"
-#include "DesktopPlatformModule.h"
 #include "FileHelpers.h"
-#include "IDesktopPlatform.h"
-#include "AssetRegistry/AssetRegistryModule.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/ModelComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/VolumetricCloudComponent.h"
 #include "Editor/MapPresetEditorToolkit.h"
-#include "UObject/SavePackage.h"
-#include "ViewportToolbar/UnrealEdViewportToolbar.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Engine/SkyLight.h"
 
 FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEditorToolkit> InToolkit, UWorld* InWorld,
-	TSharedPtr<SEditorViewport> InEditorViewportWidget)
+                                                   TSharedPtr<SEditorViewport> InEditorViewportWidget)
 	: FEditorViewportClient(nullptr, nullptr, InEditorViewportWidget)
 {
 	SetRealtime(true);
 	EngineShowFlags.SetGrid(true);
-
-	ViewportType = LVT_Perspective; // 원근 뷰
+	bShowWidget = false;
 	
 	MapPresetEditorToolkit = InToolkit.Get();
 	
@@ -43,6 +43,7 @@ FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEd
 	{
 		LevelGenerator = InWorld->SpawnActor<AOCGLevelGenerator>();
 		LevelGenerator->SetMapPreset(InToolkit->GetMapPreset());
+		SetupDefaultActors();
 	}
 }
 
@@ -120,3 +121,47 @@ UWorld* FMapPresetViewportClient::GetWorld() const
 	return MapPresetEditorWorld.Get();
 }
 
+TArray<UObject*> FMapPresetViewportClient::GetDefaultActors() const
+{
+	TArray<UObject*> DefaultActors;
+	if (DirectionalLight)
+	{
+		DefaultActors.Add(DirectionalLight);
+	}
+	if (SkyAtmosphere)
+	{
+		DefaultActors.Add(SkyAtmosphere);
+	}
+	if (VolumetricCloud)
+	{
+		DefaultActors.Add(VolumetricCloud);
+	}
+	if (ExponentialHeightFog)
+	{
+		DefaultActors.Add(ExponentialHeightFog);
+	}
+	return DefaultActors;
+}
+
+void FMapPresetViewportClient::SetupDefaultActors()
+{
+	if (!MapPresetEditorWorld.IsValid())
+		return;
+
+	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
+	ASkyLight* SkyLight = Cast<ASkyLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyLight::StaticClass(), Transform));
+	SkyLight->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+	SkyLight->GetLightComponent()->SetRealTimeCaptureEnabled(true);
+
+	DirectionalLight = Cast<ADirectionalLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ADirectionalLight::StaticClass(), Transform));
+	DirectionalLight->GetComponent()->bAtmosphereSunLight = 1;
+	DirectionalLight->GetComponent()->AtmosphereSunLightIndex = 0;
+	// The render proxy is create right after AddActor, so we need to mark the render state as dirty again to get the new values set on the render side too.
+	DirectionalLight->MarkComponentsRenderStateDirty();
+
+	SkyAtmosphere = Cast<ASkyAtmosphere>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), Transform));
+
+	VolumetricCloud = Cast<AVolumetricCloud>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AVolumetricCloud::StaticClass(), Transform));
+
+	ExponentialHeightFog = Cast<AExponentialHeightFog>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), Transform));
+}

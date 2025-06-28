@@ -48,6 +48,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"UnrealEd",
 				"WorkspaceMenuStructure",
 				"MaterialEditor",
+				"InputCore",
 			}
 			);
 		

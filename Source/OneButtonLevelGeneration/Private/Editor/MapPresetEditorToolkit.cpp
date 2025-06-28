@@ -1,24 +1,24 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
-#include "Components/DirectionalLightComponent.h"
-#include "Components/SkyAtmosphereComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Components/VolumetricCloudComponent.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
-#include "Editor/MapPresetViewport.h"
-#include "Engine/DirectionalLight.h"
-#include "Engine/ExponentialHeightFog.h"
-#include "Engine/SkyLight.h"
+#include "Editor/SMapPresetViewport.h"
+#include "Editor/MapPresetViewportClient.h"
+#include "Editor/SMapPresetEnvironmentLightingViewer.h"
 #include "MaterialEditor/MaterialEditorInstanceConstant.h"
 #include "Materials/MaterialInstanceConstant.h"
+#include "Framework/Docking/TabManager.h"
+#include "WorkspaceMenuStructure.h"
+#include "WorkspaceMenuStructureModule.h"
 
 class ADirectionalLight;
 
 const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
 const FName GMapPresetEditor_MaterialDetailsTabId(TEXT("MapPresetEditor_MaterialDetails"));
+const FName GMapPresteEditor_DefaultActorDetailsTabId(TEXT("MapPresetEditor_DefaultActorDetails"));
+const FName GMapPresetEditor_EnvLightMixerTabId(TEXT("MapPresetEditor_EnvLightMixer"));
 
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
                                          const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
@@ -57,13 +57,15 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 
 		EditingPreset->OwnerWorld = MapPresetEditorWorld;
 	}
-
-	SetupDefaultActors();
-
+	
 	// 뷰포트 위젯 생성
 	ViewportWidget = SNew(SMapPresetViewport)
 		.MapPresetEditorToolkit(SharedThis(this))
 		.World(MapPresetEditorWorld); // .World 인자로 EditorWorld 전달
+
+	// 환경 라이팅 믹서 생성
+	EnvironmentLightingViewer = SNew(SMapPresetEnvironmentLightingViewer)
+		.World(MapPresetEditorWorld);
 	
 	// 에디터 모드 추가
 	AddApplicationMode(
@@ -73,7 +75,6 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 
 	const bool bCreateDefaultStandaloneMenu = true;
 	const bool bCreateDefaultToolbar = true;
-
 	InitAssetEditor(
 		Mode,
 		InitToolkitHost,
@@ -138,6 +139,12 @@ void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabMan
 	
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_MaterialDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_MaterialDetails))
 		.SetDisplayName(FText::FromString(TEXT("Material Details")));
+
+	InTabManager->RegisterTabSpawner(GMapPresteEditor_DefaultActorDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_DefaultActorDetails))
+		.SetDisplayName(FText::FromString(TEXT("Default Actors")));
+
+	InTabManager->RegisterTabSpawner(GMapPresetEditor_EnvLightMixerTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab))
+		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer")));
 }
 
 void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
@@ -195,6 +202,32 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_MaterialDetails(const FSp
 		];
 }
 
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_DefaultActorDetails(const FSpawnTabArgs& Args)
+{
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.bAllowSearch = true;
+	DetailsViewArgs.bLockable = false;
+	DetailsViewArgs.bAllowMultipleTopLevelObjects = true; // 여러 액터를 동시에 편집할 수 있도록
+	DetailsViewArgs.bUpdatesFromSelection = false; // 선택 변경 시 자동 업데이트 안함 (수동으로 SetObject)
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::ObjectsUseNameArea;
+
+	DefaultActorDetails = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+
+	// 여기서 초기에는 아무것도 설정하지 않거나, 기본적으로 DirectionalLight를 설정할 수 있습니다.
+	FMapPresetViewportClient* ViewportClient = (FMapPresetViewportClient*)(ViewportWidget->GetViewportClient().Get());
+	if (ViewportClient)
+	{
+		DefaultActorDetails->SetObjects(ViewportClient->GetDefaultActors()); // MapPresetViewportClient 접근 필요
+	}
+
+	return SNew(SDockTab)
+		.Label(FText::FromString("World Default Actors"))
+		[
+			DefaultActorDetails.ToSharedRef()
+		];
+}
+
 TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 {
 	// 프로퍼티 에디터 모듈 로드
@@ -219,6 +252,16 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 		];
 }
 
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+	.Label(FText::FromString(TEXT("Env.Light Mixer")))
+	[
+		// 생성해 둔 환경 라이팅 믹서 위젯을 탭에 배치
+		EnvironmentLightingViewer.ToSharedRef()
+	];
+}
+
 void FMapPresetEditorToolkit::GetShowHiddenParameters(bool& bShowHiddenParameters) const
 {
 	bShowHiddenParameters = bShowAllMaterialParameters;
@@ -239,29 +282,6 @@ void FMapPresetEditorToolkit::FilterOverriddenProperties()
 {
 	MaterialEditorInstance->bShowOnlyOverrides = !MaterialEditorInstance->bShowOnlyOverrides;
 	MaterialInstanceDetails->ForceRefresh();
-}
-
-void FMapPresetEditorToolkit::SetupDefaultActors()
-{
-	if (!MapPresetEditorWorld)
-		return;
-
-	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
-	ASkyLight* SkyLight = Cast<ASkyLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyLight::StaticClass(), Transform));
-	SkyLight->GetLightComponent()->SetMobility(EComponentMobility::Movable);
-	SkyLight->GetLightComponent()->SetRealTimeCaptureEnabled(true);
-
-	ADirectionalLight* DirectionalLight = Cast<ADirectionalLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ADirectionalLight::StaticClass(), Transform));
-	DirectionalLight->GetComponent()->bAtmosphereSunLight = 1;
-	DirectionalLight->GetComponent()->AtmosphereSunLightIndex = 0;
-	// The render proxy is create right after AddActor, so we need to mark the render state as dirty again to get the new values set on the render side too.
-	DirectionalLight->MarkComponentsRenderStateDirty();
-
-	ASkyAtmosphere* SkyAtmosphere = Cast<ASkyAtmosphere>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), Transform));
-
-	AVolumetricCloud* VolumetricCloud = Cast<AVolumetricCloud>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AVolumetricCloud::StaticClass(), Transform));
-
-	AExponentialHeightFog* ExponentialHeightFog = Cast<AExponentialHeightFog>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), Transform));
 }
 
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
@@ -353,5 +373,14 @@ FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 	OnExportToLevelButtonClicked.Broadcast();
 	
 	return FReply::Handled();
+}
+
+void FMapPresetEditorToolkit::FillViewportToolbar(TSharedPtr<FMapPresetViewportClient>& InViewportClient)
+{
+	if (InViewportClient.IsValid())
+		return;
+
+	FToolBarBuilder ToolbarBuilder(ToolkitCommands, FMultiBoxCustomization::None);
+	
 }
 

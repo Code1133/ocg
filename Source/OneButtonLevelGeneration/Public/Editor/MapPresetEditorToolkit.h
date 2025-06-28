@@ -5,6 +5,7 @@
 #include "Toolkits/AssetEditorToolkit.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
 
+class FMapPresetViewportClient;
 class UMaterialEditorInstanceConstant;
 class UMapPreset;
 
@@ -22,7 +23,7 @@ public:
 	 */
 	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset);
 
-	// IToolkit 인터페이스
+	/** IToolkit 인터페이스 */ 
 	virtual FName GetToolkitFName() const override;
 	virtual FText GetBaseToolkitName() const override;
 	virtual FString GetWorldCentricTabPrefix() const override;
@@ -46,20 +47,30 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	// 머티리얼 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_MaterialDetails(const FSpawnTabArgs& Args);
+	// Default Actors 접근 탭
+	TSharedRef<SDockTab> SpawnTab_DefaultActorDetails(const FSpawnTabArgs& Args);
 	// 탭의 본문 위젯 생성 함수
 	TSharedRef<SWidget> CreateTabBody();
+	// 환경 라이팅 믹서 탭 생성 함수
+	TSharedRef<SDockTab> SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args);
+
+	
 	
 private:
 	// 편집 중인 UMapPreset 에셋
 	UMapPreset* EditingPreset = nullptr;
 
-	// 독립적인 레벨을 담을 프리뷰 씬
-	TSharedPtr<class FAdvancedPreviewScene> PreviewScene;
 	// 뷰포트 위젯
 	TSharedPtr<class SMapPresetViewport> ViewportWidget;
 
+	// 환경 라이팅 믹서
+	TSharedPtr<class SMapPresetEnvironmentLightingViewer> EnvironmentLightingViewer;
+
 	//머티리얼 디테일 띄우기 위한 프로퍼티들
 	TSharedPtr<IDetailsView> MaterialInstanceDetails;
+
+	// 기본 액터 디테일 띄우기 위한 프로퍼티들
+	TSharedPtr<IDetailsView> DefaultActorDetails;
 
 	TObjectPtr<UMaterialEditorInstanceConstant> MaterialEditorInstance;
 
@@ -72,8 +83,6 @@ private:
 	void FilterOverriddenProperties();
 
 private:
-
-	void SetupDefaultActors();
 	/** 툴바에 버튼을 추가하는 함수 */
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
 
@@ -92,4 +101,11 @@ public:
 
 private:
 	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
+
+
+private:
+	TSharedPtr<SWidget> ViewportToolBarWidget;
+	void FillViewportToolbar(TSharedPtr<FMapPresetViewportClient>& InViewportClient);
+
+	bool bTabsRegistered = false;
 };
