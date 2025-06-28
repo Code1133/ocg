@@ -4,60 +4,46 @@
 extern const FName GMapPresetEditor_ViewportTabId;
 extern const FName GMapPresetEditor_DetailsTabId;
 extern const FName GMapPresetEditor_MaterialDetailsTabId;
-extern const FName GMapPresteEditor_DefaultActorDetailsTabId;
+extern const FName GMapPresetEditor_EnvLightMixerTabId;
 
 FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit)
 	:FApplicationMode(TEXT("DefaultMode")), MyToolkit(InEditorToolkit)
 {
-	TSharedPtr<FMapPresetEditorToolkit> ToolkitPin = MyToolkit.Pin();
-
-	if (ToolkitPin.IsValid())
-	{
-		// 이 모드에섯 사용할 탭 팩토리들을 등록
-		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_ViewportTabId, MyToolkit.Pin()));
-		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_DetailsTabId, MyToolkit.Pin()));
-		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresetEditor_MaterialDetailsTabId, MyToolkit.Pin()));
-		TabFactories.RegisterFactory(MakeShared<FWorkflowTabFactory>(GMapPresteEditor_DefaultActorDetailsTabId, MyToolkit.Pin()));
-	}
+	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_ViewportTabId, InEditorToolkit)));
+	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_DetailsTabId, InEditorToolkit)));
+	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_MaterialDetailsTabId, InEditorToolkit)));
+	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresteEditor_DefaultActorDetailsTabId, InEditorToolkit)));
+	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_EnvLightMixerTabId, InEditorToolkit)));
 
 	TabLayout = FTabManager::NewLayout("Standalone_MapPresetEditor_Layout_v2")
-	->AddArea
-	(
-		FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
-		->Split
+		->AddArea
 		(
-			FTabManager::NewStack()
+			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
+			->Split
+			(
+				FTabManager::NewStack()
 				->SetSizeCoefficient(0.7f)
 				->AddTab(GMapPresetEditor_ViewportTabId, ETabState::OpenedTab)
 				->SetHideTabWell(true)
-		)
-		->Split
-		(
-			FTabManager::NewStack()
+			)
+			->Split
+			(
+				FTabManager::NewStack()
 				->SetSizeCoefficient(0.3f)
 				->AddTab(GMapPresetEditor_DetailsTabId, ETabState::OpenedTab)
-		)
-		->Split
-		(
-			FTabManager::NewStack()
-				->SetSizeCoefficient(0.3f)
 				->AddTab(GMapPresetEditor_MaterialDetailsTabId, ETabState::OpenedTab)
-		)
-		->Split
-		(
-			FTabManager::NewStack()
-				->SetSizeCoefficient(0.3f)
-				->AddTab(GMapPresteEditor_DefaultActorDetailsTabId, ETabState::OpenedTab)
-		)
-		
-	);
+			)
+		);
 }
 
 void FMapPresetApplicationMode::RegisterTabFactories(TSharedPtr<FTabManager> InTabManager)
 {
+	// 툴킷의 유효성을 확인합니다.
 	if (TSharedPtr<FMapPresetEditorToolkit> Toolkit = MyToolkit.Pin())
 	{
-		// 툴킷의 탭 스패너들을 TabManager에 등록합니다.
+		// 이 모드에서 사용할 탭 팩토리들을 TabManager에 등록합니다.
 		Toolkit->RegisterTabSpawners(InTabManager.ToSharedRef());
 	}
+	FApplicationMode::RegisterTabFactories(InTabManager);
 }
+

@@ -17,8 +17,8 @@ class ADirectionalLight;
 const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
 const FName GMapPresetEditor_MaterialDetailsTabId(TEXT("MapPresetEditor_MaterialDetails"));
-const FName GMapPresteEditor_DefaultActorDetailsTabId(TEXT("MapPresetEditor_DefaultActorDetails"));
 const FName GMapPresetEditor_EnvLightMixerTabId(TEXT("MapPresetEditor_EnvLightMixer"));
+
 
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
                                          const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
@@ -57,6 +57,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 
 		EditingPreset->OwnerWorld = MapPresetEditorWorld;
 	}
+
 	
 	// 뷰포트 위젯 생성
 	ViewportWidget = SNew(SMapPresetViewport)
@@ -88,7 +89,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	// 확장 기능을 에디터에 추가
 	AddToolbarExtender(ToolbarExtender);
 	// 메뉴 및 툴바를 다시 생성하여 변경사항 적용
-	RegenerateMenusAndToolbars();
+	//RegenerateMenusAndToolbars();
 	SetCurrentMode(TEXT("DefaultMode"));
 }
 
@@ -131,20 +132,28 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 
 void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
+	//FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
+
+	
+	// 메뉴 그룹 생성
+	const IWorkspaceMenuStructure& MenuStructure = WorkspaceMenu::GetMenuStructure();
+	TSharedRef<FWorkspaceItem> MenuRoot = MenuStructure.GetLevelEditorCategory()->AddGroup(
+		FName(TEXT("MapPresetEditor")),
+		FText::FromString(TEXT("Map Preset Editor"))
+	);
+
+	// 각 탭을 TabManager에 직접 등록합니다.
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_ViewportTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Viewport))
-		.SetDisplayName(FText::FromString(TEXT("Viewport")));
+		.SetDisplayName(FText::FromString(TEXT("Viewport"))).SetGroup(MenuRoot);
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_DetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Details))
-		.SetDisplayName(FText::FromString(TEXT("Details")));
-	
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_MaterialDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_MaterialDetails))
-		.SetDisplayName(FText::FromString(TEXT("Material Details")));
+		.SetDisplayName(FText::FromString(TEXT("Details"))).SetGroup(MenuRoot);
 
-	InTabManager->RegisterTabSpawner(GMapPresteEditor_DefaultActorDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_DefaultActorDetails))
-		.SetDisplayName(FText::FromString(TEXT("Default Actors")));
+	InTabManager->RegisterTabSpawner(GMapPresetEditor_MaterialDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_MaterialDetails))
+		.SetDisplayName(FText::FromString(TEXT("Material Details"))).SetGroup(MenuRoot);
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_EnvLightMixerTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab))
-		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer")));
+		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer"))).SetGroup(MenuRoot);
 }
 
 void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
@@ -189,42 +198,20 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_MaterialDetails(const FSp
 	DetailsViewArgs.bShowModifiedPropertiesOption = false;
 
 	MaterialInstanceDetails = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	MaterialInstanceDetails->SetObject(MaterialEditorInstance.Get());
+	if (MaterialEditorInstance->IsValidLowLevelFast())
+	{
+		MaterialInstanceDetails->SetObject(MaterialEditorInstance.Get());
 
-	// 사용자 정의 필터 로직은 그대로 사용할 수 있습니다.
-	MaterialInstanceDetails->SetCustomFilterDelegate(FSimpleDelegate::CreateSP(this, &FMapPresetEditorToolkit::FilterOverriddenProperties));
-	MaterialEditorInstance->DetailsView = MaterialInstanceDetails;
+		// 사용자 정의 필터 로직은 그대로 사용할 수 있습니다.
+		MaterialInstanceDetails->SetCustomFilterDelegate(FSimpleDelegate::CreateSP(this, &FMapPresetEditorToolkit::FilterOverriddenProperties));
+		MaterialEditorInstance->DetailsView = MaterialInstanceDetails;
+	}
+
 
 	return SNew(SDockTab)
 		.Label(FText::FromString("Landscape Material Parameters"))
 		[
 			MaterialInstanceDetails.ToSharedRef()
-		];
-}
-
-TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_DefaultActorDetails(const FSpawnTabArgs& Args)
-{
-	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	FDetailsViewArgs DetailsViewArgs;
-	DetailsViewArgs.bAllowSearch = true;
-	DetailsViewArgs.bLockable = false;
-	DetailsViewArgs.bAllowMultipleTopLevelObjects = true; // 여러 액터를 동시에 편집할 수 있도록
-	DetailsViewArgs.bUpdatesFromSelection = false; // 선택 변경 시 자동 업데이트 안함 (수동으로 SetObject)
-	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::ObjectsUseNameArea;
-
-	DefaultActorDetails = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-
-	// 여기서 초기에는 아무것도 설정하지 않거나, 기본적으로 DirectionalLight를 설정할 수 있습니다.
-	FMapPresetViewportClient* ViewportClient = (FMapPresetViewportClient*)(ViewportWidget->GetViewportClient().Get());
-	if (ViewportClient)
-	{
-		DefaultActorDetails->SetObjects(ViewportClient->GetDefaultActors()); // MapPresetViewportClient 접근 필요
-	}
-
-	return SNew(SDockTab)
-		.Label(FText::FromString("World Default Actors"))
-		[
-			DefaultActorDetails.ToSharedRef()
 		];
 }
 
@@ -280,8 +267,11 @@ void FMapPresetEditorToolkit::CreateOrUpdateMaterialEditorWrapper(UMaterialInsta
 
 void FMapPresetEditorToolkit::FilterOverriddenProperties()
 {
-	MaterialEditorInstance->bShowOnlyOverrides = !MaterialEditorInstance->bShowOnlyOverrides;
-	MaterialInstanceDetails->ForceRefresh();
+	if (MaterialEditorInstance->IsValidLowLevelFast())
+	{
+		MaterialEditorInstance->bShowOnlyOverrides = !MaterialEditorInstance->bShowOnlyOverrides;
+		MaterialInstanceDetails->ForceRefresh();
+	}
 }
 
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
@@ -383,4 +373,3 @@ void FMapPresetEditorToolkit::FillViewportToolbar(TSharedPtr<FMapPresetViewportC
 	FToolBarBuilder ToolbarBuilder(ToolkitCommands, FMultiBoxCustomization::None);
 	
 }
-

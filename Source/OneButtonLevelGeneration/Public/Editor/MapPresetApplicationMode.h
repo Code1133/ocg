@@ -12,7 +12,6 @@ public:
 	FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit);
 
 	virtual void RegisterTabFactories(TSharedPtr<FTabManager> InTabManager) override;
-
 protected:
 	// 이 모드에서 사용할 탭 팩토리들의 목록
 	FWorkflowAllowedTabSet TabFactories;

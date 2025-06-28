@@ -14,6 +14,8 @@ DECLARE_MULTICAST_DELEGATE(FOnExportToLevelButtonClicked);
 
 class FMapPresetEditorToolkit : public FWorkflowCentricApplication, public FNotifyHook
 {
+	friend class FMapPresetApplicationMode; // friend 클래스 선언 추가
+
 public:
 	/**
 	 * 에디터를 초기화합니다. 에셋 타입 액션에서 호출됩니다.
@@ -36,9 +38,9 @@ public:
 
 	void CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance);
 	
-	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 protected:
 	// 탭 스패너 등록
+	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 
 	// 뷰포트 탭 생성 함수
@@ -47,8 +49,6 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	// 머티리얼 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_MaterialDetails(const FSpawnTabArgs& Args);
-	// Default Actors 접근 탭
-	TSharedRef<SDockTab> SpawnTab_DefaultActorDetails(const FSpawnTabArgs& Args);
 	// 탭의 본문 위젯 생성 함수
 	TSharedRef<SWidget> CreateTabBody();
 	// 환경 라이팅 믹서 탭 생성 함수
