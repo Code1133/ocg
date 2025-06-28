@@ -244,6 +244,9 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 		}
 	}
 
+	if (UsedBlendNode == nullptr)
+		return LayerNames;
+	
 	for (FLayerBlendInput LayerInput : UsedBlendNode->Layers)
 	{
 		LayerNames.Add(LayerInput.LayerName);
