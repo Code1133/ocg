@@ -247,7 +247,7 @@ SMapPresetEnvironmentLightingViewer::~SMapPresetEnvironmentLightingViewer()
 void SMapPresetEnvironmentLightingViewer::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime,
 	const float InDeltaTime)
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return;
 	}
@@ -359,7 +359,7 @@ void SMapPresetEnvironmentLightingViewer::Tick(const FGeometry& AllottedGeometry
 
 FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateSkyLight()
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return FReply::Handled();
 	}
@@ -374,7 +374,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateSkyLight()
 
 FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateDirectionalLight(uint32 Index)
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return FReply::Handled();
 	}
@@ -395,7 +395,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateDirectionalLight(uint3
 
 FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateSkyAtmosphere()
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return FReply::Handled();
 	}
@@ -408,7 +408,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateSkyAtmosphere()
 
 FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateVolumetricCloud()
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return FReply::Handled();
 	}
@@ -421,7 +421,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateVolumetricCloud()
 
 FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateHeightFog()
 {
-	if (!World)
+	if (!World.IsValid())
 	{
 		return FReply::Handled();
 	}

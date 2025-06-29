@@ -31,7 +31,8 @@ UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
 	GENERATED_BODY()
-
+public:
+	UMapPreset();
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
@@ -221,6 +222,6 @@ public:
 	UPROPERTY()
 	UWorld* OwnerWorld = nullptr;
 
-	class FMapPresetEditorToolkit* EditorToolkit = nullptr;
+	TWeakPtr<class FMapPresetEditorToolkit> EditorToolkit;
 #endif
 };

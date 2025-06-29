@@ -32,7 +32,7 @@ public:
 	virtual FLinearColor GetWorldCentricTabColorScale() const override;
 
 	// UMapPreset 에셋에 접근하기 위한 함수
-	UMapPreset* GetMapPreset() const { return EditingPreset; }
+	UMapPreset* GetMapPreset() const { return EditingPreset.Get(); }
 
 	virtual ~FMapPresetEditorToolkit();
 
@@ -58,7 +58,7 @@ protected:
 	
 private:
 	// 편집 중인 UMapPreset 에셋
-	UMapPreset* EditingPreset = nullptr;
+	TWeakObjectPtr<UMapPreset> EditingPreset = nullptr;
 
 	// 뷰포트 위젯
 	TSharedPtr<class SMapPresetViewport> ViewportWidget;
@@ -101,7 +101,6 @@ public:
 
 private:
 	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
-
 
 private:
 	TSharedPtr<SWidget> ViewportToolBarWidget;

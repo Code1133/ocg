@@ -89,6 +89,17 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
 	ULevel* SourceLevel = SourceWorld->PersistentLevel;
 	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
 
+	// AOCGLevelGenerator 액터를 찾아서 제거합니다.
+	LevelGenerator ->SetMapPreset(nullptr);
+	LevelGenerator = nullptr;
+	for (AActor* Actor : DuplicatedLevel->Actors)
+	{
+		if (Actor && Actor->IsA<AOCGLevelGenerator>())
+		{
+			DuplicatedWorld->DestroyActor(Actor);
+		}
+	}
+
 	if (DuplicatedLevel->Model != NULL
 		&& DuplicatedLevel->Model == SourceLevel->Model
 		&& DuplicatedLevel->ModelComponents.Num() == SourceLevel->ModelComponents.Num())

@@ -1,5 +1,6 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
+#include "OCGLevelGenerator.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
@@ -36,7 +37,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		);
 	
 	EditingPreset = MapPreset;
-	EditingPreset->EditorToolkit = this;
+	EditingPreset->EditorToolkit = SharedThis(this);
 
 	CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(EditingPreset->LandscapeMaterial));
 
@@ -51,22 +52,22 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	if (MapPresetEditorWorld)
 	{
 		FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Editor);
-		Context.SetCurrentWorld(MapPresetEditorWorld);
+		Context.SetCurrentWorld(MapPresetEditorWorld.Get());
 		// 월드 바운드 체크 비활성화
 		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
 
-		EditingPreset->OwnerWorld = MapPresetEditorWorld;
+		EditingPreset->OwnerWorld = MapPresetEditorWorld.Get();
 	}
 
 	
 	// 뷰포트 위젯 생성
 	ViewportWidget = SNew(SMapPresetViewport)
 		.MapPresetEditorToolkit(SharedThis(this))
-		.World(MapPresetEditorWorld); // .World 인자로 EditorWorld 전달
+		.World(MapPresetEditorWorld.Get()); // .World 인자로 EditorWorld 전달
 
 	// 환경 라이팅 믹서 생성
 	EnvironmentLightingViewer = SNew(SMapPresetEnvironmentLightingViewer)
-		.World(MapPresetEditorWorld);
+		.World(MapPresetEditorWorld.Get());
 	
 	// 에디터 모드 추가
 	AddApplicationMode(
@@ -83,7 +84,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		FTabManager::FLayout::NullLayout,
 		bCreateDefaultStandaloneMenu,
 		bCreateDefaultToolbar,
-		EditingPreset
+		EditingPreset.Get()
 		);
 
 	// 확장 기능을 에디터에 추가
@@ -115,17 +116,45 @@ FLinearColor FMapPresetEditorToolkit::GetWorldCentricTabColorScale() const
 
 FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
-	// 패키지가 이미 TransientPackage이기 때문에 패키지 관련 작업 필요 없음
-	if (MapPresetEditorWorld)
+	// 델리게이트 바인딩을 해제합니다.
+	OnGenerateButtonClicked.Clear();
+	OnExportToLevelButtonClicked.Clear();
+	
+	// Toolkit이 파괴될 때 EditingPreset의 참조를 제거합니다.
+	if (EditingPreset.Get())
 	{
-		GEngine->DestroyWorldContext(MapPresetEditorWorld);
+		EditingPreset->EditorToolkit = nullptr;
+		EditingPreset = nullptr;
+	}
+
+	// DetailsView가 MaterialEditorInstance를 참조하지 않도록 하여 순환 참조를 방지합니다.
+	if (MaterialInstanceDetails.IsValid())
+	{
+		MaterialInstanceDetails->SetObject(nullptr);
+	}
+	
+	// Preview World를 정리합니다.
+	if (MapPresetEditorWorld.Get())
+	{
+		GEngine->DestroyWorldContext(MapPresetEditorWorld.Get());
+		// AOCGLevelGenerator 액터를 찾아서 제거합니다.
+		for (AActor* Actor : MapPresetEditorWorld->GetCurrentLevel()->Actors)
+		{
+			if (Actor && Actor->IsA<AOCGLevelGenerator>())
+			{
+				AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(Actor);
+				LevelGenerator->SetMapPreset(nullptr);
+				MapPresetEditorWorld->DestroyActor(Actor);
+			}
+		}
+		
 		MapPresetEditorWorld->DestroyWorld(true);
 		MapPresetEditorWorld->MarkAsGarbage();
 		MapPresetEditorWorld->SetFlags(RF_Transient);
 		MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
-		
+
 		MapPresetEditorWorld = nullptr;
-		
+
 		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 }
@@ -330,7 +359,7 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 
 FReply FMapPresetEditorToolkit::OnGenerateClicked()
 {
-	if (!EditingPreset || EditingPreset->Biomes.IsEmpty())
+	if (!EditingPreset.IsValid() || EditingPreset->Biomes.IsEmpty())
 	{
 		// 에러 메시지 정의
 		const FText DialogTitle = FText::FromString(TEXT("Error"));

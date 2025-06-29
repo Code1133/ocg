@@ -78,5 +78,5 @@ private:
 
 	bool GetIsPropertyVisible(const FPropertyAndParent& PropertyAndParent) const;
 
-	UWorld* World = nullptr;
+	TWeakObjectPtr<UWorld> World = nullptr;
 };
