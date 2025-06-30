@@ -31,6 +31,18 @@ struct FOCGMeshInfo
 	FName MeshFilterName_Internal;
 };
 
+USTRUCT(BlueprintType)
+struct FSlopeLimitInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
+	float LowerLimit = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
+	float UpperLimit = 1.0f;
+};
+
 /**
  * 랜드스케이프의 특정 레이어에 대한 계층적 생성 데이터를 정의하는 구조체입니다.
  */
@@ -66,6 +78,14 @@ struct FLandscapeHierarchyData
 	/** 포인트의 가파른 정도를 제어합니다. 0과 1 사이의 값으로, 1에 가까울수록 경사가 급해집니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
 	float PointSteepness = 0.5f;
+
+	/** 경사면에 Mesh를 생성할지 여부입니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (InlineEditConditionToggle))
+	bool bSlopeLimit = false;
+
+	/** 경사면에 Mesh를 생성할 때 사용할 경사 제한 정보입니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f, EditCondition = "bSlopeLimit"))
+	FSlopeLimitInfo SlopeLimits;
 
 	/** 월드 위치 오프셋 기능이 비활성화되는 거리입니다. 0이면 항상 활성화 됩니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
