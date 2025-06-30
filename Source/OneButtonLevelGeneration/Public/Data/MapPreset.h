@@ -134,6 +134,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", AllowPrivateAccess="true"))
 	float TerrainNoiseScale = 0.01f;
 
+	//Decides the frequency of Temperature Change
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", AllowPrivateAccess="true"))
+	float TemperatureNoiseScale = 0.002f;
+
+	//Decides the frequency of details in Biome
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", AllowPrivateAccess="true"))
+	float BiomeNoiseScale = 0.01f;
+
 	//Larger Octaves gives more detail to the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0",AllowPrivateAccess="true"))
 	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)

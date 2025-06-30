@@ -72,7 +72,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     TArray<const FOCGBiomeSettings*> BiomeMap; 
     DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     //바이옴 별 특징 적용
-    //ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
+    ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
 }
 
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
@@ -434,8 +434,14 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
 void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
     TArray<float> AverageHeights;
+    //각 바이옴 구역의 평균 높이를 월드 기준 float로 반환
     CalculateBiomeAverageHeights(InOutHeightMap, InBiomeMap, AverageHeights, MapPreset);
-    
+    float SeaLevel;
+    if (MapPreset->bContainWater)
+        SeaLevel = MapPreset->SeaLevel;
+    else
+        SeaLevel = 0.f;
+    uint16 SeaLevelHeight = FMath::RoundToInt(SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight) + MapPreset->MinHeight + 32768.f);
     for (int32 y = 0; y<MapPreset->MapResolution.Y; y++)
     {
         for (int32 x = 0; x<MapPreset->MapResolution.X; x++)
@@ -446,10 +452,12 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
                 continue;
             uint16 CurrentHeight = InOutHeightMap[Index];
             float MtoPRatio = CurrentBiome->MountainRatio;
-            float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * 0.002f) * 0.15f + 0.15f;
-            float MountainHeight = MapPreset->MinHeight + (DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight));
+            float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * MapPreset->BiomeNoiseScale) * 0.05f + 0.05f;
+            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight);
             uint16 AverageHeight = static_cast<uint16>(AverageHeights[Index] + 32768.f);
-            InOutHeightMap[Index] = FMath::Lerp(AverageHeight, CurrentHeight + MountainHeight, MtoPRatio);
+            uint16 NewHeight = FMath::Lerp(AverageHeight, CurrentHeight + MountainHeight, MtoPRatio);
+            NewHeight = FMath::Max(NewHeight, SeaLevelHeight);
+            InOutHeightMap[Index] = NewHeight;
         }
     }
 }
@@ -570,9 +578,8 @@ void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, cons
             //       1. 노이즈 기반으로 기본 온도 설정
             // ==========================================================
             // 매우 낮은 주파수의 노이즈를 사용하여 따뜻한 지역과 추운 지역의 큰 덩어리를 만듭니다.
-            // TODO : 0.002f Property로 빼기
-            float TempNoiseInputX = x * 0.002f + PlainNoiseOffset.X;
-            float TempNoiseInputY = y * 0.002f + PlainNoiseOffset.Y;
+            float TempNoiseInputX = x * MapPreset->TemperatureNoiseScale + PlainNoiseOffset.X;
+            float TempNoiseInputY = y * MapPreset->TemperatureNoiseScale + PlainNoiseOffset.Y;
             
             float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;
 
@@ -580,7 +587,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, cons
             float BaseTemp = FMath::Lerp(MapPreset->MinTemp, MapPreset->MaxTemp, TempNoiseAlpha);
 
             // ==========================================================
-            //        2. 고도에 따른 온도 감쇠 (그대로 유지)
+            //        2. 고도에 따른 온도 감쇠
             // ==========================================================
             const uint16 Height16 = InHeightMap[Index];
             const float WorldHeight = static_cast<float>(Height16) - 32768.0f;
@@ -596,16 +603,17 @@ void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, cons
             
             if (WorldHeight > SeaLevelHeight)
             {
-                BaseTemp -= (WorldHeight / 1000.0f) * MapPreset->TempDropPer1000Units;
+                BaseTemp -= ((WorldHeight - SeaLevelHeight) / 1000.0f) * MapPreset->TempDropPer1000Units;
             }
 
             float NormalizedBaseTemp = (BaseTemp - MapPreset->MinTemp) / TempRange;
-            if (MapPreset->RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
-            {
-                const float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
-                const float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
-                NormalizedBaseTemp = PowX/(PowX + Pow1_X);
-            }
+            //온도 차이 벌리기
+            //if (MapPreset->RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
+            //{
+            //    const float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
+            //    const float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
+            //    NormalizedBaseTemp = PowX/(PowX + Pow1_X);
+            //}
             BaseTemp = MapPreset->MinTemp + NormalizedBaseTemp * TempRange;
             // ==========================================================
             //          3. 최종 온도 값 저장
@@ -745,13 +753,13 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
         }
 
         FinalHumidity = FMath::Clamp(FinalHumidity, 0.0f, 1.0f);
-        
-        if (MapPreset->RedistributionFactor > 1.f && FinalHumidity > 0.f && FinalHumidity < 1.f)
-        {
-            const float PowX = FMath::Pow(FinalHumidity, MapPreset->RedistributionFactor);
-            const float Pow1_X = FMath::Pow(1-FinalHumidity, MapPreset->RedistributionFactor);
-            FinalHumidity = PowX/(PowX + Pow1_X);
-        }
+        //습도 차이 벌리기
+        //if (MapPreset->RedistributionFactor > 1.f && FinalHumidity > 0.f && FinalHumidity < 1.f)
+        //{
+        //    const float PowX = FMath::Pow(FinalHumidity, MapPreset->RedistributionFactor);
+        //    const float Pow1_X = FMath::Pow(1-FinalHumidity, MapPreset->RedistributionFactor);
+        //    FinalHumidity = PowX/(PowX + Pow1_X);
+        //}
         
         HumidityMapFloat[i] = FinalHumidity;
         
