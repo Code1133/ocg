@@ -12,7 +12,8 @@ void UMapPreset::PostLoad()
 {
 	Super::PostLoad();
 
-	UpdateMeshLayerNames();
+	UpdateInternalMeshFilterNames();
+	UpdateInternalLandscapeFilterNames();
 }
 
 void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -50,10 +51,16 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 	}
 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
+	{
+		UpdateInternalLandscapeFilterNames();
+	}
+
 	// Update HierarchiesData
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HierarchiesData))
 	{
-		UpdateMeshLayerNames();
+		UpdateInternalMeshFilterNames();
+		UpdateInternalLandscapeFilterNames();
 	}
 
 	// Update Landscape Settings
@@ -109,16 +116,49 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 }
 #endif
 
-void UMapPreset::UpdateMeshLayerNames()
+void UMapPreset::UpdateInternalMeshFilterNames()
 {
 	for (uint32 Idx = 0; FLandscapeHierarchyData& Data : HierarchiesData)
 	{
-		Data.MeshFilterName_Internal = FName(*FString::Printf(TEXT("%s_%d"), *Data.LayerName.ToString(), Idx));
+		Data.MeshFilterName_Internal = FName(*FString::Printf(TEXT("%s_%d"), *Data.BiomeName.ToString(), Idx));
 		for (FOCGMeshInfo& Mesh : Data.Meshes)
 		{
 			// 부모 레이어 이름으로 자동 설정
 			Mesh.MeshFilterName_Internal = Data.MeshFilterName_Internal;
 		}
 		++Idx;
+	}
+}
+
+void UMapPreset::UpdateInternalLandscapeFilterNames()
+{
+	TMap<FName, uint32> NameToIndex;
+	for (uint32 Idx = 0; const FOCGBiomeSettings& Data : Biomes)
+	{
+		NameToIndex.Add(Data.BiomeName, Idx);
+		++Idx;
+	}
+
+	/* TODO: 추후 LandscapeMaterial이 아니라 bIsOverrideMaterial을 bool로 두고,
+	 * OverrideMaterial의 EditCondition 설정해서 사용
+	 */
+	for (FLandscapeHierarchyData& Data : HierarchiesData)
+	{
+		if (LandscapeMaterial)
+		{
+			// TODO: 머티리얼에서 LandscapeLayer 정보가 있는지 확인후 Idx로 Layer이름 접근
+			// Data.LayerName_Internal =
+			unimplemented(); // 구현 예정
+		}
+		else
+		{
+			// 기본값으로 Layer{Idx}로 설정
+			if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
+			{
+				Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), *Index));
+				continue;
+			}
+			Data.LayerName_Internal = NAME_None;
+		}
 	}
 }

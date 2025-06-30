@@ -53,7 +53,11 @@ struct FLandscapeHierarchyData
 
 	/** 이 계층 데이터가 나타내는 레이어의 이름입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	FName LayerName;
+	FName BiomeName;
+
+	/** PCG에서 Landscape Layer를 매칭시킬 때 사용하는 내부 이름입니다. */
+	UPROPERTY(BlueprintReadOnly, Category = "OCG")
+	FName LayerName_Internal;
 
 	/** PCG에서 Mesh를 Filtering할 때 쓰이는 내부 이름입니다. */
 	UPROPERTY(BlueprintReadOnly, Category = "OCG")
@@ -88,19 +92,19 @@ struct FLandscapeHierarchyData
 	FSlopeLimitInfo SlopeLimits;
 
 	/** 월드 위치 오프셋 기능이 비활성화되는 거리입니다. 0이면 항상 활성화 됩니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
 	int32 WorldPositionOffsetDisableDistance = 0;
 
 	/** Mesh를 Cull할 시작 거리입니다. 0이면 항상 활성화 됩니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
 	int32 StartCullDistance = 0;
 
 	/** Mesh를 Cull할 끝 거리입니다. 0이면 항상 활성화 됩니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
 	int32 EndCullDistance = 0;
 
 	/** Affect Distance Field Lighting을 설정합니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
 	bool bAffectDistanceFieldLighting = true;
 
 	/**
@@ -114,13 +118,13 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	int32 Seed;
 
-	/** 디버깅 시각화를 위해 이 레이어를 나타내는 색상입니다. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	FLinearColor DebugColor = FLinearColor::White;
-
 	/** 이 레이어에 배치될 메시와 가중치의 배열입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FOCGMeshInfo> Meshes;
+
+	/** 디버깅 시각화를 위해 이 레이어를 나타내는 색상입니다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Debug", AdvancedDisplay)
+	FLinearColor DebugColor = FLinearColor::White;
 
 	FLandscapeHierarchyData()
 		: Seed(FMath::Rand())
