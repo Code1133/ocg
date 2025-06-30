@@ -90,8 +90,7 @@ void FMapPresetViewportClient::ExportPreviewSceneToLevel()
 	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
 
 	// AOCGLevelGenerator 액터를 찾아서 제거합니다.
-	LevelGenerator ->SetMapPreset(nullptr);
-	LevelGenerator = nullptr;
+
 	for (AActor* Actor : DuplicatedLevel->Actors)
 	{
 		if (Actor && Actor->IsA<AOCGLevelGenerator>())
