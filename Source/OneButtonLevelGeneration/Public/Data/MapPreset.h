@@ -88,6 +88,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true") )
 	float SeaLevel = 0.4f;
 
+	//Decides the smoothness of plains, value between 0~1 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true") )
+	float PlainSmoothFactor = 0.8f;
+
 	//Decides whether the landscape will be island or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
 	bool bIsland = true;
@@ -212,18 +216,23 @@ public:
 	float InitialSpeed = 2.0f;
 
 public:
+	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings", meta=(AllowPrivateAccess="true"))
 	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
 
+	// The number of sections in a single landscape component. This along with the section size determines the size of each landscape component. A component is the base unit of rendering and culling.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings", meta=(AllowPrivateAccess="true", ClampMin="1", ClampMax="2", UIMin="1", UIMax="2"))
 	int32 Landscape_SectionsPerComponent = 1;
-	
+
+	// The number of components in the X and Y direction, determining the overall size of the landscape.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
 	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
-	
+
+	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129", AllowPrivateAccess="true"))
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
-	
+
+	// The Material used for Landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
 

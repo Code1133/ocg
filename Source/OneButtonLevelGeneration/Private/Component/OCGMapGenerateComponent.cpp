@@ -434,8 +434,10 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
 void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
     TArray<float> AverageHeights;
+    TArray<float> BlurredAverageHeights;
     //각 바이옴 구역의 평균 높이를 월드 기준 float로 반환
     CalculateBiomeAverageHeights(InOutHeightMap, InBiomeMap, AverageHeights, MapPreset);
+    BlurBiomeAverageHeights(BlurredAverageHeights, AverageHeights, MapPreset);
     float SeaLevel;
     if (MapPreset->bContainWater)
         SeaLevel = MapPreset->SeaLevel;
@@ -451,11 +453,22 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
             if (!CurrentBiome || CurrentBiome->BiomeName == TEXT("Water"))
                 continue;
             uint16 CurrentHeight = InOutHeightMap[Index];
-            float MtoPRatio = CurrentBiome->MountainRatio;
-            float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * MapPreset->BiomeNoiseScale) * 0.05f + 0.05f;
-            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight);
+            float MtoPRatio = 0;
+            for (int i=1; i<WeightLayers.Num(); i++)
+            {
+                FString LayerNameStr = FString::Printf(TEXT("Layer%d"), i);
+                FName LayerName(LayerNameStr);
+                float CurrentBiomeWeight = WeightLayers[LayerName][Index] / 255.f;
+                if (CurrentBiomeWeight <= 0.f)
+                    continue;
+                MtoPRatio+=MapPreset->Biomes[i - 1].MountainRatio * CurrentBiomeWeight;
+            }
             uint16 AverageHeight = static_cast<uint16>(AverageHeights[Index] + 32768.f);
-            uint16 NewHeight = FMath::Lerp(AverageHeight, CurrentHeight + MountainHeight, MtoPRatio);
+            float Amplitude = (1.f - SeaLevel) * 0.15f;
+            float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * MapPreset->BiomeNoiseScale) * Amplitude;
+            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight);
+            uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, AverageHeight, MapPreset->PlainSmoothFactor);
+            uint16 NewHeight = FMath::Lerp(TargetPlainHeight, CurrentHeight + MountainHeight, MtoPRatio);
             NewHeight = FMath::Max(NewHeight, SeaLevelHeight);
             InOutHeightMap[Index] = NewHeight;
         }
@@ -513,8 +526,34 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
     }
 }
 
+void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverageHeights, const TArray<float>& InAverageHeights, const UMapPreset* MapPreset)
+{
+    float BlendRadius = MapPreset->BiomeBlendRadius;
+    FIntPoint MapSize = MapPreset->MapResolution;
+    OutAverageHeights.AddUninitialized(MapSize.X * MapSize.Y);
+    for (int32 y = 0; y < MapSize.Y; ++y)
+    {
+        float Sum = 0;
+        //첫 픽셀 값 계산
+        for (int32 i = -BlendRadius; i < BlendRadius; ++i)
+        {
+            int32 CurrentX = FMath::Clamp(i, 0, MapSize.X - 1);
+            Sum+=InAverageHeights[y*MapSize.X + CurrentX];
+        }
+        OutAverageHeights[y*MapSize.X + 0] = Sum;
+        // 슬라이딩 윈도우
+        for (int32 x = 1; x < MapSize.X ; ++x)
+        {
+            int32 OldX = FMath::Clamp(x - BlendRadius - 1, 0, MapSize.X  - 1);
+            int32 NewX = FMath::Clamp(x + BlendRadius, 0, MapSize.X  - 1);
+            Sum += InAverageHeights[y * MapSize.X  + NewX] - InAverageHeights[y * MapSize.X + OldX];
+            OutAverageHeights[y * MapSize.X  + x] = Sum;
+        }
+    }
+}
+
 void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel,
-    TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
+                                             TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
     TQueue<FIntPoint> Queue;
     Queue.Enqueue(FIntPoint(x, y));
@@ -790,8 +829,8 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
     const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
     const FIntPoint CurResolution = MapPreset->MapResolution;
-    
-    TArray<FColor> BiomeColorMap;
+
+    BiomeColorMap.Empty();
     BiomeColorMap.AddUninitialized(CurResolution.X * CurResolution.Y);
     TArray<FName> BiomeNameMap;
     BiomeNameMap.AddUninitialized(CurResolution.X * CurResolution.Y);
@@ -869,12 +908,6 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
                 FName LayerName;
                 if (CurrentBiomeIndex != INDEX_NONE)
                 {
-                    if (CurrentBiomeIndex == 1)
-                        int g=0;
-                    if (CurrentBiomeIndex == 2)
-                        int s=0;
-                    if (CurrentBiomeIndex == 3)
-                        int i=0;
                     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
                     LayerName = FName(LayerNameStr);
                     WeightLayers[LayerName][Index] = 255;
