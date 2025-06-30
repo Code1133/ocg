@@ -31,9 +31,15 @@ UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
 	GENERATED_BODY()
+
+	virtual void PostLoad() override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
+
+private:
+	void UpdateMeshLayerNames();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
@@ -50,6 +56,9 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	bool bShowDebugPoints = false;
 
 public:
 	//Decides Landscape Size(Changes Landscape Actor Scale)

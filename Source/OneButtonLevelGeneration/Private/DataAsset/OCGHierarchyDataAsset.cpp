@@ -5,7 +5,7 @@
 #include "Structure/OCGHierarchyDataStructure.h"
 
 
-struct FMeshAndWeight;
+struct FOCGMeshInfo;
 
 void UOCGHierarchyDataAsset::PostLoad()
 {
@@ -21,7 +21,7 @@ void UOCGHierarchyDataAsset::PostEditChangeProperty(FPropertyChangedEvent& Prope
 
 	if (
 		PropertyChangedEvent.MemberProperty
-		&& PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, HierarchyData)
+		&& PropertyChangedEvent.MemberProperty->GetFName() == GET_MEMBER_NAME_CHECKED(ThisClass, HierarchiesData)
 	)
 	{
 		UpdateMeshLayerNames();
@@ -31,12 +31,14 @@ void UOCGHierarchyDataAsset::PostEditChangeProperty(FPropertyChangedEvent& Prope
 
 void UOCGHierarchyDataAsset::UpdateMeshLayerNames()
 {
-	for (FLandscapeHierarchyData& Data : HierarchyData)
+	for (uint32 Idx = 0; FLandscapeHierarchyData& Data : HierarchiesData)
 	{
-		for (FMeshAndWeight& Mesh : Data.Meshes)
+		Data.MeshFilterName_Internal = FName(*FString::Printf(TEXT("%s_%d"), *Data.LayerName.ToString(), Idx));
+		for (FOCGMeshInfo& Mesh : Data.Meshes)
 		{
 			// 부모 레이어 이름으로 자동 설정
-			Mesh.LayerName = Data.LayerName;
+			Mesh.MeshFilterName_Internal = Data.MeshFilterName_Internal;
 		}
+		++Idx;
 	}
 }

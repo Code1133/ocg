@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
 	const UMapPreset* MapPreset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
+	bool bShowDebugPoints = false;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> BoxComponent;

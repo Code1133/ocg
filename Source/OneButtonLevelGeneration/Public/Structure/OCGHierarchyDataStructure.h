@@ -10,7 +10,7 @@
  * 메시와 해당 메시의 생성 가중치를 정의하는 구조체입니다.
  */
 USTRUCT(BlueprintType)
-struct FMeshAndWeight
+struct FOCGMeshInfo
 {
 	GENERATED_BODY()
 
@@ -28,7 +28,7 @@ struct FMeshAndWeight
 
 	/** 메시가 속할 레이어의 이름입니다. */
 	UPROPERTY(BlueprintReadOnly, Category = "OCG")
-	FName LayerName;
+	FName MeshFilterName_Internal;
 };
 
 /**
@@ -42,6 +42,10 @@ struct FLandscapeHierarchyData
 	/** 이 계층 데이터가 나타내는 레이어의 이름입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	FName LayerName;
+
+	/** PCG에서 Mesh를 Filtering할 때 쓰이는 내부 이름입니다. */
+	UPROPERTY(BlueprintReadOnly, Category = "OCG")
+	FName MeshFilterName_Internal;
 
 	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 낮을수록 이 레이어의 영향력이 커집니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
@@ -96,7 +100,7 @@ struct FLandscapeHierarchyData
 
 	/** 이 레이어에 배치될 메시와 가중치의 배열입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	TArray<FMeshAndWeight> Meshes;
+	TArray<FOCGMeshInfo> Meshes;
 
 	FLandscapeHierarchyData()
 		: Seed(FMath::Rand())

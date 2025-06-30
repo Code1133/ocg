@@ -8,6 +8,13 @@
 #include "PCG/OCGLandscapeVolume.h"
 
 #if WITH_EDITOR
+void UMapPreset::PostLoad()
+{
+	Super::PostLoad();
+
+	UpdateMeshLayerNames();
+}
+
 void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -31,12 +38,22 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	}
 
 	// Update Volume Actor
-	if (const AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
+	if (AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
 	{
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
 		{
 			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
 		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bShowDebugPoints))
+		{
+			VolumeActor->bShowDebugPoints = bShowDebugPoints;
+		}
+	}
+
+	// Update HierarchiesData
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HierarchiesData))
+	{
+		UpdateMeshLayerNames();
 	}
 
 	// Update Landscape Settings
@@ -91,3 +108,17 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	}
 }
 #endif
+
+void UMapPreset::UpdateMeshLayerNames()
+{
+	for (uint32 Idx = 0; FLandscapeHierarchyData& Data : HierarchiesData)
+	{
+		Data.MeshFilterName_Internal = FName(*FString::Printf(TEXT("%s_%d"), *Data.LayerName.ToString(), Idx));
+		for (FOCGMeshInfo& Mesh : Data.Meshes)
+		{
+			// 부모 레이어 이름으로 자동 설정
+			Mesh.MeshFilterName_Internal = Data.MeshFilterName_Internal;
+		}
+		++Idx;
+	}
+}

@@ -32,5 +32,5 @@ protected:
 public:
 	/** 레벨 생성을 위한 계층 데이터의 배열입니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	TArray<FLandscapeHierarchyData> HierarchyData;
+	TArray<FLandscapeHierarchyData> HierarchiesData;
 };
