@@ -3,8 +3,6 @@
 
 #include "Component/OCGComponent.h"
 
-#include "OCGMaterialEditTool.h"
-
 
 // Sets default values for this component's properties
 UOCGComponent::UOCGComponent()

@@ -6,6 +6,9 @@
 #include "Components/ActorComponent.h"
 #include "OCGLandscapeGenerateComponent.generated.h"
 
+class UMapPreset;
+class ALandscapeProxy;
+class ULandscapeLayerInfoObject;
 class AOCGLevelGenerator;
 struct FOCGBiomeSettings;
 struct FLandscapeImportLayerInfo;
@@ -47,6 +50,14 @@ public:
 private:
 	void FinalizeLayerInfos(ALandscape* Landscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
 
+	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset);
+
+	ULandscapeLayerInfoObject* CreateLayerInfo(ALandscape* InLandscape, const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate = nullptr);
+
+	ULandscapeLayerInfoObject* CreateLayerInfo(const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate = nullptr);
+
+	FString LayerInfoSavePath = TEXT("/Game/Landscape/LayerInfos");
+	
 	AOCGLevelGenerator* GetLevelGenerator() const;
 private:
 	float CachedGlobalMinTemp;

@@ -1,16 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "OCGMaterialEditTool.h"
+#include "Util/OCGMaterialEditTool.h"
 
 #include "FileHelpers.h"
-#include "Materials/MaterialExpressionSetMaterialAttributes.h"
-
 
 #if WITH_EDITOR
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "Materials/MaterialExpressionMaterialFunctionCall.h"
-#include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialFunctionInterface.h"
@@ -224,9 +221,9 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 	TArray<FName> LayerNames;
 	if (!TargetMaterial) return LayerNames;
 
-	// 사용 중인 모든 표현식을 수집합니다.
-	TSet<UMaterialExpression*> UsedExpressions;
-	CollectUsedExpressions(TargetMaterial, UsedExpressions);
+	// // 사용 중인 모든 표현식을 수집합니다.
+	// TSet<UMaterialExpression*> UsedExpressions;
+	// CollectUsedExpressions(TargetMaterial, UsedExpressions);
 
 	UMaterialExpressionLandscapeLayerBlend* UsedBlendNode = nullptr;
 	
@@ -236,7 +233,7 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 		if (UsedBlendNode == nullptr)
 		{
 			UMaterialExpressionLandscapeLayerBlend* CurBlendNode = Cast<UMaterialExpressionLandscapeLayerBlend>(Expr);
-			if (CurBlendNode && UsedExpressions.Contains(CurBlendNode))
+			if (CurBlendNode/* && UsedExpressions.Contains(CurBlendNode)*/)
 			{
 				UsedBlendNode =  CurBlendNode;
 				break;
