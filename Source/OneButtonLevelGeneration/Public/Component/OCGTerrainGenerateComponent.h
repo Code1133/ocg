@@ -7,7 +7,6 @@
 #include "OCGTerrainGenerateComponent.generated.h"
 
 class AOCGLandscapeVolume;
-class UOCGHierarchyDataAsset;
 class AOCGLevelGenerator;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))

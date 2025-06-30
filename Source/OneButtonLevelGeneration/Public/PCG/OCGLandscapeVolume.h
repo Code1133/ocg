@@ -8,7 +8,6 @@
 
 class UMapPreset;
 class UPCGGraph;
-class UOCGHierarchyDataAsset;
 class UPCGComponent;
 class UBoxComponent;
 

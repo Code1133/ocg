@@ -11,7 +11,6 @@
  * 
  */
 
-class UOCGHierarchyDataAsset;
 class AOCGLandscapeVolume;
 class UPCGGraph;
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
