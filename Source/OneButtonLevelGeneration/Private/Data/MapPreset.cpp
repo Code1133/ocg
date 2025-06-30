@@ -8,8 +8,7 @@
 #include "Editor/MapPresetEditorToolkit.h"
 #include "Materials/MaterialInstanceConstant.h"
 #include "PCG/OCGLandscapeVolume.h"
-#include "Config/OCGDeveloperSettings.h"
-#include "Engine/AssetManager.h"
+#include "OCGDeveloperSettings.h"
 
 
 UMapPreset::UMapPreset()
