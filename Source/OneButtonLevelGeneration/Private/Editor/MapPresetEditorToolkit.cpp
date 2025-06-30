@@ -35,11 +35,10 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 			ToolkitCommands,
 			FToolBarExtensionDelegate::CreateSP(this, &FMapPresetEditorToolkit::FillToolbar)
 		);
-	
+
+	// 맵 프리셋
 	EditingPreset = MapPreset;
 	EditingPreset->EditorToolkit = SharedThis(this);
-
-	CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(EditingPreset->LandscapeMaterial));
 
 	MapPresetEditorWorld = UWorld::CreateWorld(
 		EWorldType::Editor,
@@ -116,28 +115,18 @@ FLinearColor FMapPresetEditorToolkit::GetWorldCentricTabColorScale() const
 
 FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
-	// 델리게이트 바인딩을 해제합니다.
 	OnGenerateButtonClicked.Clear();
 	OnExportToLevelButtonClicked.Clear();
 	
-	// Toolkit이 파괴될 때 EditingPreset의 참조를 제거합니다.
 	if (EditingPreset.Get())
 	{
 		EditingPreset->EditorToolkit = nullptr;
 		EditingPreset = nullptr;
 	}
-
-	// DetailsView가 MaterialEditorInstance를 참조하지 않도록 하여 순환 참조를 방지합니다.
-	if (MaterialInstanceDetails.IsValid())
-	{
-		MaterialInstanceDetails->SetObject(nullptr);
-	}
 	
-	// Preview World를 정리합니다.
 	if (MapPresetEditorWorld.Get())
 	{
 		GEngine->DestroyWorldContext(MapPresetEditorWorld.Get());
-		// AOCGLevelGenerator 액터를 찾아서 제거합니다.
 		for (AActor* Actor : MapPresetEditorWorld->GetCurrentLevel()->Actors)
 		{
 			if (Actor && Actor->IsA<AOCGLevelGenerator>())
@@ -161,9 +150,6 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 
 void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
-	//FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
-
-	
 	// 메뉴 그룹 생성
 	const IWorkspaceMenuStructure& MenuStructure = WorkspaceMenu::GetMenuStructure();
 	TSharedRef<FWorkspaceItem> MenuRoot = MenuStructure.GetLevelEditorCategory()->AddGroup(
@@ -177,9 +163,6 @@ void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabMan
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_DetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Details))
 		.SetDisplayName(FText::FromString(TEXT("Details"))).SetGroup(MenuRoot);
-
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_MaterialDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_MaterialDetails))
-		.SetDisplayName(FText::FromString(TEXT("Material Details"))).SetGroup(MenuRoot);
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_EnvLightMixerTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab))
 		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer"))).SetGroup(MenuRoot);
@@ -217,33 +200,6 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Details(const FSpawnTabAr
 		];
 }
 
-TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_MaterialDetails(const FSpawnTabArgs& Args)
-{
-	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	FDetailsViewArgs DetailsViewArgs;
-	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	DetailsViewArgs.bHideSelectionTip = true;
-	DetailsViewArgs.NotifyHook = this;
-	DetailsViewArgs.bShowModifiedPropertiesOption = false;
-
-	MaterialInstanceDetails = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	if (MaterialEditorInstance->IsValidLowLevelFast())
-	{
-		MaterialInstanceDetails->SetObject(MaterialEditorInstance.Get());
-
-		// 사용자 정의 필터 로직은 그대로 사용할 수 있습니다.
-		MaterialInstanceDetails->SetCustomFilterDelegate(FSimpleDelegate::CreateSP(this, &FMapPresetEditorToolkit::FilterOverriddenProperties));
-		MaterialEditorInstance->DetailsView = MaterialInstanceDetails;
-	}
-
-
-	return SNew(SDockTab)
-		.Label(FText::FromString("Landscape Material Parameters"))
-		[
-			MaterialInstanceDetails.ToSharedRef()
-		];
-}
-
 TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 {
 	// 프로퍼티 에디터 모듈 로드
@@ -278,36 +234,10 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FS
 	];
 }
 
-void FMapPresetEditorToolkit::GetShowHiddenParameters(bool& bShowHiddenParameters) const
-{
-	bShowHiddenParameters = bShowAllMaterialParameters;
-}
-
-void FMapPresetEditorToolkit::CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance)
-{
-	if (!MaterialEditorInstance)
-	{
-		MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>();
-	}
-	// 기존에 존재하는 MaterialEditorInstanceWrapper가 있다면 유효하지 않도록 설정
-	if (InMaterialInstance)
-		MaterialEditorInstance->SetSourceInstance(InMaterialInstance);
-}
-
-void FMapPresetEditorToolkit::FilterOverriddenProperties()
-{
-	if (MaterialEditorInstance->IsValidLowLevelFast())
-	{
-		MaterialEditorInstance->bShowOnlyOverrides = !MaterialEditorInstance->bShowOnlyOverrides;
-		MaterialInstanceDetails->ForceRefresh();
-	}
-}
-
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 {
-	// 버튼 파란색
+	// 버튼 스타일
 	FButtonStyle* GenerateButtonStyle = new FButtonStyle(FAppStyle::Get().GetWidgetStyle<FButtonStyle>("Button"));
-	//GenerateButtonStyle->SetNormal(FSlateColorBrush(FLinearColor(0.05f, 0.2f, 0.8f)));
 
 	// 툴바 박스 추가
 	TSharedRef<SHorizontalBox> CustomToolbarBox = SNew(SHorizontalBox);
@@ -361,14 +291,13 @@ FReply FMapPresetEditorToolkit::OnGenerateClicked()
 {
 	if (!EditingPreset.IsValid() || EditingPreset->Biomes.IsEmpty())
 	{
-		// 에러 메시지 정의
+		// 에러 메시지 
 		const FText DialogTitle = FText::FromString(TEXT("Error"));
 		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
 
 		// FMessageDialog::Open을 호출하여 다이얼로그를 엽니다.
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
         
-		// 오류가 발생했으므로 여기서 함수를 종료합니다.
 		return FReply::Handled();
 	}
 	for (const auto& Biome : EditingPreset->Biomes)
@@ -394,11 +323,3 @@ FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 	return FReply::Handled();
 }
 
-void FMapPresetEditorToolkit::FillViewportToolbar(TSharedPtr<FMapPresetViewportClient>& InViewportClient)
-{
-	if (InViewportClient.IsValid())
-		return;
-
-	FToolBarBuilder ToolbarBuilder(ToolkitCommands, FMultiBoxCustomization::None);
-	
-}

@@ -5,40 +5,7 @@
 #include "EngineUtils.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
-#include "Editor/MapPresetEditorToolkit.h"
-#include "Materials/MaterialInstanceConstant.h"
 #include "PCG/OCGLandscapeVolume.h"
-#include "OCGDeveloperSettings.h"
-
-
-UMapPreset::UMapPreset()
-{
-	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
-
-	if (!Settings)
-	{
-		UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Invalid OCGDeveloperSettings!"));
-		return;		
-	}
-
-		LandscapeMaterial = Settings->DefaultLandscapeMaterialPath.LoadSynchronous();
-	if (!Settings->DefaultLandscapeMaterialPath.IsNull())
-	{
-		if (!LandscapeMaterial)
-		{
-			UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Failed to load default landscape material!"));
-		}
-	}
-
-		PCGGraph = Settings->DefaultPCGGraphPath.LoadSynchronous();
-	if (!Settings->DefaultPCGGraphPath.IsNull())
-	{
-		if (!PCGGraph)
-		{
-			UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Failed to load default PCG graph!"));
-		}
-	}
-}
 
 #if WITH_EDITOR
 void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -70,11 +37,6 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		{
 			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
 		}
-	}
-
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeMaterial))
-	{
-		EditorToolkit.Pin()->CreateOrUpdateMaterialEditorWrapper(Cast<UMaterialInstanceConstant>(LandscapeMaterial));
 	}
 
 	// Update Landscape Settings

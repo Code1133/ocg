@@ -36,8 +36,6 @@ public:
 
 	virtual ~FMapPresetEditorToolkit();
 
-	void CreateOrUpdateMaterialEditorWrapper(UMaterialInstanceConstant* InMaterialInstance);
-	
 protected:
 	// 탭 스패너 등록
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
@@ -47,14 +45,10 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);
 	// 디테일 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
-	// 머티리얼 탭 생성 함수
-	TSharedRef<SDockTab> SpawnTab_MaterialDetails(const FSpawnTabArgs& Args);
-	// 탭의 본문 위젯 생성 함수
-	TSharedRef<SWidget> CreateTabBody();
 	// 환경 라이팅 믹서 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args);
-
-	
+	// 탭의 본문 위젯 생성 함수
+	TSharedRef<SWidget> CreateTabBody();
 	
 private:
 	// 편집 중인 UMapPreset 에셋
@@ -66,21 +60,8 @@ private:
 	// 환경 라이팅 믹서
 	TSharedPtr<class SMapPresetEnvironmentLightingViewer> EnvironmentLightingViewer;
 
-	//머티리얼 디테일 띄우기 위한 프로퍼티들
-	TSharedPtr<IDetailsView> MaterialInstanceDetails;
-
 	// 기본 액터 디테일 띄우기 위한 프로퍼티들
 	TSharedPtr<IDetailsView> DefaultActorDetails;
-
-	TObjectPtr<UMaterialEditorInstanceConstant> MaterialEditorInstance;
-
-	void GetShowHiddenParameters(bool& bShowHiddenParameters) const;
-	
-	/** Whether or not we should be displaying all the material parameters */
-	bool bShowAllMaterialParameters = false;
-
-	// 헬퍼 함수
-	void FilterOverriddenProperties();
 
 private:
 	/** 툴바에 버튼을 추가하는 함수 */
@@ -101,10 +82,4 @@ public:
 
 private:
 	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
-
-private:
-	TSharedPtr<SWidget> ViewportToolBarWidget;
-	void FillViewportToolbar(TSharedPtr<FMapPresetViewportClient>& InViewportClient);
-
-	bool bTabsRegistered = false;
 };

@@ -9,12 +9,6 @@ extern const FName GMapPresetEditor_EnvLightMixerTabId;
 FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit)
 	:FApplicationMode(TEXT("DefaultMode")), MyToolkit(InEditorToolkit)
 {
-	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_ViewportTabId, InEditorToolkit)));
-	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_DetailsTabId, InEditorToolkit)));
-	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_MaterialDetailsTabId, InEditorToolkit)));
-	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresteEditor_DefaultActorDetailsTabId, InEditorToolkit)));
-	// TabFactories.RegisterFactory(MakeShareable(new FWorkflowTabFactory(GMapPresetEditor_EnvLightMixerTabId, InEditorToolkit)));
-
 	TabLayout = FTabManager::NewLayout("Standalone_MapPresetEditor_Layout_v2")
 		->AddArea
 		(
