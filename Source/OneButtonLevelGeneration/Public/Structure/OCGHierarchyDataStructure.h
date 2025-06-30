@@ -47,7 +47,7 @@ struct FLandscapeHierarchyData
 	UPROPERTY(BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 
-	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 낮을수록 이 레이어의 영향력이 커집니다. */
+	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 높을수록 이 레이어의 영향력이 커집니다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
 	float BlendingRatio = 0.5f;
 
