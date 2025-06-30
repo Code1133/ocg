@@ -53,7 +53,41 @@ void UOCGMapGenerateComponent::GenerateMaps()
         return;
     
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-	Stream.Initialize(MapPreset->Seed);
+    if (!MapPreset) return;
+
+    Initialize(MapPreset);
+
+    const FIntPoint CurMapResolution = MapPreset->MapResolution;
+
+    //Height Map 채우기
+    GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
+    //침식 진행
+    ErosionPass(MapPreset, HeightMapData);
+    ExportMap(MapPreset, HeightMapData, "HeightMap.png");
+    //온도 맵 생성
+    GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
+    //습도 맵 계산
+    GenerateHumidityMap(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData);
+    //높이, 온도, 습도 기반 바이옴 결정
+    TArray<const FOCGBiomeSettings*> BiomeMap; 
+    DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
+    //바이옴 별 특징 적용
+    //ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
+}
+
+FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
+{
+    auto Fix = [](int32 Value) {
+        int32 Pow = FMath::RoundToInt(FMath::Log2(static_cast<float>(Value - 1)));
+        return FMath::Pow(2.f, static_cast<float>(Pow)) + 1;
+    };
+
+    return FIntPoint(Fix(InResolution.X), Fix(InResolution.Y));
+}
+
+void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
+{
+    Stream.Initialize(MapPreset->Seed);
     
     InitializeNoiseOffsets(MapPreset);
 
@@ -69,43 +103,6 @@ void UOCGMapGenerateComponent::GenerateMaps()
     NoiseScale = 1;
     if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
         NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
-
-    const FIntPoint CurMapResolution = MapPreset->MapResolution;
-    HeightMapData.AddUninitialized(CurMapResolution.X * CurMapResolution.Y);
-    
-    // 2. 하이트맵 데이터 채우기
-    for (int32 y = 0; y < CurMapResolution.Y; ++y)
-    {
-        for (int32 x = 0; x <CurMapResolution.X; ++x)
-        {
-            const float CalculatedHeight = CalculateHeightForCoordinate(x, y);
-            const float NormalizedHeight = 32768.0f + CalculatedHeight;
-            const uint16 HeightValue = FMath::Clamp(FMath::RoundToInt(NormalizedHeight), 0, 65535);
-            HeightMapData[y * CurMapResolution.X + x] = HeightValue;
-        }
-    }
-    //침식 진행
-    ErosionPass(HeightMapData);
-    ExportMap(HeightMapData, "HeightMap.png");
-    
-    GenerateTempMap(HeightMapData, TemperatureMapData);
-
-    GenerateHumidityMap(HeightMapData, TemperatureMapData, HumidityMapData);
-
-    TArray<const FOCGBiomeSettings*> BiomeMap; 
-    DecideBiome(HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
-
-    //ApplyBiome(HeightMapData, BiomeMap);
-}
-
-FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
-{
-    auto Fix = [](int32 Value) {
-        int32 Pow = FMath::RoundToInt(FMath::Log2(static_cast<float>(Value - 1)));
-        return FMath::Pow(2.f, static_cast<float>(Pow)) + 1;
-    };
-
-    return FIntPoint(Fix(InResolution.X), Fix(InResolution.Y));
 }
 
 void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPreset)
@@ -126,40 +123,25 @@ void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPrese
     IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
 }
 
-void UOCGMapGenerateComponent::GenerateHeightMap(TArray<uint16>& OutHeightMap) const
+void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    
-    const FIntPoint CurResolution = MapPreset->MapResolution;
-    OutHeightMap.AddZeroed(CurResolution.X * CurResolution.Y);
+    HeightMapData.AddUninitialized(CurMapResolution.X * CurMapResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
-    for (int32 y = 0; y < CurResolution.Y; ++y)
+    for (int32 y = 0; y < CurMapResolution.Y; ++y)
     {
-        for (int32 x = 0; x < CurResolution.X; ++x)
+        for (int32 x = 0; x <CurMapResolution.X; ++x)
         {
-            float CalculatedHeight = CalculateHeightForCoordinate(x, y);
+            const float CalculatedHeight = CalculateHeightForCoordinate(MapPreset, x, y);
             const float NormalizedHeight = 32768.0f + CalculatedHeight;
             const uint16 HeightValue = FMath::Clamp(FMath::RoundToInt(NormalizedHeight), 0, 65535);
-            OutHeightMap[y * CurResolution.X + x] = HeightValue;
+            HeightMapData[y * CurMapResolution.X + x] = HeightValue;
         }
     }
-
-    ExportMap(OutHeightMap, "HeightMap.png");
 }
 
-float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, const int32 InY) const
+float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return 0.0f;
-
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-
 	const float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
 	// ==========================================================
     //            1. 낮은 주파수로 거대한 산맥 생성
@@ -242,13 +224,8 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const int32 InX, co
     return MapPreset->MinHeight + (Height * HeightRange);
 }
 
-void UOCGMapGenerateComponent::ErosionPass(TArray<uint16>& InOutHeightMap)
+void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     if (MapPreset->NumErosionIterations <= 0) return;
 
     // 1. 침식 브러시 인덱스 미리 계산 (최적화)
@@ -296,7 +273,7 @@ void UOCGMapGenerateComponent::ErosionPass(TArray<uint16>& InOutHeightMap)
 
             // 현재 위치의 높이와 경사 계산
             FVector2D Gradient;
-            float CurrentHeight = CalculateHeightAndGradient(HeightMapFloat, PosX, PosY, Gradient);
+            float CurrentHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
 
             // 관성을 적용하여 새로운 방향 계산
             DirX = (DirX * MapPreset->DropletInertia) - (Gradient.X * (1 - MapPreset->DropletInertia));
@@ -320,7 +297,7 @@ void UOCGMapGenerateComponent::ErosionPass(TArray<uint16>& InOutHeightMap)
             }
 
             // 이동 후 높이와 높이 차이 계산
-            float NewHeight = CalculateHeightAndGradient(HeightMapFloat, PosX, PosY, Gradient);
+            float NewHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
             if (NewHeight <= SeaLevelHeight)
                 break;
             float HeightDifference = NewHeight - CurrentHeight;
@@ -424,12 +401,9 @@ void UOCGMapGenerateComponent::InitializeErosionBrush()
     CurrentErosionRadius = MapPreset->ErosionRadius;
 }
 
-float UOCGMapGenerateComponent::CalculateHeightAndGradient(const TArray<float>& HeightMap, float PosX, float PosY,
-    FVector2D& OutGradient)
+float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap,
+    float PosX, float PosY,FVector2D& OutGradient)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    
     int32 CoordX = static_cast<int32>(PosX);
     int32 CoordY = static_cast<int32>(PosY);
 
@@ -457,15 +431,8 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const TArray<float>& 
     return Height_00 * (1 - x) * (1 - y) + Height_10 * x * (1 - y) + Height_01 * (1 - x) * y + Height_11 * x * y;
 }
 
-void UOCGMapGenerateComponent::ApplyBiome(TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
+void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator)
-        return;
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    if (!MapPreset)
-        return;
-
     TArray<float> AverageHeights;
     CalculateBiomeAverageHeights(InOutHeightMap, InBiomeMap, AverageHeights, MapPreset);
     
@@ -578,14 +545,8 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
     }
 }
 
-void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
+void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-
     const FIntPoint CurResolution = MapPreset->MapResolution;
 	if (OutTempMap.Num() != CurResolution.X * CurResolution.Y)
     {
@@ -680,17 +641,12 @@ void UOCGMapGenerateComponent::GenerateTempMap(const TArray<uint16>& InHeightMap
     }
 
     // 이미지 파일로 저장하여 결과 확인
-    ExportMap(OutTempMap, "TempMap.png");
+    ExportMap(MapPreset, OutTempMap, "TempMap.png");
 }
 
-void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
+void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
 	TArray<uint16>& OutHumidityMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     const FIntPoint CurResolution = MapPreset->MapResolution;
     if (OutHumidityMap.Num() != CurResolution.X * CurResolution.Y)
     {
@@ -819,17 +775,12 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const TArray<uint16>& InHeigh
         OutHumidityMap[i] = static_cast<uint16>(NormalizedHumidity * 65535.0f);
     }
 
-    ExportMap(OutHumidityMap, "HumidityMap.png");
+    ExportMap(MapPreset, OutHumidityMap, "HumidityMap.png");
 }
 
-void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
+void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
     const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     const FIntPoint CurResolution = MapPreset->MapResolution;
     
     TArray<FColor> BiomeColorMap;
@@ -931,17 +882,11 @@ void UOCGMapGenerateComponent::DecideBiome(const TArray<uint16>& InHeightMap, co
         }
     }
     MapDataUtils::ExportMap(BiomeColorMap, CurResolution, "BiomeMap0.png");
-    BlendBiome(BiomeNameMap);
+    BlendBiome(MapPreset, BiomeNameMap);
 }
 
-void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
+void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset, const TArray<FName>& InBiomeMap)
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-
     const FIntPoint CurResolution = MapPreset->MapResolution;
      // 초기화 및 원본 맵 복사
     TMap<FName, TArray<uint8>> OriginalWeightMaps;
@@ -1068,15 +1013,9 @@ void UOCGMapGenerateComponent::BlendBiome(const TArray<FName>& InBiomeMap)
     }
 }
 
-void UOCGMapGenerateComponent::ExportMap(const TArray<uint16>& InMap, const FString& FileName) const
+void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const
 {
 #if WITH_EDITOR
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
-        return;
-    
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-
     const FIntPoint CurResolution = MapPreset->MapResolution;
     
      // 1. 저장할 파일 경로를 동적으로 생성합니다.

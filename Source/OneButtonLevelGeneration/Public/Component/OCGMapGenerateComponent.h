@@ -66,18 +66,19 @@ public:
 private:
 	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
 
+	void Initialize(const UMapPreset* MapPreset);
 	void InitializeNoiseOffsets(const UMapPreset* MapPreset);
-	void GenerateHeightMap(TArray<uint16>& OutHeightMap) const;
-	float CalculateHeightForCoordinate(const int32 InX, const int32 InY) const;
-	void GenerateTempMap(const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
-	void GenerateHumidityMap(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
-	void DecideBiome(const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
-	void BlendBiome(const TArray<FName>& InBiomeMap);
-	void ExportMap(const TArray<uint16>& InMap, const FString& FileName) const;
-	void ErosionPass(TArray<uint16>& InOutHeightMap);
+	void GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap);
+	float CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const;
+	void GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
+	void GenerateHumidityMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
+	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
+	void BlendBiome(const UMapPreset* MapPreset, const TArray<FName>& InBiomeMap);
+	void ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const;
+	void ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	void InitializeErosionBrush();
-	float CalculateHeightAndGradient(const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);
-	void ApplyBiome(TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
+	float CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);
+	void ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
 	void CalculateBiomeAverageHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutAverageHeights, const UMapPreset* MapPreset);
 	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
 
