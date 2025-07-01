@@ -60,6 +60,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bShowDebugPoints = false;
 
+	UFUNCTION(CallInEditor, Category = "PCG")
+	void ForceGenerate() const;
+
 public:
 	// Decides Landscape Size(Changes Landscape Actor Scale)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics", meta = (ClampMin = 0.1f))

@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
+#include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
 
 #if WITH_EDITOR
@@ -51,7 +52,10 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
+	if (
+		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeMaterial)
+		|| PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bContainWater)
+	)
 	{
 		UpdateInternalLandscapeFilterNames();
 	}
@@ -96,6 +100,8 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
 	{
+		UpdateInternalLandscapeFilterNames();
+
 		if (bContainWater)
 		{
 			if (Biomes.Num() > 7)
@@ -132,6 +138,7 @@ void UMapPreset::UpdateInternalMeshFilterNames()
 
 void UMapPreset::UpdateInternalLandscapeFilterNames()
 {
+	// Make Biome Name To Index Map
 	TMap<FName, uint32> NameToIndex;
 	for (uint32 Idx = 0; const FOCGBiomeSettings& Data : Biomes)
 	{
@@ -142,23 +149,66 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 	/* TODO: 추후 LandscapeMaterial이 아니라 bIsOverrideMaterial을 bool로 두고,
 	 * OverrideMaterial의 EditCondition 설정해서 사용
 	 */
-	for (FLandscapeHierarchyData& Data : HierarchiesData)
+
+	// Get Landscape Layer Names
+	TArray<FName> LandscapeLayerNames;
+	if (LandscapeMaterial)
 	{
-		if (LandscapeMaterial)
+		if (const UMaterial* BaseMaterial = LandscapeMaterial->GetMaterial())
 		{
-			// TODO: 머티리얼에서 LandscapeLayer 정보가 있는지 확인후 Idx로 Layer이름 접근
-			// Data.LayerName_Internal =
-			unimplemented(); // 구현 예정
+			for (const UMaterialExpression* Expression : BaseMaterial->GetExpressions())
+			{
+				if (const UMaterialExpressionLandscapeLayerBlend* BlendNode = Cast<UMaterialExpressionLandscapeLayerBlend>(Expression))
+				{
+					BlendNode->GetLandscapeLayerNames(LandscapeLayerNames);
+					break;
+				}
+			}
 		}
-		else
+
+		for (FLandscapeHierarchyData& Data : HierarchiesData)
 		{
-			// 기본값으로 Layer{Idx}로 설정
 			if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 			{
-				Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), *Index));
-				continue;
+				const uint32 LayerIdx = *Index + static_cast<uint32>(bContainWater);
+				if (LandscapeLayerNames.IsValidIndex(LayerIdx))
+				{
+					Data.LayerName_Internal = LandscapeLayerNames[LayerIdx];
+					continue;
+				}
 			}
 			Data.LayerName_Internal = NAME_None;
 		}
+		return;
+	}
+
+	// if LandscapeMaterial is nullptr, use default Layer names
+	for (FLandscapeHierarchyData& Data : HierarchiesData)
+	{
+		// 기본값으로 Layer{Idx}로 설정
+		if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
+		{
+			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), *Index));
+			continue;
+		}
+		Data.LayerName_Internal = NAME_None;
+	}
+}
+
+void UMapPreset::ForceGenerate() const
+{
+	AActor* FoundActor = nullptr;
+	for (AActor* Actor : TActorRange<AActor>(OwnerWorld))
+	{
+		if (Actor->IsA<AOCGLandscapeVolume>())
+		{
+			FoundActor = Actor;
+			break;
+		}
+	}
+
+	if (const AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
+	{
+		VolumeActor->GetPCGComponent()->Generate(true);
 	}
 }
