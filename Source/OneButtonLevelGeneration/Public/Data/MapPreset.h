@@ -92,30 +92,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float SeaLevel = 0.4f;
 
-	// Decides the smoothness of plains, value between 0~1
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true") )
-	float PlainSmoothFactor = 0.8f;
-
-	// Decides whether the landscape will be island or not
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
-	bool bIsland = true;
-
-	// Decides the sharpness of island edge and island's size
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.1))
-	float IslandFaloffExponent = 2.0f;
-
-	// Decides irregularity of island shape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.0))
-	float IslandShapeNoiseScale = 0.0025f;
-
-	// Decides irregularity of island edge
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.0))
-	float IslandShapeNoiseStrength = 0.5f;
-	
-	// Decides whether the Mountain Ratio of biomes will be applied or not
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
-	bool bModifyTerrainByBiome = true;
-
 	// Landscapes Minimum Temperature
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Temperature")
 	float MinTemp = -30.0f;
@@ -136,6 +112,56 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float TemperatureInfluenceOnHumidity = 0.7f;
 
+	//Island Properties
+	// Decides whether the landscape will be island or not
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
+	bool bIsland = true;
+
+	// Decides the sharpness of island edge and island's size
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height",
+		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.1))
+	float IslandFaloffExponent = 2.0f;
+
+	// Decides irregularity of island shape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height",
+		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.0))
+	float IslandShapeNoiseScale = 0.0025f;
+
+	// Decides irregularity of island edge
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height",
+		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.0))
+	float IslandShapeNoiseStrength = 0.5f;
+	
+	// Modify Terrain Properties
+	// Decides whether the Mountain Ratio of biomes will be applied or not
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification")
+	bool bModifyTerrainByBiome = true;
+	
+	// Decides the smoothness of plains, value between 0~1
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification",
+		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0", AllowPrivateAccess="true") )
+	float PlainSmoothFactor = 0.8f;
+	
+	// Decides the frequency of details in Biome
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification",
+		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0"))
+	float BiomeNoiseScale = 0.01f;
+
+	// Decides the height of details in Biome
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification",
+		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
+	float BiomeNoiseAmplitude = 0.2f;
+
+	// Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification",
+		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0"))
+	float TerrainNoiseScale = 0.01f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Terrain Modification",
+			meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0"))
+	int32 BiomeHeightBlendRadius = 5;
+	// Larger radius gives smaller spike height difference at biome borders
+	
+	
 public:
 	// --- Noise Settings ---
 	// Decides the difference between different noises (larger value gives more randomness)
@@ -150,21 +176,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
 	float ContinentNoiseScale = 0.003f;
 
-	// Decides the frequency of Mountains
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
-	float TerrainNoiseScale = 0.01f;
-
 	// Decides the frequency of Temperature Change
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
 	float TemperatureNoiseScale = 0.002f;
-
-	// Decides the frequency of details in Biome
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
-	float BiomeNoiseScale = 0.01f;
-
-	// Decides the height of details in Biome
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float BiomeNoiseAmplitude = 0.2f;
 
 	// Larger Octaves gives more detail to the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
@@ -231,6 +245,7 @@ public:
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings")
 	bool bExportMaps = false;
+	
 	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings")
 	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;

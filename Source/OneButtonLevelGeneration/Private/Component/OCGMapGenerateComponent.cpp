@@ -550,7 +550,7 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
 
 void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverageHeights, const TArray<float>& InAverageHeights, const UMapPreset* MapPreset)
 {
-    float BlendRadius = FMath::Min(MapPreset->BiomeBlendRadius, 5.f);
+    float BlendRadius = MapPreset->BiomeHeightBlendRadius;
     FIntPoint MapSize = MapPreset->MapResolution;
     int32 TotalPixels = MapSize.X * MapSize.Y;
     OutAverageHeights.SetNumUninitialized(TotalPixels);
