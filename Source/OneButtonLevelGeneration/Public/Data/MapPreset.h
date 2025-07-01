@@ -111,6 +111,10 @@ public:
 	// Decides irregularity of island edge
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = 0.0))
 	float IslandShapeNoiseStrength = 0.5f;
+	
+	// Decides whether the Mountain Ratio of biomes will be applied or not
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height")
+	bool bModifyTerrainByBiome = true;
 
 	// Landscapes Minimum Temperature
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Temperature")
@@ -157,6 +161,10 @@ public:
 	// Decides the frequency of details in Biome
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
 	float BiomeNoiseScale = 0.01f;
+
+	// Decides the height of details in Biome
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BiomeNoiseAmplitude = 0.2f;
 
 	// Larger Octaves gives more detail to the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Noise", meta = (ClampMin = "0.0"))
