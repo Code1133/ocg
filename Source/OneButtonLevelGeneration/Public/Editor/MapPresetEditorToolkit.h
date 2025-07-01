@@ -53,33 +53,28 @@ protected:
 private:
 	// 편집 중인 UMapPreset 에셋
 	TWeakObjectPtr<UMapPreset> EditingPreset = nullptr;
-
 	// 뷰포트 위젯
 	TSharedPtr<class SMapPresetViewport> ViewportWidget;
-
 	// 환경 라이팅 믹서
 	TSharedPtr<class SMapPresetEnvironmentLightingViewer> EnvironmentLightingViewer;
-
 	// 기본 액터 디테일 띄우기 위한 프로퍼티들
 	TSharedPtr<IDetailsView> DefaultActorDetails;
 
 private:
 	/** 툴바에 버튼을 추가하는 함수 */
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
-
 	/** "Generate" 버튼 클릭 시 실행될 함수 */
 	FReply OnGenerateClicked();
-
 	/** "Export to Level" 버튼 클릭 시 실행될 함수 */
 	FReply OnExportToLevelClicked();
-	
 	/** 툴킷의 UI 커맨드 리스트 */
 	TSharedPtr<FUICommandList> ToolkitCommands;
 
-public:
-	FOnGenerateButtonClicked OnGenerateButtonClicked;
-	FOnExportToLevelButtonClicked OnExportToLevelButtonClicked;
+	void SetupDefaultActors();
+	void ExportPreviewSceneToLevel();
+	void Generate() const;
 
 private:
 	TObjectPtr<UWorld> MapPresetEditorWorld; // MapPreset 에디터가 참조하는 월드
+	TWeakObjectPtr<class AOCGLevelGenerator> LevelGenerator; // OCG 레벨 생성기
 };

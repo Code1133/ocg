@@ -11,6 +11,7 @@ struct FOCGBiomeSettings;
 class UOCGLandscapeGenerateComponent;
 class UOCGTerrainGenerateComponent;
 class UOCGMapGenerateComponent;
+class AStaticMeshActor;
 class UMapPreset;
 
 UCLASS()
@@ -48,10 +49,15 @@ public:
 	void SetMapPreset(UMapPreset* InMapPreset);
 
 	const UMapPreset* GetMapPreset() const { return MapPreset; }
+
+	void AddWaterPlane(UWorld* InWorld);
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMapPreset> MapPreset;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AStaticMeshActor> PlaneActor;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;

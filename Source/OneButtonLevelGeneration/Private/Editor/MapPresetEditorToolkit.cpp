@@ -1,17 +1,23 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
+#include "FileHelpers.h"
 #include "OCGLevelGenerator.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
 #include "Editor/SMapPresetViewport.h"
-#include "Editor/MapPresetViewportClient.h"
 #include "Editor/SMapPresetEnvironmentLightingViewer.h"
-#include "MaterialEditor/MaterialEditorInstanceConstant.h"
-#include "Materials/MaterialInstanceConstant.h"
 #include "Framework/Docking/TabManager.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/ModelComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
+#include "Components/SkyLightComponent.h"
+#include "Components/VolumetricCloudComponent.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
+#include "Engine/SkyLight.h"
 
 class ADirectionalLight;
 
@@ -54,8 +60,12 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		Context.SetCurrentWorld(MapPresetEditorWorld.Get());
 		// 월드 바운드 체크 비활성화
 		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
-
 		EditingPreset->OwnerWorld = MapPresetEditorWorld.Get();
+
+		// 월드에 레벨 제너레이터 액터 추가
+		LevelGenerator = MapPresetEditorWorld->SpawnActor<AOCGLevelGenerator>();
+		LevelGenerator->SetMapPreset(EditingPreset.Get());
+		SetupDefaultActors();
 	}
 
 	
@@ -115,15 +125,13 @@ FLinearColor FMapPresetEditorToolkit::GetWorldCentricTabColorScale() const
 
 FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
-	OnGenerateButtonClicked.Clear();
-	OnExportToLevelButtonClicked.Clear();
-	
 	if (EditingPreset.Get())
 	{
 		EditingPreset->EditorToolkit = nullptr;
 		EditingPreset = nullptr;
 	}
-	
+
+	LevelGenerator = nullptr;
 	if (MapPresetEditorWorld.Get())
 	{
 		GEngine->DestroyWorldContext(MapPresetEditorWorld.Get());
@@ -131,8 +139,6 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 		{
 			if (Actor && Actor->IsA<AOCGLevelGenerator>())
 			{
-				AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(Actor);
-				LevelGenerator->SetMapPreset(nullptr);
 				MapPresetEditorWorld->DestroyActor(Actor);
 			}
 		}
@@ -143,8 +149,6 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 		MapPresetEditorWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
 
 		MapPresetEditorWorld = nullptr;
-
-		CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 	}
 }
 
@@ -311,15 +315,106 @@ FReply FMapPresetEditorToolkit::OnGenerateClicked()
 			return FReply::Handled();
 		}
 	}
-	OnGenerateButtonClicked.Broadcast();
 
+	Generate();
+	
 	return FReply::Handled();
 }
 
 FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 {
-	OnExportToLevelButtonClicked.Broadcast();
+	ExportPreviewSceneToLevel();
 	
 	return FReply::Handled();
+}
+
+void FMapPresetEditorToolkit::SetupDefaultActors()
+{
+	if (!MapPresetEditorWorld)
+		return;
+
+	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
+	ASkyLight* SkyLight = Cast<ASkyLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyLight::StaticClass(), Transform));
+	SkyLight->GetLightComponent()->SetMobility(EComponentMobility::Movable);
+	SkyLight->GetLightComponent()->SetRealTimeCaptureEnabled(true);
+
+	ADirectionalLight* DirectionalLight = Cast<ADirectionalLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ADirectionalLight::StaticClass(), Transform));
+	DirectionalLight->GetComponent()->bAtmosphereSunLight = 1;
+	DirectionalLight->GetComponent()->AtmosphereSunLightIndex = 0;
+	DirectionalLight->MarkComponentsRenderStateDirty();
+
+	GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), Transform);
+	GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AVolumetricCloud::StaticClass(), Transform);
+	GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), Transform);
+}
+
+void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
+{
+	if (!MapPresetEditorWorld)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Toolkit or its EditorWorld is null, cannot export."));
+		return;
+	}
+	
+	UWorld* SourceWorld = MapPresetEditorWorld;
+	
+	// 월드 복제
+	UPackage* DestWorldPackage = CreatePackage(TEXT("/Temp/MapPresetEditor/World"));
+	FObjectDuplicationParameters Parameters(SourceWorld, DestWorldPackage);
+	Parameters.DestName = SourceWorld->GetFName();
+	Parameters.DestClass = SourceWorld->GetClass();
+	Parameters.DuplicateMode = EDuplicateMode::World;
+	Parameters.PortFlags = PPF_Duplicate;
+
+	UWorld* DuplicatedWorld = CastChecked<UWorld>(StaticDuplicateObjectEx(Parameters));
+	DuplicatedWorld->SetFeatureLevel(SourceWorld->GetFeatureLevel());
+
+	ULevel* SourceLevel = SourceWorld->PersistentLevel;
+	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
+
+	// AOCGLevelGenerator 액터를 찾아서 제거합니다.
+	for (AActor* Actor : DuplicatedLevel->Actors)
+	{
+		if (Actor && Actor->IsA<AOCGLevelGenerator>())
+		{
+			DuplicatedWorld->DestroyActor(Actor);
+		}
+	}
+
+	if (DuplicatedLevel->Model != NULL
+		&& DuplicatedLevel->Model == SourceLevel->Model
+		&& DuplicatedLevel->ModelComponents.Num() == SourceLevel->ModelComponents.Num())
+	{
+		DuplicatedLevel->Model->ClearLocalMaterialIndexBuffersData();
+		for (int32 ComponentIndex = 0; ComponentIndex < DuplicatedLevel->ModelComponents.Num(); ++ComponentIndex)
+		{
+			UModelComponent* SrcComponent = SourceLevel->ModelComponents[ComponentIndex];
+			UModelComponent* DstComponent = DuplicatedLevel->ModelComponents[ComponentIndex];
+			DstComponent->CopyElementsFrom(SrcComponent);
+		}
+	}
+	
+	bool bSuccess = FEditorFileUtils::SaveLevelAs(DuplicatedWorld->GetCurrentLevel());
+	if (!bSuccess)
+	{
+		DestWorldPackage->ClearFlags(RF_Standalone);
+		DestWorldPackage->MarkAsGarbage();
+	
+		GEngine->DestroyWorldContext(DuplicatedWorld);
+		DuplicatedWorld->DestroyWorld(true);
+		DuplicatedWorld->MarkAsGarbage();
+		DuplicatedWorld->SetFlags(RF_Transient);
+		DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
+
+		CollectGarbage(RF_NoFlags);
+	}
+}
+
+void FMapPresetEditorToolkit::Generate() const
+{
+	if (LevelGenerator.IsValid() && MapPresetEditorWorld)
+	{
+		LevelGenerator->OnClickGenerate(MapPresetEditorWorld);
+	}
 }
 
