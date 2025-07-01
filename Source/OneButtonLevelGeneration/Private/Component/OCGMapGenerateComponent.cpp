@@ -60,10 +60,9 @@ void UOCGMapGenerateComponent::GenerateMaps()
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
     //Height Map 채우기
-    GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
+     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
     //침식 진행
     ErosionPass(MapPreset, HeightMapData);
-    ExportMap(MapPreset, HeightMapData, "HeightMap.png");
     //온도 맵 생성
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
     //습도 맵 계산
@@ -73,6 +72,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     //바이옴 별 특징 적용
     ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
+    ExportMap(MapPreset, HeightMapData, "HeightMap.png");
 }
 
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
@@ -103,6 +103,8 @@ void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
     NoiseScale = 1;
     if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
         NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
+
+    WeightLayers.Empty();
 }
 
 void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPreset)
@@ -125,7 +127,7 @@ void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPrese
 
 void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
 {
-    HeightMapData.AddUninitialized(CurMapResolution.X * CurMapResolution.Y);
+    HeightMapData.SetNumUninitialized(CurMapResolution.X * CurMapResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
     for (int32 y = 0; y < CurMapResolution.Y; ++y)
@@ -463,7 +465,7 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
                     continue;
                 MtoPRatio+=MapPreset->Biomes[i - 1].MountainRatio * CurrentBiomeWeight;
             }
-            uint16 AverageHeight = static_cast<uint16>(AverageHeights[Index] + 32768.f);
+            uint16 AverageHeight = static_cast<uint16>(BlurredAverageHeights[Index] + 32768.f);
             float Amplitude = (1.f - SeaLevel) * 0.15f;
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) * MapPreset->BiomeNoiseScale) * Amplitude;
             float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight);
@@ -530,24 +532,49 @@ void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverage
 {
     float BlendRadius = MapPreset->BiomeBlendRadius;
     FIntPoint MapSize = MapPreset->MapResolution;
-    OutAverageHeights.AddUninitialized(MapSize.X * MapSize.Y);
+    int32 TotalPixels = MapSize.X * MapSize.Y;
+    OutAverageHeights.AddUninitialized(TotalPixels);
+    //Horizontal Pass
+    TArray<float> HorizontalPass;
+    HorizontalPass.Init(0, TotalPixels);
+    float WindowSize = (2.f * BlendRadius + 1.f);
     for (int32 y = 0; y < MapSize.Y; ++y)
     {
         float Sum = 0;
         //첫 픽셀 값 계산
-        for (int32 i = -BlendRadius; i < BlendRadius; ++i)
+        for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
         {
             int32 CurrentX = FMath::Clamp(i, 0, MapSize.X - 1);
             Sum+=InAverageHeights[y*MapSize.X + CurrentX];
         }
-        OutAverageHeights[y*MapSize.X + 0] = Sum;
+        HorizontalPass[y*MapSize.X + 0] = Sum / WindowSize;
         // 슬라이딩 윈도우
         for (int32 x = 1; x < MapSize.X ; ++x)
         {
             int32 OldX = FMath::Clamp(x - BlendRadius - 1, 0, MapSize.X  - 1);
             int32 NewX = FMath::Clamp(x + BlendRadius, 0, MapSize.X  - 1);
             Sum += InAverageHeights[y * MapSize.X  + NewX] - InAverageHeights[y * MapSize.X + OldX];
-            OutAverageHeights[y * MapSize.X  + x] = Sum;
+            HorizontalPass[y * MapSize.X  + x] = Sum / WindowSize;
+        }
+    }
+    //Vertical Pass
+    for (int32 x = 0; x < MapSize.X; ++x)
+    {
+        float Sum = 0;
+        //첫 픽셀 값 계산
+        for (int32 i = -BlendRadius; i <= BlendRadius; ++i)
+        {
+            int32 CurrentY = FMath::Clamp(i, 0, MapSize.Y - 1);
+            Sum+=HorizontalPass[CurrentY * MapSize.X + x];
+        }
+        OutAverageHeights[x] = Sum/ (2*BlendRadius+1);
+        // 슬라이딩 윈도우
+        for (int32 y = 1; y < MapSize.Y; ++y)
+        {
+            int32 OldY = FMath::Clamp(y - BlendRadius - 1, 0, MapSize.Y - 1);
+            int32 NewY = FMath::Clamp(y + BlendRadius, 0, MapSize.Y - 1);
+            Sum += HorizontalPass[NewY * MapSize.X + x] - HorizontalPass[OldY * MapSize.X + x];
+            OutAverageHeights[y * MapSize.X + x] = Sum / WindowSize;
         }
     }
 }
@@ -829,12 +856,11 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
     const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
     const FIntPoint CurResolution = MapPreset->MapResolution;
-
-    BiomeColorMap.Empty();
-    BiomeColorMap.AddUninitialized(CurResolution.X * CurResolution.Y);
+    
+    BiomeColorMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
     TArray<FName> BiomeNameMap;
-    BiomeNameMap.AddUninitialized(CurResolution.X * CurResolution.Y);
-    OutBiomeMap.AddUninitialized(CurResolution.X * CurResolution.Y);
+    BiomeNameMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
+    OutBiomeMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
 
     for (int Index = 1; Index <= MapPreset->Biomes.Num(); ++Index)
     {
@@ -922,7 +948,7 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
             }
         }
     }
-    MapDataUtils::ExportMap(BiomeColorMap, CurResolution, "BiomeMap0.png");
+    ExportMap(MapPreset, BiomeColorMap, "BiomeMap0.png");
     BlendBiome(MapPreset, BiomeNameMap);
 }
 
@@ -1056,67 +1082,15 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset, const TAr
 
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const
 {
-#if WITH_EDITOR
-    const FIntPoint CurResolution = MapPreset->MapResolution;
-    
-     // 1. 저장할 파일 경로를 동적으로 생성합니다.
-    // 프로젝트의 콘텐츠 폴더 경로를 가져옵니다. (예: "C:/MyProject/Content/")
-    const FString ContentDir = FPaths::ProjectContentDir();
-    
-    // 하위 폴더와 파일 이름을 지정합니다. 시드 값을 파일 이름에 포함시켜 구별하기 쉽게 만듭니다.
-    const FString SubDir = TEXT("Maps/");
-    
-    // 디렉토리 경로를 먼저 조합합니다.
-    const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
-
-    // 디렉토리가 존재하지 않으면 생성합니다.
-    if (!FPaths::DirectoryExists(DirectoryPath))
-    {
-        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-        if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
-            return;
-        }
-    }
-
-    // 최종 파일 경로를 완성합니다.
-    const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
-    
-    UE_LOG(LogTemp, Log, TEXT("Attempting to export heightmap to: %s"), *FullPath);
-
-    // 2. 이미지 래퍼(Image Wrapper) 모듈을 로드합니다.
-    IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-    
-    // PNG 형식으로 저장할 래퍼를 생성합니다.
-    TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
-
-    if (!ImageWrapper.IsValid())
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create Image Wrapper."));
+    if (!MapPreset->bExportMaps)
         return;
-    }
+    MapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+}
 
-    // 3. 이미지 래퍼에 데이터 설정
-    // 16비트 그레이스케일(G16) 형식으로 데이터를 설정합니다.
-    if (ImageWrapper->SetRaw(InMap.GetData(), InMap.GetAllocatedSize(), CurResolution.X, CurResolution.Y, ERGBFormat::Gray, 16))
-    {
-        // 4. 데이터를 압축하여 TArray<uint8> 버퍼로 가져옵니다.
-        const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
-
-        // 5. 파일로 저장합니다.
-        if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
-        {
-            UE_LOG(LogTemp, Log, TEXT("map exported successfully to: %s"), *FullPath);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed to save map file."));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to set raw data to Image Wrapper."));
-    }
-#endif
+void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap,
+    const FString& FileName) const
+{
+    if (!MapPreset->bExportMaps)
+        return;
+    MapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
 }

@@ -77,6 +77,7 @@ private:
 	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
 	void BlendBiome(const UMapPreset* MapPreset, const TArray<FName>& InBiomeMap);
 	void ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const;
+	void ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap, const FString& FileName) const;
 	void ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	void InitializeErosionBrush();
 	float CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);

@@ -217,6 +217,9 @@ public:
 	float InitialSpeed = 2.0f;
 
 public:
+	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings")
+	bool bExportMaps = false;
 	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape Settings")
 	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
