@@ -4,18 +4,18 @@
 #include "Util/OCGFileUtils.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
-#include "Logging/LogMacros.h" // UE_LOG 사용을 위해 필요
+#include "Logging/LogMacros.h"
 #endif
 
-OCGFileUtils::OCGFileUtils()
+FOCGFileUtils::FOCGFileUtils()
 {
 }
 
-OCGFileUtils::~OCGFileUtils()
+FOCGFileUtils::~FOCGFileUtils()
 {
 }
 
-bool OCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
+bool FOCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
 {
 #if WITH_EDITOR
 	// 1. /Game/ 접두사를 제거하여 Content 폴더 내의 상대 경로를 만듭니다.
@@ -29,7 +29,6 @@ bool OCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
 	const FString FullPath = FPaths::Combine(FPaths::ProjectContentDir(), RelativeContentPath);
     
 	// 3. FPaths::GetPath()를 사용하여 파일 이름을 제외한 디렉토리 경로만 추출합니다.
-	// 이 함수는 모든 경우를 알아서 처리해줍니다.
 	const FString DirectoryPath = FPaths::GetPath(FullPath);
 	
 	IFileManager& FileManager = IFileManager::Get();

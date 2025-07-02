@@ -414,7 +414,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
 
     // 애셋을 찾지 못했으므로, 새로 생성하기 전에 디렉토리 존재를 확인하고 필요시 생성합니다.
     // InPackagePath는 "/Game/MyFolder/MySubFolder" 형태일 것으로 예상됩니다.
-    if (!OCGFileUtils::EnsureContentDirectoryExists(FullPackageName))
+    if (!FOCGFileUtils::EnsureContentDirectoryExists(FullPackageName))
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to ensure directory exists for package path: %s"), *InPackagePath);
         return nullptr;

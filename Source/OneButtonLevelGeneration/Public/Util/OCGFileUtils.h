@@ -7,11 +7,11 @@
 /**
  * 
  */
-class ONEBUTTONLEVELGENERATION_API OCGFileUtils
+struct ONEBUTTONLEVELGENERATION_API FOCGFileUtils
 {
 public:
-	OCGFileUtils();
-	~OCGFileUtils();
+	FOCGFileUtils();
+	~FOCGFileUtils();
 
 	static bool EnsureContentDirectoryExists(const FString& InPackagePath);
 };
