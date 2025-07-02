@@ -14,31 +14,27 @@ DECLARE_MULTICAST_DELEGATE(FOnExportToLevelButtonClicked);
 
 class FMapPresetEditorToolkit : public FWorkflowCentricApplication, public FNotifyHook
 {
-	friend class FMapPresetApplicationMode; // friend 클래스 선언 추가
+	friend class FMapPresetApplicationMode; 
 
 public:
-	/**
-	 * 에디터를 초기화합니다. 에셋 타입 액션에서 호출됩니다.
-	 * @param Mode 에디터 모드 (Standalone 또는 WorldCentric)
-	 * @param InitToolkitHost 툴킷을 호스팅하는 상위 툴킷
-	 * @param InMapPreset 편집할 UMapPreset 에셋
-	 */
+	/** Initialize the Map Preset Editor Toolkit */
 	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset);
 
-	/** IToolkit 인터페이스 */ 
+	/** IToolkit Interface */ 
 	virtual FName GetToolkitFName() const override;
 	virtual FText GetBaseToolkitName() const override;
 	virtual FString GetWorldCentricTabPrefix() const override;
 	virtual FLinearColor GetWorldCentricTabColorScale() const override;
 
-	// UMapPreset 에셋에 접근하기 위한 함수
+	/** Getter for the MapPreset */
 	UMapPreset* GetMapPreset() const { return EditingPreset.Get(); }
 
 	virtual ~FMapPresetEditorToolkit();
 
 protected:
-	// 탭 스패너 등록
+	/** Register TabSpawners */
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
+	/** Unregister TabSpawners */
 	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 
 	// 뷰포트 탭 생성 함수

@@ -32,7 +32,7 @@ void FMapPresetAssetTypeActions::OpenAssetEditor(const TArray<UObject*>& InObjec
     {
         if (UMapPreset* MapPreset = Cast<UMapPreset>(Object))
         {
-            // 새 에디터 툴킷 인스턴스를 생성합니다.
+            // Generate New Editor Toolkit
             TSharedRef<FMapPresetEditorToolkit> NewEditor(new FMapPresetEditorToolkit());
             NewEditor->InitEditor(Mode, EditWithinLevelEditor, MapPreset);
         }

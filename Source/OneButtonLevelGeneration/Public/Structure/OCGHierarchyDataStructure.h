@@ -27,7 +27,7 @@ struct FOCGMeshInfo
 	bool bEnableDefaultCollision = false;
 
 	/** 메시가 속할 레이어의 이름입니다. */
-	UPROPERTY(BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 };
 
@@ -56,11 +56,11 @@ struct FLandscapeHierarchyData
 	FName BiomeName;
 
 	/** PCG에서 Landscape Layer를 매칭시킬 때 사용하는 내부 이름입니다. */
-	UPROPERTY(BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "OCG")
 	FName LayerName_Internal;
 
 	/** PCG에서 Mesh를 Filtering할 때 쓰이는 내부 이름입니다. */
-	UPROPERTY(BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 
 	/** 블렌딩된 레이어의 가중치입니다. 0과 1 사이의 값으로, 값이 높을수록 이 레이어의 영향력이 커집니다. */

@@ -73,7 +73,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Landscape_SectionsPerComponent) ||
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, MapResolution))
 	{
-		// 무한 루프를 방지하기 위해 변경 알림을 잠시 비활성화합니다.
+		// Deactivate script execution guard to prevent infinite loop
 		FEditorScriptExecutionGuard ScriptGuard;
 
 		// Landscape resolution formula
@@ -129,7 +129,7 @@ void UMapPreset::UpdateInternalMeshFilterNames()
 		Data.MeshFilterName_Internal = FName(*FString::Printf(TEXT("%s_%d"), *Data.BiomeName.ToString(), Idx));
 		for (FOCGMeshInfo& Mesh : Data.Meshes)
 		{
-			// 부모 레이어 이름으로 자동 설정
+			// Set MeshFilterName_Internal for each Mesh
 			Mesh.MeshFilterName_Internal = Data.MeshFilterName_Internal;
 		}
 		++Idx;
@@ -185,7 +185,7 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 	// if LandscapeMaterial is nullptr, use default Layer names
 	for (FLandscapeHierarchyData& Data : HierarchiesData)
 	{
-		// 기본값으로 Layer{Idx}로 설정
+		// Set LayerName to Layer{idx} for each Biome
 		if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 		{
 			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), *Index));

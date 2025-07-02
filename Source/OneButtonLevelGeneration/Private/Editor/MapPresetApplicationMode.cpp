@@ -1,5 +1,5 @@
 #include "Editor/MapPresetApplicationMode.h"
-#include "Editor/MapPresetEditorToolkit.h" // 툴킷 헤더
+#include "Editor/MapPresetEditorToolkit.h" 
 
 extern const FName GMapPresetEditor_ViewportTabId;
 extern const FName GMapPresetEditor_DetailsTabId;
@@ -32,10 +32,10 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditor
 
 void FMapPresetApplicationMode::RegisterTabFactories(TSharedPtr<FTabManager> InTabManager)
 {
-	// 툴킷의 유효성을 확인합니다.
+	// Validate the toolkit pointer before proceeding
 	if (TSharedPtr<FMapPresetEditorToolkit> Toolkit = MyToolkit.Pin())
 	{
-		// 이 모드에서 사용할 탭 팩토리들을 TabManager에 등록합니다.
+		// Register the tab spawners with the toolkit
 		Toolkit->RegisterTabSpawners(InTabManager.ToSharedRef());
 	}
 	FApplicationMode::RegisterTabFactories(InTabManager);

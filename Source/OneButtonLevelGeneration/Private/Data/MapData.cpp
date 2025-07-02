@@ -23,7 +23,6 @@ bool MapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& Out
 	const int32 Height = Texture->GetSizeY();
 	const int32 NumPixels = Width * Height;
 
-	// Mip 0 기준
 	FTexture2DMipMap Mip = Texture->GetPlatformMips()[0];
 	const void* DataPtr = Mip.BulkData.Lock(LOCK_READ_ONLY);
 
@@ -48,7 +47,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
         return false;
     }
 
-    // 1. PNG 파일을 메모리로 읽기
+    // Load PNG file
     TArray<uint8> CompressedData;
     if (!FFileHelper::LoadFileToArray(CompressedData, *FullPath))
     {
@@ -56,7 +55,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
         return false;
     }
 
-    // 2. 이미지 래퍼 생성
+    // Create Image Wrapper
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
     TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
 
@@ -66,7 +65,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
         return false;
     }
 
-    // 3. PNG가 16비트 Grayscale인지 확인 후 원시 데이터 추출
+    // Check if the image is 16-bit grayscale and extract raw data
     if (ImageWrapper->GetBitDepth() != 16 || ImageWrapper->GetFormat() != ERGBFormat::Gray)
     {
         UE_LOG(LogTemp, Error, TEXT("ImportMap: PNG format is not 16-bit grayscale."));
@@ -83,7 +82,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
         return false;
     }
 
-    // 4. RawData를 uint16 배열로 변환
+    // Convert raw data to uint16 array
     const int32 NumPixels = Width * Height;
     OutMapData.SetNumUninitialized(NumPixels);
 
@@ -92,7 +91,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
 
     UE_LOG(LogTemp, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap."), Width, Height);
 
-    // 필요하다면 해상도도 저장
+    // Save resolution if needed
     OutResolution = FIntPoint(Width, Height);
 
     return true;
@@ -121,7 +120,7 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 		return nullptr;
 	}
 
-	// PNG 디코딩
+	// Decode PNG file
 	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
 
@@ -134,7 +133,7 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 	const int32 Width = ImageWrapper->GetWidth();
 	const int32 Height = ImageWrapper->GetHeight();
 
-	// RGBA 8비트 포맷으로 불러옴
+	// Import raw data
 	TArray<uint8> RawData;
 	if (!ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, RawData))
 	{
@@ -144,7 +143,7 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 
 	const FString AssetName = FPaths::GetBaseFilename(FileName);  // "MyMap.png" → "MyMap"
 	
-	// 1. 패키지 생성
+	// Create Package
 	const FString PackageName = FPaths::Combine(ContentDir, SubDir, AssetName);
 	UPackage* Package = CreatePackage(*PackageName);
 	if (!Package)
@@ -153,14 +152,14 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 		return nullptr;
 	}
 
-	// 2. UTexture2D 생성
+	// Create UTexture2D
 	UTexture2D* Texture = NewObject<UTexture2D>(Package, *AssetName, RF_Public | RF_Standalone);
 	FTexturePlatformData* PlatformData = new FTexturePlatformData();
 	PlatformData->SizeX = Width;
 	PlatformData->SizeY = Height;
 	PlatformData->PixelFormat = PF_B8G8R8A8;
 
-	// Mip 생성 및 데이터 설정
+	// Create Mip and fill it with raw data
 	FTexture2DMipMap* Mip = new FTexture2DMipMap();
 	Mip->SizeX = Width;
 	Mip->SizeY = Height;
@@ -169,12 +168,11 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 	FMemory::Memcpy(Data, RawData.GetData(), RawData.Num());
 	Mip->BulkData.Unlock();
 
-	// PlatformData에 추가
+	// Add Mip to PlatformData and assign it to Texture
 	PlatformData->Mips.Add(Mip);
-	// 공식 API로 설정
 	Texture->SetPlatformData(PlatformData);
 
-	// 3. 에셋 등록 및 저장
+	// Register asset and mark it dirty
 	FAssetRegistryModule::AssetCreated(Texture);
 	Package->MarkPackageDirty();
 
@@ -203,27 +201,27 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
-	// 1. 디렉토리 및 전체 경로 구성 (가독성이 뛰어난 방식)
+	// Create directory and full path for the map file
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
 	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
 	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
 
-	// 2. 일관성을 위해 IPlatformFile 인터페이스로 디렉토리 확인 및 생성
+	// Get the platform file interface to check and create directories
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	if (!PlatformFile.DirectoryExists(*DirectoryPath)) // FPaths 대신 PlatformFile 사용
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
 	{
 		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
-			return false; // 또는 다른 에러 처리
+			return false;
 		}
 	}
 
-	// 2. 이미지 래퍼 생성
+	// Create Image Wrapper for PNG format
 	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
 
@@ -233,7 +231,7 @@ bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resol
 		return false;
 	}
 
-	// 3. 데이터 설정
+	// Set raw data to the Image Wrapper
 	const int32 Width = Resolution.X;
 	const int32 Height = Resolution.Y;
 
@@ -270,23 +268,23 @@ bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resol
 bool MapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
-	// 1. 디렉토리 및 전체 경로 구성 (가독성이 뛰어난 방식)
+	// Create directory and full path for the map file
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
 	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
 	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
 
-	// 2. 일관성을 위해 IPlatformFile 인터페이스로 디렉토리 확인 및 생성
+	// Get the platform file interface to check and create directories
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	if (!PlatformFile.DirectoryExists(*DirectoryPath)) // FPaths 대신 PlatformFile 사용
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
 	{
 		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
-			return false; // 또는 다른 에러 처리
+			return false; 
 		}
 	}
 	
@@ -299,7 +297,7 @@ bool MapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resol
 		return false;
 	}
 
-	// 3. 데이터 설정
+	// Set raw data to the Image Wrapper
 	const int32 Width = Resolution.X;
 	const int32 Height = Resolution.Y;
 
@@ -310,7 +308,7 @@ bool MapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resol
 		return false;
 	}
 
-	// BGRA8 형식으로 원본 데이터를 설정합니다. FColor는 내부적으로 BGRA 순서입니다.
+	// Set the raw color data to the Image Wrapper
 	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.Num() * sizeof(FColor), Width, Height, ERGBFormat::BGRA, 8))
 	{
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);

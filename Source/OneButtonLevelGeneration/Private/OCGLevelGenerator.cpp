@@ -10,29 +10,11 @@
 #include "Data/MapPreset.h"
 #include "Engine/StaticMeshActor.h"
 
-// Sets default values
 AOCGLevelGenerator::AOCGLevelGenerator()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	MapGenerateComponent = CreateDefaultSubobject<UOCGMapGenerateComponent>(TEXT("MapGenerateComponent"));
 	LandscapeGenerateComponent = CreateDefaultSubobject<UOCGLandscapeGenerateComponent>(TEXT("LandscapeGenerateComponent"));
 	TerrainGenerateComponent = CreateDefaultSubobject<UOCGTerrainGenerateComponent>(TEXT("TerrainGenerateComponent"));
-}
-
-// Called when the game starts or when spawned
-void AOCGLevelGenerator::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void AOCGLevelGenerator::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void AOCGLevelGenerator::Generate()
