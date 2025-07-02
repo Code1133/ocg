@@ -15,6 +15,7 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/VolumetricCloudComponent.h"
+#include "Editor/MapPresetAssetTypeActions.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
@@ -149,6 +150,8 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 
 		MapPresetEditorWorld = nullptr;
 	}
+
+	FMapPresetAssetTypeActions::OpenedEditorInstance = nullptr;
 }
 
 void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)

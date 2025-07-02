@@ -1,5 +1,6 @@
 #pragma once
 #include "AssetTypeActions_Base.h"
+#include "MapPresetEditorToolkit.h"
 
 class FMapPresetAssetTypeActions : public FAssetTypeActions_Base
 {
@@ -11,4 +12,6 @@ public:
 	virtual uint32 GetCategories() override;
 
 	virtual void OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<IToolkitHost> EditWithinLevelEditor = TSharedPtr<IToolkitHost>()) override;
+
+	static inline TWeakPtr<FMapPresetEditorToolkit> OpenedEditorInstance;
 };
