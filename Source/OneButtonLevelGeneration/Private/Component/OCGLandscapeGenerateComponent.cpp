@@ -13,6 +13,12 @@
 #include "Engine/DirectionalLight.h"
 #include "Engine/SkyLight.h"
 
+#include "VT/RuntimeVirtualTexture.h"
+#include "VT/RuntimeVirtualTextureVolume.h"
+#include "Components/RuntimeVirtualTextureComponent.h"
+#include "RuntimeVirtualTextureSetBounds.h"
+#include "UObject/ConstructorHelpers.h"
+
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeSettings.h"
@@ -22,7 +28,35 @@
 #include "Util/OCGMaterialEditTool.h"
 #endif
 
-class IImageWrapper;
+static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)
+{
+    UWorld* World = InLandscapeActor != nullptr ? InLandscapeActor->GetWorld() : nullptr;
+    if (World == nullptr)
+    {
+        return;
+    }
+
+    TArray<URuntimeVirtualTexture*> FoundVolumes;
+    for (TObjectIterator<URuntimeVirtualTextureComponent> It(RF_ClassDefaultObject, false, EInternalObjectFlags::Garbage); It; ++It)
+    {
+        if (It->GetWorld() == World)
+        {
+            if (URuntimeVirtualTexture* VirtualTexture = It->GetVirtualTexture())
+            {
+                FoundVolumes.Add(VirtualTexture);
+            }
+        }
+    }
+
+    for (URuntimeVirtualTexture* VirtualTexture : InLandscapeActor->RuntimeVirtualTextures)
+    {
+        if (VirtualTexture != nullptr && FoundVolumes.Find(VirtualTexture) == INDEX_NONE)
+        {
+            OutVirtualTextures.Add(VirtualTexture);
+        }
+    }
+}
+
 // Sets default values for this component's properties
 UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
 {
@@ -31,6 +65,35 @@ UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
+    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> ColorRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color'"));
+    if (ColorRVTFinder.Succeeded())
+    {
+        ColorRVT = ColorRVTFinder.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
+    }
+
+    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> HeightRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height'"));
+    if (HeightRVTFinder.Succeeded())
+    {
+        HeightRVT = HeightRVTFinder.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
+    }
+
+    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> DisplacementRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement'"));
+    if (DisplacementRVTFinder.Succeeded())
+    {
+        DisplacementRVT = DisplacementRVTFinder.Object;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
+    }
 }
 
 
@@ -112,74 +175,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     // 레이어 데이터 준비
     const TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer = PrepareLandscapeLayerData(TargetLandscape, LevelGenerator, MapPreset);
 
-    // // 2. 머티리얼 레이어 정보 TMap에도 동일한 GUID로 빈 데이터를 추가
-    // TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
-    // TArray<FLandscapeImportLayerInfo> ImportLayerDataPerLayer;
-    // const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
-    // ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
-    //
-    // TMap<FName, TArray<uint8>> WeightLayers = LevelGenerator->GetWeightLayers();
-    // TArray<FName> LayerNames;
-    // if (MapPreset->LandscapeMaterial)
-    // {
-    //     LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(MapPreset->LandscapeMaterial->Parent));
-    // }
-    //
-    // for (int32 Index = 0; Index < WeightLayers.Num(); ++Index)
-    // {
-    //     FLandscapeImportLayerInfo LayerInfo;
-    //     
-    //     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), Index);
-    //     FName LayerName(LayerNameStr);
-    //     
-    //     LayerInfo.LayerData = WeightLayers.FindChecked(LayerName);
-    //     
-    //     if (LayerNames.IsValidIndex(Index))
-    //     {
-    //         LayerInfo.LayerName = LayerNames[Index];
-    //     }
-    //     else
-    //     {
-    //         LayerInfo.LayerName = LayerName;
-    //         UE_LOG(LogTemp, Warning, TEXT("Layer %d not found In Material Names"), Index);
-    //     }
-    //     
-    //     ULandscapeLayerInfoObject* LayerInfoObject = nullptr;
-    //     // 1. 먼저 LandscapeInfo에 해당 이름의 LayerInfoObject가 있는지 확인합니다.
-    //     if (LandscapeInfo)
-    //     {
-    //         LayerInfoObject = LandscapeInfo->GetLayerInfoByName(LayerInfo.LayerName);
-    //     }
-    //     
-    //     // 2. 만약 LayerInfoObject가 존재하지 않는다면 (nullptr), 새로 생성합니다.
-    //     if (LayerInfoObject == nullptr)
-    //     {
-    //         UE_LOG(LogTemp, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
-    //         LayerInfoObject = CreateLayerInfo(TargetLandscape, LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
-    //         if (LayerInfoObject != nullptr)
-    //         {
-    //             LayerInfoObject->LayerUsageDebugColor = LayerInfoObject->GenerateLayerUsageDebugColor();
-    //             LayerInfoObject->MarkPackageDirty();
-    //         }
-    //     }
-    //     else
-    //     {
-    //         UE_LOG(LogTemp, Log, TEXT("Found and reused existing LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
-    //     }
-    //     
-    //     // 3. 찾았거나 새로 생성한 LayerInfoObject를 레이어 데이터에 할당합니다.
-    //     if(LayerInfoObject)
-    //     {
-    //         LayerInfo.LayerInfo = LayerInfoObject;
-    //         ImportLayerDataPerLayer.Add(LayerInfo);
-    //     }
-    //     else
-    //     {
-    //         UE_LOG(LogTemp, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
-    //     }
-    // }
-    // MaterialLayerDataPerLayer.Add(LayerGuid, ImportLayerDataPerLayer);
-    //
     // 트랜잭션 시작 (Undo/Redo를 위함)
     FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "LandscapeEditor_CreateLandscape", "Create Landscape"));
 
@@ -210,6 +205,12 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     GEditor->RedrawAllViewports();
 
     TargetLandscape->ForceUpdateLayersContent(true);
+
+    TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
+    TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
+    TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+    
+    CreateRuntimeVirtualTextureVolume(TargetLandscape);
 #endif
 }
 
@@ -262,6 +263,7 @@ void UOCGLandscapeGenerateComponent::FinalizeLayerInfos(ALandscape* Landscape,
 TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::PrepareLandscapeLayerData(
     ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset)
 {
+#if WITH_EDITOR
     TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
     if (!InTargetLandscape || !InLevelGenerator || !InMapPreset)
     {
@@ -337,11 +339,13 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::P
     MaterialLayerDataPerLayer.Add(LayerGuid, ImportLayerDataPerLayer);
     
     return MaterialLayerDataPerLayer;
+#endif
 }
 
 ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(ALandscape* InLandscape,
                                                                            const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate)
 {
+#if WITH_EDITOR
     if (!InLandscape)
     {
         UE_LOG(LogTemp, Error, TEXT("TargetLandscape is null."));
@@ -371,11 +375,13 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(ALand
     }
 
     return LayerInfo;
+#endif
 }
 
 ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const FString& InPackagePath, const FString& InAssetName,
                                                                            const ULandscapeLayerInfoObject* InTemplate)
 {
+#if WITH_EDITOR
     // 1. 경로 유효성 검사
     if (!InPackagePath.StartsWith(TEXT("/Game/")))
     {
@@ -450,9 +456,39 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     NewLayerInfo->MarkPackageDirty();
 
     return NewLayerInfo;
+#endif
 }
 
 AOCGLevelGenerator* UOCGLandscapeGenerateComponent::GetLevelGenerator() const
 {
     return Cast<AOCGLevelGenerator>(GetOwner());
+}
+
+bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscape* InLandscapeActor)
+{
+#if WITH_EDITOR
+    if (InLandscapeActor == nullptr)
+    {
+        return false;
+    }
+
+    TArray<URuntimeVirtualTexture*> VirtualTextureVolumesToCreate;
+    GetMissingRuntimeVirtualTextureVolumes(InLandscapeActor, VirtualTextureVolumesToCreate);
+    if (VirtualTextureVolumesToCreate.Num() == 0)
+    {
+        return false;
+    }
+    
+    for (URuntimeVirtualTexture* VirtualTexture : VirtualTextureVolumesToCreate)
+    {
+        ARuntimeVirtualTextureVolume* NewVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
+        NewVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
+        NewVolume->VirtualTextureComponent->SetBoundsAlignActor(InLandscapeActor);
+        RuntimeVirtualTexture::SetBounds(NewVolume->VirtualTextureComponent);
+        
+        NewVolume->VirtualTextureComponent->SetBoundsAlignActor(nullptr);
+    }
+
+    return true;
+#endif
 }

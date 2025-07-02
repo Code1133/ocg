@@ -49,8 +49,9 @@ public class OneButtonLevelGeneration : ModuleRules
 				"WorkspaceMenuStructure",
 				"MaterialEditor",
 				"InputCore",
-				"DeveloperSettings"
-			}
+				"DeveloperSettings", 
+				"VirtualTexturingEditor"
+			}  
 			);
 		
 		

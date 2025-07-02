@@ -13,6 +13,7 @@ class AOCGLevelGenerator;
 struct FOCGBiomeSettings;
 struct FLandscapeImportLayerInfo;
 class ALandscape;
+class URuntimeVirtualTexture;
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -59,6 +60,12 @@ private:
 	FString LayerInfoSavePath = TEXT("/Game/Landscape/LayerInfos");
 	
 	AOCGLevelGenerator* GetLevelGenerator() const;
+
+	bool CreateRuntimeVirtualTextureVolume(ALandscape* InLandscapeActor);
+
+	TObjectPtr<URuntimeVirtualTexture> ColorRVT = nullptr;
+	TObjectPtr<URuntimeVirtualTexture> HeightRVT = nullptr;
+	TObjectPtr<URuntimeVirtualTexture> DisplacementRVT = nullptr;
 private:
 	float CachedGlobalMinTemp;
 	float CachedGlobalMaxTemp;
