@@ -272,8 +272,8 @@ public:
 
 #if WITH_EDITOR
 public:
-	UPROPERTY()
-	UWorld* OwnerWorld = nullptr;
+	UPROPERTY(Transient)
+	TObjectPtr<UWorld> OwnerWorld = nullptr;
 
 	TWeakPtr<class FMapPresetEditorToolkit> EditorToolkit;
 #endif
