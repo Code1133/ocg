@@ -170,7 +170,7 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 		{
 			if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 			{
-				const uint32 LayerIdx = *Index + static_cast<uint32>(bContainWater);
+				const uint32 LayerIdx = *Index;
 				if (LandscapeLayerNames.IsValidIndex(LayerIdx))
 				{
 					Data.LayerName_Internal = LandscapeLayerNames[LayerIdx];
