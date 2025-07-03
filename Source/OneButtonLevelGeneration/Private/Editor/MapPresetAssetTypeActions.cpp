@@ -1,11 +1,38 @@
 #include "Editor/MapPresetAssetTypeActions.h"
 #include "Editor/MapPresetEditorToolkit.h"
 #include "Data/MapPreset.h"
-#include "Toolkits/ToolkitManager.h"
-#include "Framework/Application/SlateApplication.h"
+#include "Interfaces/IPluginManager.h"
+#include "Styling/SlateStyleRegistry.h"
 #include "Widgets/SWindow.h"
-#include "Widgets/Input/SButton.h"
-#include "Widgets/Text/STextBlock.h"
+
+void FOneButtonLevelGenerationStyle::Initialize()
+{
+    if (!StyleSet.IsValid())
+    {
+        StyleSet = MakeShareable(new FSlateStyleSet("OneButtonLevelGenerationStyle"));
+        FString ContentDir = IPluginManager::Get().FindPlugin("OneButtonLevelGeneration")->GetBaseDir() / TEXT("Resources");
+
+        StyleSet->Set("ClassIcon.MapPreset", new FSlateImageBrush(ContentDir / TEXT("MapPreset128.png"), FVector2D(16,16)));
+        StyleSet->Set("ClassThumbnail.MapPreset", new FSlateImageBrush(ContentDir / TEXT("MapPreset128.png"), FVector2D(64,64)));
+
+        FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
+    }
+}
+
+void FOneButtonLevelGenerationStyle::Shutdown()
+{
+    if (StyleSet.IsValid())
+    {
+        FSlateStyleRegistry::UnRegisterSlateStyle(*StyleSet.Get());
+        ensure(StyleSet.IsUnique());
+        StyleSet.Reset();
+    }
+}
+
+TSharedPtr<ISlateStyle> FOneButtonLevelGenerationStyle::Get()
+{
+    return StyleSet;
+}
 
 FText FMapPresetAssetTypeActions::GetName() const
 {

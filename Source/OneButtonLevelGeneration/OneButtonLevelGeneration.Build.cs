@@ -50,7 +50,8 @@ public class OneButtonLevelGeneration : ModuleRules
 				"MaterialEditor",
 				"InputCore",
 				"DeveloperSettings", 
-				"VirtualTexturingEditor"
+				"VirtualTexturingEditor",
+				"Projects"
 			}  
 			);
 		

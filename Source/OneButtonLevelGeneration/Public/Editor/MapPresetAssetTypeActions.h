@@ -2,6 +2,17 @@
 #include "AssetTypeActions_Base.h"
 #include "MapPresetEditorToolkit.h"
 
+class FOneButtonLevelGenerationStyle
+{
+public:
+	static void Initialize();
+	static void Shutdown();
+	static TSharedPtr<ISlateStyle> Get();
+
+private:
+	static inline TSharedPtr<FSlateStyleSet> StyleSet = nullptr;
+};
+
 class FMapPresetAssetTypeActions : public FAssetTypeActions_Base
 {
 public:

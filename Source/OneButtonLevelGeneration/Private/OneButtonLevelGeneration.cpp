@@ -12,17 +12,20 @@ void FOneButtonLevelGenerationModule::StartupModule()
 {
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
-	// 생성한 에셋 타입 액션을 등록합니다.
+	// Register the custom asset type actions for Map Preset
 	TSharedRef<IAssetTypeActions> Action = MakeShared<FMapPresetAssetTypeActions>();
 	AssetTools.RegisterAssetTypeActions(Action);
 
-	// 등록된 액션을 나중에 ShutdownModule에서 해제할 수 있도록 저장합니다.
+	// Cache the registered asset type actions
 	RegisteredAssetTypeActions.Add(Action);
+
+	// Initialize the style for the module
+	FOneButtonLevelGenerationStyle::Initialize();
 }
 
 void FOneButtonLevelGenerationModule::ShutdownModule()
 {
-	// 모듈이 언로드될 때 등록된 액션을 해제합니다.
+	// Unregister the custom asset type actions for Map Preset
 	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 	{
 		IAssetTools& AssetTools = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -31,6 +34,9 @@ void FOneButtonLevelGenerationModule::ShutdownModule()
 			AssetTools.UnregisterAssetTypeActions(Action);
 		}
 	}
+
+	// Shutdown the style for the module
+	FOneButtonLevelGenerationStyle::Shutdown();
 }
 
 #undef LOCTEXT_NAMESPACE
