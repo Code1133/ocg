@@ -86,9 +86,9 @@ private:
 	void InitializeErosionBrush();
 	float CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap, float PosX, float PosY, FVector2D& OutGradient);
 	void ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
-	void CalculateBiomeAverageHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutAverageHeights, const UMapPreset* MapPreset);
-	void BlurBiomeAverageHeights(TArray<float>& OutAverageHeights, const TArray<float>& InAverageHeights, const UMapPreset* MapPreset);
-	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
+	void CalculateBiomeMinHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutMinHeights, const UMapPreset* MapPreset);
+	void BlurBiomeMinHeights(TArray<float>& OutMinHeights, const TArray<float>& InMinHeights, const UMapPreset* MapPreset);
+	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
 	void GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
 	void FinalizeHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	

@@ -450,11 +450,12 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
 
 void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
-    TArray<float> AverageHeights;
-    TArray<float> BlurredAverageHeights;
-    //각 바이옴 구역의 평균 높이를 월드 기준 float로 반환
-    CalculateBiomeAverageHeights(InOutHeightMap, InBiomeMap, AverageHeights, MapPreset);
-    BlurBiomeAverageHeights(BlurredAverageHeights, AverageHeights, MapPreset);
+    TArray<float> MinHeights;
+    TArray<float> BlurredMinHeights;
+    //각 바이옴 구역의 최소 높이를 월드 기준 float로 반환
+    CalculateBiomeMinHeights(InOutHeightMap, InBiomeMap, MinHeights, MapPreset);
+    if (MapPreset->BiomeBlendRadius > 0)
+        BlurBiomeMinHeights(BlurredMinHeights, MinHeights, MapPreset);
     float SeaLevel;
     if (MapPreset->bContainWater)
         SeaLevel = MapPreset->SeaLevel;
@@ -462,7 +463,6 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
         SeaLevel = 0.f;
     float SeaLevelHeightF = SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight) + MapPreset->MinHeight;
     uint16 SeaLevelHeight = FMath::RoundToInt(SeaLevelHeightF * 128.f/100.f + 32768.f);
-    uint16 Min = FMath::RoundToInt((MapPreset->MaxHeight * 128.f/100.f) + 32768.f);
     for (int32 y = 0; y<MapPreset->MapResolution.Y; y++)
     {
         for (int32 x = 0; x<MapPreset->MapResolution.X; x++)
@@ -482,7 +482,7 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
                     continue;
                 MtoPRatio+=MapPreset->Biomes[i - 1].MountainRatio * CurrentBiomeWeight;
             }
-            uint16 AverageHeight = static_cast<uint16>(BlurredAverageHeights[Index] * 128.f / 100.f + 32768.f);
+            uint16 AverageHeight = static_cast<uint16>(BlurredMinHeights[Index] * 128.f / 100.f + 32768.f);
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) *
                 MapPreset->BiomeNoiseScale) * MapPreset->BiomeNoiseAmplitude + MapPreset->BiomeNoiseAmplitude;
             float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f/100.f;
@@ -490,32 +490,20 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
             uint16 NewHeight = FMath::Lerp(TargetPlainHeight, CurrentHeight + MountainHeight, MtoPRatio);
             NewHeight = FMath::Max(NewHeight, SeaLevelHeight);
             InOutHeightMap[Index] = NewHeight;
-            if (TargetPlainHeight < Min && TargetPlainHeight > SeaLevelHeight)
-            {
-                Min = TargetPlainHeight;
-            }
         }
-    }
-    float Offset = Min - SeaLevelHeight;
-    for (auto& Height : InOutHeightMap)
-    {
-        if (Height>SeaLevelHeight)
-            Height -= Offset;
     }
 }
 
-void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap,
-    TArray<float>& OutAverageHeights, const UMapPreset* MapPreset)
+void UOCGMapGenerateComponent::CalculateBiomeMinHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap,
+    TArray<float>& OutMinHeights, const UMapPreset* MapPreset)
 {
     FIntPoint MapSize = MapPreset->MapResolution;
     const int32 TotalPixels = MapSize.X * MapSize.Y;
     TArray<int32> RegionIDMap;
     RegionIDMap.Init(0, TotalPixels);
-    OutAverageHeights.Init(0, TotalPixels);
+    OutMinHeights.Init(0, TotalPixels);
 
-    TMap<int32, float> RegionTotalHeights;
-    TMap<int32, int32> RegionTotalPixel;
-    TMap<int32, FName> RegionToBiome;
+    TMap<int32, float> RegionMinHeight;
 
     int32 CurrentRegionID = 1;
 
@@ -525,43 +513,28 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
         {
             if (RegionIDMap[y*MapSize.X + x] == 0)
             {
-                float TotalHeight;
-                int32 TotalPixel;
-                GetBiomeStats(MapSize, x, y, CurrentRegionID, TotalHeight, TotalPixel, RegionIDMap, InHeightMap, InBiomeMap);
+                float MinimumHeight;
+                GetBiomeStats(MapSize, x, y, CurrentRegionID, MinimumHeight, RegionIDMap, InHeightMap, InBiomeMap);
 
-                RegionTotalHeights.Add(CurrentRegionID, TotalHeight);
-                RegionTotalPixel.Add(CurrentRegionID, TotalPixel);
-
-                RegionToBiome.FindOrAdd(CurrentRegionID, InBiomeMap[y*MapSize.X +x]->BiomeName);
+                RegionMinHeight.Add(CurrentRegionID, MinimumHeight);
                 CurrentRegionID++;
             }
         }
     }
-
-    TMap<int32, float> RegionAverageHeights;
-    for (const auto& Region : RegionTotalHeights)
-    {
-        int32 RegionID = Region.Key;
-        float PixelNum = static_cast<float>(RegionTotalPixel[RegionID]);
-        if (PixelNum>0)
-        {
-            float AverageHeight = RegionTotalHeights[RegionID] / PixelNum;
-            RegionAverageHeights.Add(RegionID, AverageHeight);
-        }
-    }
+    
     for (int32 i=0; i<TotalPixels; i++)
     {
         int32 RegionID = RegionIDMap[i];
-        OutAverageHeights[i] = RegionAverageHeights.FindRef(RegionID);
+        OutMinHeights[i] = RegionMinHeight.FindRef(RegionID);
     }
 }
 
-void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverageHeights, const TArray<float>& InAverageHeights, const UMapPreset* MapPreset)
+void UOCGMapGenerateComponent::BlurBiomeMinHeights(TArray<float>& OutMinHeights, const TArray<float>& InMinHeights, const UMapPreset* MapPreset)
 {
     float BlendRadius = MapPreset->BiomeHeightBlendRadius;
     FIntPoint MapSize = MapPreset->MapResolution;
     int32 TotalPixels = MapSize.X * MapSize.Y;
-    OutAverageHeights.SetNumUninitialized(TotalPixels);
+    OutMinHeights.SetNumUninitialized(TotalPixels);
     float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
     //Horizontal Pass
     TArray<float> HorizontalPass;
@@ -575,31 +548,31 @@ void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverage
         {
             const int32 CurrentX = FMath::Clamp(i, 0, MapSize.X - 1);
             const int32 Index = y * MapSize.X + CurrentX;
-            if (InAverageHeights[Index] >= SeaLevelHeight)
+            if (InMinHeights[Index] >= SeaLevelHeight)
             {
-                Sum+=InAverageHeights[Index];
+                Sum+=InMinHeights[Index];
                 ValidPixelCount++;
             }
         }
-        HorizontalPass[y*MapSize.X + 0] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : InAverageHeights[y*MapSize.X + 0];
+        HorizontalPass[y*MapSize.X + 0] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : InMinHeights[y*MapSize.X + 0];
         // 슬라이딩 윈도우
         for (int32 x = 1; x < MapSize.X ; ++x)
         {
             const int32 OldX = FMath::Clamp(x - BlendRadius - 1, 0, MapSize.X  - 1);
             const int32 OldIndex = y * MapSize.X + OldX;
-            if (InAverageHeights[OldIndex] >= SeaLevelHeight)
+            if (InMinHeights[OldIndex] >= SeaLevelHeight)
             {
-                Sum-=InAverageHeights[OldIndex];
+                Sum-=InMinHeights[OldIndex];
                 ValidPixelCount--;
             }
             const int32 NewX = FMath::Clamp(x + BlendRadius, 0, MapSize.X  - 1);
             const int32 NewIndex = y * MapSize.X + NewX;
-            if (InAverageHeights[NewIndex] >= SeaLevelHeight)
+            if (InMinHeights[NewIndex] >= SeaLevelHeight)
             {
-                Sum+=InAverageHeights[NewIndex];
+                Sum+=InMinHeights[NewIndex];
                 ValidPixelCount++;
             }
-            HorizontalPass[y * MapSize.X  + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : InAverageHeights[y * MapSize.X + x];
+            HorizontalPass[y * MapSize.X  + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : InMinHeights[y * MapSize.X + x];
         }
     }
     //Vertical Pass
@@ -618,7 +591,7 @@ void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverage
                 ValidPixelCount++;
             }
         }
-        OutAverageHeights[0 * MapSize.X + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : HorizontalPass[0 * MapSize.X + x];
+        OutMinHeights[0 * MapSize.X + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : HorizontalPass[0 * MapSize.X + x];
         // 슬라이딩 윈도우
         for (int32 y = 1; y < MapSize.Y ; ++y)
         {
@@ -636,13 +609,13 @@ void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverage
                 Sum+=HorizontalPass[NewIndex];
                 ValidPixelCount++;
             }
-            OutAverageHeights[y * MapSize.X  + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : HorizontalPass[y * MapSize.X + x];
+            OutMinHeights[y * MapSize.X  + x] = (ValidPixelCount > 0) ? Sum / ValidPixelCount : HorizontalPass[y * MapSize.X + x];
         }
     }
 }
 
-void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel,
-                                             TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
+void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight,
+    TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
     TQueue<FIntPoint> Queue;
     Queue.Enqueue(FIntPoint(x, y));
@@ -650,15 +623,15 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
     const FOCGBiomeSettings* TargetBiome = InBiomeMap[y*MapSize.X + x];
     RegionIDMap[y*MapSize.X + x] = RegionID;
 
-    OutTotalHeight = 0.f;
-    OutTotalPixel = 0.f;
+    OutMinHeight = FLT_MAX;
 
     FIntPoint CurrentPoint;
     while (Queue.Dequeue(CurrentPoint))
     {
         uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
-        OutTotalHeight += (static_cast<float>(InHeightMap[CurrentIndex] - 32768))*100.f/128.f;
-        OutTotalPixel++;
+        float CurrentHeight = (static_cast<float>(InHeightMap[CurrentIndex] - 32768))*100.f/128.f;
+        if (CurrentHeight < OutMinHeight)
+            OutMinHeight = CurrentHeight;
 
         const FIntPoint Neighbors[] =
         {
