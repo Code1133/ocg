@@ -31,16 +31,66 @@ struct FOCGMeshInfo
 	FName MeshFilterName_Internal;
 };
 
+/**
+ * A structure that defines slope limits for mesh generation.
+ */
 USTRUCT(BlueprintType)
 struct FSlopeLimitInfo
 {
 	GENERATED_BODY()
 
+	/** The lower bound of the slope limit, normalized between 0 and 1. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
 	float LowerLimit = 0.5f;
 
+	/** The upper bound of the slope limit, normalized between 0 and 1. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
 	float UpperLimit = 1.0f;
+};
+
+/**
+ * A structure that defines transform (offset, rotation, scale) information for a point.
+ */
+USTRUCT(BlueprintType)
+struct FTransformPointInfo
+{
+	GENERATED_BODY()
+
+	/** Minimum offset to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FVector OffsetMin = FVector::ZeroVector;
+
+	/** Maximum offset to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FVector OffsetMax = FVector::ZeroVector;
+
+	/** If true, the offset is an absolute value, otherwise it's relative to the point's transform. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bAbsoluteOffset = false;
+
+	/** Minimum rotation to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FRotator RotationMin = FRotator::ZeroRotator;
+
+	/** Maximum rotation to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FRotator RotationMax = FRotator(0.0f, 360.0f, 0.0f);
+
+	/** If true, the rotation is an absolute value, otherwise it's relative to the point's transform. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bAbsoluteRotation = false;
+
+	/** Minimum scale to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FVector ScaleMin = FVector::OneVector;
+
+	/** Maximum scale to apply to the point. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FVector ScaleMax = FVector::OneVector;
+
+	/** If true, the scale is an absolute value, otherwise it's relative to the point's transform. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bAbsoluteScale = false;
 };
 
 /**
@@ -90,6 +140,14 @@ struct FLandscapeHierarchyData
 	/** Slope limit information used when generating Mesh on slopes. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f, EditCondition = "bSlopeLimit"))
 	FSlopeLimitInfo SlopeLimits;
+
+	/** Whether to override the transform point settings. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (InlineEditConditionToggle))
+	bool bOverrideTransformPoint = false;
+
+	/** The transform point information to use when overriding. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bOverrideTransformPoint"))
+	FTransformPointInfo TransformPoint;
 
 	/** Distance at which world position offset gets disabled. 0 means always enabled. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
