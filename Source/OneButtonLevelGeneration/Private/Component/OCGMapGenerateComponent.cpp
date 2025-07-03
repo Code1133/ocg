@@ -73,6 +73,8 @@ void UOCGMapGenerateComponent::GenerateMaps()
         ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
     //침식 진행
     ErosionPass(MapPreset, HeightMapData);
+    GetMaxMinHeight(MapPreset, HeightMapData);
+    //FinalizeHeightMap(MapPreset, HeightMapData);
     ExportMap(MapPreset, HeightMapData, "HeightMap.png");
 }
 
@@ -199,32 +201,36 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const UMapPreset* M
     // ==========================================================
     MountainHeight = MountainHeight * 0.5f + 0.5f;
     float Height = FMath::Lerp(PlainHeight, MountainHeight, BlendNoise);
-    if (!MapPreset->bIsland)
-        return MapPreset->MinHeight + (Height * HeightRange);
 
     // ==========================================================
     //            5. 섬 모양 적용
     // ==========================================================
-    //중앙에서의 거리 계산
-    float nx = (static_cast<float>(InX) / MapPreset->MapResolution.X) * 2.f - 1.f;
-    float ny = (static_cast<float>(InY) / MapPreset->MapResolution.Y) * 2.f - 1.f;
-    float Distance = FMath::Sqrt(nx * nx + ny * ny);
-    //해안선 노이즈 생성
-    float IslandNoiseX = InX * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;
-    float IslandNoiseY = InY * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.Y;
-    //-1~1 범위
-    float IslandNoise = FMath::PerlinNoise2D(FVector2D(IslandNoiseX, IslandNoiseY));
-    //거리 왜곡
-    float DistortedDistance = Distance + IslandNoise * MapPreset->IslandShapeNoiseStrength;
-    //최종 섬 마스크 생성
-    float IslandMask = 1.f - DistortedDistance;
-    IslandMask *= 3.f;
-    IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
-    IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFaloffExponent);
-    IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
-    Height *= IslandMask;
-    Height = FMath::Clamp(Height, 0.f, 1.f);
-    return MapPreset->MinHeight + (Height * HeightRange);
+    if (MapPreset->bIsland)
+    {
+        //중앙에서의 거리 계산
+        float nx = (static_cast<float>(InX) / MapPreset->MapResolution.X) * 2.f - 1.f;
+        float ny = (static_cast<float>(InY) / MapPreset->MapResolution.Y) * 2.f - 1.f;
+        float Distance = FMath::Sqrt(nx * nx + ny * ny);
+        //해안선 노이즈 생성
+        float IslandNoiseX = InX * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;
+        float IslandNoiseY = InY * MapPreset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.Y;
+        //-1~1 범위
+        float IslandNoise = FMath::PerlinNoise2D(FVector2D(IslandNoiseX, IslandNoiseY));
+        //거리 왜곡
+        float DistortedDistance = Distance + IslandNoise * MapPreset->IslandShapeNoiseStrength;
+        //최종 섬 마스크 생성
+        float IslandMask = 1.f - DistortedDistance;
+        IslandMask *= 3.f;
+        IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
+        IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFaloffExponent);
+        IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
+        Height *= IslandMask;
+        Height = FMath::Clamp(Height, 0.f, 1.f);
+    }
+
+    float FinalHeight = MapPreset->MinHeight + (Height * HeightRange);
+    
+    return FinalHeight * 128.f / 100.f;
 }
 
 void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
@@ -239,21 +245,18 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
     HeightMapFloat.SetNumUninitialized(InOutHeightMap.Num());
     for (int i = 0; i < InOutHeightMap.Num(); ++i)
     {
-        HeightMapFloat[i] = static_cast<float>(InOutHeightMap[i]);
+        HeightMapFloat[i] = (static_cast<float>(InOutHeightMap[i]) - 32768.f)*100.f/128.f;
     }
 
     float SeaLevelHeight;
     if (MapPreset->bContainWater)
     {
-        SeaLevelHeight = 32768.f + MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+        SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
     }
     else
     {
-        SeaLevelHeight = 32768.f + MapPreset->MinHeight;
+        SeaLevelHeight = MapPreset->MinHeight;
     }
-
-    const float MinSlope = FMath::Tan(FMath::DegreesToRadians(20.f));// * 100.f;
-    const float MaxSlope = FMath::Tan(FMath::DegreesToRadians(70.f));// * 100.f;
 
     // 3. 메인 시뮬레이션 루프
     for (int i = 0; i < MapPreset->NumErosionIterations; ++i)
@@ -282,79 +285,70 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
             // 현재 위치의 높이와 경사 계산
             FVector2D Gradient;
             float CurrentHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
-            const float Slope = Gradient.Size();
-
-            if (Slope > MaxSlope || Slope < MinSlope)
+            // 관성을 적용하여 새로운 방향 계산
+            DirX = (DirX * MapPreset->DropletInertia) - (Gradient.X * (1 - MapPreset->DropletInertia));
+            DirY = (DirY * MapPreset->DropletInertia) - (Gradient.Y * (1 - MapPreset->DropletInertia));
+            
+            // 방향 벡터 정규화
+            float Len = FMath::Sqrt(DirX * DirX + DirY * DirY);
+            if (Len > KINDA_SMALL_NUMBER)
+            {
+                DirX /= Len;
+                DirY /= Len;
+            }
+            
+            // 새로운 위치로 이동
+            PosX += DirX;
+            PosY += DirY;
+            
+            if (PosX <= 0 || PosX >= MapPreset->MapResolution.X - 1 ||
+                PosY <= 0 || PosY >= MapPreset->MapResolution.Y - 1)
             {
                 break;
             }
+            
+            // 이동 후 높이와 높이 차이 계산
+            float NewHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
+            if (NewHeight <= SeaLevelHeight)
+                break;
+            float HeightDifference = NewHeight - CurrentHeight;
+            
+            // 흙 운반 용량 계산
+            float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * MapPreset->SedimentCapacityFactor, MapPreset->MinSedimentCapacity);
+            
+            // 침식 또는 퇴적
+            if (Sediment > SedimentCapacity || HeightDifference > 0)
+            {
+                // 퇴적
+                float AmountToDeposit = (HeightDifference > 0) ? FMath::Min(Sediment, HeightDifference) : (Sediment - SedimentCapacity) * MapPreset->DepositSpeed;
+                Sediment -= AmountToDeposit;
+                
+                // 미리 계산된 브러시를 사용하여 주변에 흙을 쌓음
+                const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
+                const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
+                for (int j = 0; j < Indices.Num(); j++)
+                {
+                    HeightMapFloat[Indices[j]] += AmountToDeposit * Weights[j];
+                }
+            }
             else
             {
-                // 관성을 적용하여 새로운 방향 계산
-                DirX = (DirX * MapPreset->DropletInertia) - (Gradient.X * (1 - MapPreset->DropletInertia));
-                DirY = (DirY * MapPreset->DropletInertia) - (Gradient.Y * (1 - MapPreset->DropletInertia));
+                // 침식
+                float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * MapPreset->ErodeSpeed;
                 
-                // 방향 벡터 정규화
-                float Len = FMath::Sqrt(DirX * DirX + DirY * DirY);
-                if (Len > KINDA_SMALL_NUMBER)
+                // 미리 계산된 브러시를 사용하여 주변 땅을 깎음
+                const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
+                const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
+                for (int j = 0; j < Indices.Num(); j++)
                 {
-                    DirX /= Len;
-                    DirY /= Len;
+                    HeightMapFloat[Indices[j]] -= AmountToErode * Weights[j];
                 }
-                
-                // 새로운 위치로 이동
-                PosX += DirX;
-                PosY += DirY;
-                
-                if (PosX <= 0 || PosX >= MapPreset->MapResolution.X - 1 ||
-                    PosY <= 0 || PosY >= MapPreset->MapResolution.Y - 1)
-                {
-                    break;
-                }
-                
-                // 이동 후 높이와 높이 차이 계산
-                float NewHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
-                if (NewHeight <= SeaLevelHeight)
-                    break;
-                float HeightDifference = NewHeight - CurrentHeight;
-                
-                // 흙 운반 용량 계산
-                float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * MapPreset->SedimentCapacityFactor, MapPreset->MinSedimentCapacity);
-                
-                // 침식 또는 퇴적
-                if (Sediment > SedimentCapacity || HeightDifference > 0)
-                {
-                    // 퇴적
-                    float AmountToDeposit = (HeightDifference > 0) ? FMath::Min(Sediment, HeightDifference) : (Sediment - SedimentCapacity) * MapPreset->DepositSpeed;
-                    Sediment -= AmountToDeposit;
-                    
-                    // 미리 계산된 브러시를 사용하여 주변에 흙을 쌓음
-                    const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
-                    const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
-                    for (int j = 0; j < Indices.Num(); j++)
-                    {
-                        HeightMapFloat[Indices[j]] += AmountToDeposit * Weights[j];
-                    }
-                }
-                else if (HeightDifference<0)
-                {
-                    // 침식
-                    float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * MapPreset->ErodeSpeed;
-                    
-                    // 미리 계산된 브러시를 사용하여 주변 땅을 깎음
-                    const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
-                    const TArray<float>& Weights = ErosionBrushWeights[DropletIndex];
-                    for (int j = 0; j < Indices.Num(); j++)
-                    {
-                        HeightMapFloat[Indices[j]] -= AmountToErode * Weights[j];
-                    }
-                    Sediment += AmountToErode;
-                }
-                
-                // 속도 및 물 업데이트
-                Speed = FMath::Sqrt(FMath::Max(0.f, Speed * Speed - HeightDifference * MapPreset->Gravity));
-                Water *= (1.0f - MapPreset->EvaporateSpeed);
+                Sediment += AmountToErode;
             }
+            
+            // 속도 및 물 업데이트
+            Speed = FMath::Sqrt(FMath::Max(0.f, Speed * Speed - HeightDifference * MapPreset->Gravity));
+            Water *= (1.0f - MapPreset->EvaporateSpeed);
         }
     }
 
@@ -362,7 +356,8 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
     for (int i = 0; i < HeightMapFloat.Num(); ++i)
     {
         //퇴적으로 인해 기존 높이 보다 높게 흙이 쌓인 걸 제거
-        uint16 NewHeight = FMath::RoundToInt(FMath::Min(HeightMapFloat[i], InOutHeightMap[i]));
+        float Height = HeightMapFloat[i] * 128.f/100.f + 32768.f;
+        uint16 NewHeight = FMath::RoundToInt(FMath::Min(Height, InOutHeightMap[i]));
         InOutHeightMap[i] = FMath::Clamp(NewHeight, 0, 65535);
     }
 }
@@ -465,7 +460,9 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
         SeaLevel = MapPreset->SeaLevel;
     else
         SeaLevel = 0.f;
-    uint16 SeaLevelHeight = FMath::RoundToInt(SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight) + MapPreset->MinHeight + 32768.f);
+    float SeaLevelHeightF = SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight) + MapPreset->MinHeight;
+    uint16 SeaLevelHeight = FMath::RoundToInt(SeaLevelHeightF * 128.f/100.f + 32768.f);
+    uint16 Min = FMath::RoundToInt((MapPreset->MaxHeight * 128.f/100.f) + 32768.f);
     for (int32 y = 0; y<MapPreset->MapResolution.Y; y++)
     {
         for (int32 x = 0; x<MapPreset->MapResolution.X; x++)
@@ -485,15 +482,25 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
                     continue;
                 MtoPRatio+=MapPreset->Biomes[i - 1].MountainRatio * CurrentBiomeWeight;
             }
-            uint16 AverageHeight = static_cast<uint16>(BlurredAverageHeights[Index] + 32768.f);
+            uint16 AverageHeight = static_cast<uint16>(BlurredAverageHeights[Index] * 128.f / 100.f + 32768.f);
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) *
                 MapPreset->BiomeNoiseScale) * MapPreset->BiomeNoiseAmplitude + MapPreset->BiomeNoiseAmplitude;
-            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight);
+            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f/100.f;
             uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, AverageHeight, MapPreset->PlainSmoothFactor);
             uint16 NewHeight = FMath::Lerp(TargetPlainHeight, CurrentHeight + MountainHeight, MtoPRatio);
             NewHeight = FMath::Max(NewHeight, SeaLevelHeight);
             InOutHeightMap[Index] = NewHeight;
+            if (TargetPlainHeight < Min && TargetPlainHeight > SeaLevelHeight)
+            {
+                Min = TargetPlainHeight;
+            }
         }
+    }
+    float Offset = Min - SeaLevelHeight;
+    for (auto& Height : InOutHeightMap)
+    {
+        if (Height>SeaLevelHeight)
+            Height -= Offset;
     }
 }
 
@@ -508,6 +515,7 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
 
     TMap<int32, float> RegionTotalHeights;
     TMap<int32, int32> RegionTotalPixel;
+    TMap<int32, FName> RegionToBiome;
 
     int32 CurrentRegionID = 1;
 
@@ -524,6 +532,7 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
                 RegionTotalHeights.Add(CurrentRegionID, TotalHeight);
                 RegionTotalPixel.Add(CurrentRegionID, TotalPixel);
 
+                RegionToBiome.FindOrAdd(CurrentRegionID, InBiomeMap[y*MapSize.X +x]->BiomeName);
                 CurrentRegionID++;
             }
         }
@@ -540,7 +549,6 @@ void UOCGMapGenerateComponent::CalculateBiomeAverageHeights(const TArray<uint16>
             RegionAverageHeights.Add(RegionID, AverageHeight);
         }
     }
-
     for (int32 i=0; i<TotalPixels; i++)
     {
         int32 RegionID = RegionIDMap[i];
@@ -558,7 +566,6 @@ void UOCGMapGenerateComponent::BlurBiomeAverageHeights(TArray<float>& OutAverage
     //Horizontal Pass
     TArray<float> HorizontalPass;
     HorizontalPass.Init(0, TotalPixels);
-    float WindowSize = (2.f * BlendRadius + 1.f);
     for (int32 y = 0; y < MapSize.Y; ++y)
     {
         float Sum = 0;
@@ -650,7 +657,7 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
     while (Queue.Dequeue(CurrentPoint))
     {
         uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
-        OutTotalHeight += static_cast<float>(InHeightMap[CurrentIndex] - 32768);
+        OutTotalHeight += (static_cast<float>(InHeightMap[CurrentIndex] - 32768))*100.f/128.f;
         OutTotalPixel++;
 
         const FIntPoint Neighbors[] =
@@ -672,6 +679,45 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
             }
         }
     }
+}
+
+void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap)
+{
+    TArray<float> HeightMapFloat;
+    int32 TotalPixel = MapPreset->MapResolution.X * MapPreset->MapResolution.Y;
+    HeightMapFloat.SetNumUninitialized(TotalPixel);
+    float Max = MapPreset->MinHeight;
+    float Min = MapPreset->MaxHeight;
+    for (int32 i=0; i < TotalPixel; i++)
+    {
+        HeightMapFloat[i] = (InHeightMap[i] - 32768.f)*100.f/128.f;
+        if (HeightMapFloat[i] > Max)
+            Max = HeightMapFloat[i];
+        if (HeightMapFloat[i] < Min)
+            Min = HeightMapFloat[i];
+    }
+    MaxHeight = Max;
+    MinHeight = Min;
+}
+
+void UOCGMapGenerateComponent::FinalizeHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
+{
+    int32 TotalPixel = InOutHeightMap.Num();
+    float Max = MapPreset->MaxHeight;
+    float Min = MapPreset->MinHeight;
+    uint16 LandscapeMax = 0;
+    uint16 LandscapeMin = 65535;
+    for (int32 i=0; i < TotalPixel; i++)
+    {
+        float CurrentHeight = (InOutHeightMap[i] - 32768.f) * 100.f / 128.f;
+        float AdjustedHeight = Min + (CurrentHeight - MinHeight) * (Max - Min) / (MaxHeight - MinHeight);
+        InOutHeightMap[i] = FMath::Clamp(FMath::RoundToInt(AdjustedHeight*128.f/100.f + 32768.f), 0, 65535);
+        if (InOutHeightMap[i] > LandscapeMax)
+            LandscapeMax = InOutHeightMap[i];
+        if (InOutHeightMap[i] < LandscapeMin)
+            LandscapeMin = InOutHeightMap[i];
+    }
+    UE_LOG(LogTemp, Display, TEXT("Max Height: %d, Min Height: %d"), LandscapeMax, LandscapeMin);
 }
 
 void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
@@ -711,7 +757,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, cons
             //        2. 고도에 따른 온도 감쇠
             // ==========================================================
             const uint16 Height16 = InHeightMap[Index];
-            const float WorldHeight = static_cast<float>(Height16) - 32768.0f;
+            const float WorldHeight = (static_cast<float>(Height16) - 32768.0f) * 100.f / 128.f;
             float SeaLevelHeight;
             if (MapPreset->bContainWater)
             {
@@ -811,7 +857,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             const int32 Index = y * CurResolution.X  + x;
-            const float WorldHeight = (static_cast<float>(InHeightMap[Index]) - 32768.0f);
+            const float WorldHeight = (static_cast<float>(InHeightMap[Index]) - 32768.0f) * 100.f / 128.f;
 
             if (WorldHeight <= SeaLevelWorldHeight)
             {
@@ -947,8 +993,7 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             const int32 Index = y * CurResolution.X + x;
-            float Height = static_cast<float>(InHeightMap[Index]);
-            Height -= 32768.f;
+            float Height = (static_cast<float>(InHeightMap[Index]) - 32768.f) * 100.f/128.f;
             float NormalizedTemp = static_cast<float>(InTempMap[y * CurResolution.X + x]) / 65535.f;
             const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;

@@ -39,12 +39,16 @@ private:
 	TArray<uint16> HumidityMapData;
 	TMap<FName, TArray<uint8>> WeightLayers;
 	TArray<FColor> BiomeColorMap;
+	float MaxHeight;
+	float MinHeight;
 public:
 	FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
 	FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
 	FORCEINLINE const TArray<uint16>& GetHumidityMapData() { return HumidityMapData; }
 	FORCEINLINE const TMap<FName, TArray<uint8>>& GetWeightLayers() { return WeightLayers; }
 	FORCEINLINE const TArray<FColor>& GetBiomeColorMap() { return BiomeColorMap; }
+	FORCEINLINE const float GetMaxHeight() const { return MaxHeight; }
+	FORCEINLINE const float GetMinHeight() const { return MinHeight; }
 
 private:
 	UPROPERTY()
@@ -85,7 +89,9 @@ private:
 	void CalculateBiomeAverageHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutAverageHeights, const UMapPreset* MapPreset);
 	void BlurBiomeAverageHeights(TArray<float>& OutAverageHeights, const TArray<float>& InAverageHeights, const UMapPreset* MapPreset);
 	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutTotalHeight, int32& OutTotalPixel, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
-
+	void GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
+	void FinalizeHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	
 private:
 	float CachedGlobalMinTemp;
 	float CachedGlobalMaxTemp;

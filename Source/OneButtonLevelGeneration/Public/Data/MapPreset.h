@@ -81,11 +81,11 @@ public:
 	int32 WaterBlendRadius = 10;
 	
 	// Landscapes Minimum Height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = -32768.f))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMin = -25600.f))
 	float MinHeight = -15000.0f;
 
 	// Landscapes Maximum Height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMax = 32768.f))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Height", meta = (ClampMax = 25600.f))
 	float MaxHeight = 20000.0f;
 
 	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)

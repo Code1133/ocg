@@ -181,6 +181,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     // 랜드스케이프의 기본 속성 설정
     float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
+    float OffsetZ = (MapPreset->MaxHeight - MapPreset->MinHeight) / 2.f;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
     TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f) * MapPreset->LandscapeScale);
     

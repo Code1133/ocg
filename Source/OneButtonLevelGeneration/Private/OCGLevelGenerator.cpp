@@ -119,12 +119,12 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	// Linear Interpolation for sea height
 	float SeaHeight = MapPreset->MinHeight + 
 		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel;
+	SeaHeight *= MapPreset->LandscapeScale;	
 	FTransform PlaneTransform = FTransform::Identity;
 	
 	PlaneTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
 	
 	PlaneActor = InWorld->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), PlaneTransform);
-
 	
 	ALandscape* Landscape = LandscapeGenerateComponent->GetLandscape();
 	if (Landscape)
