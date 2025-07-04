@@ -1,3 +1,5 @@
+// Copyright (c) 2025 Code1133. All rights reserved.
+
 #include "Editor/MapPresetEditorToolkit.h"
 
 #include "FileHelpers.h"

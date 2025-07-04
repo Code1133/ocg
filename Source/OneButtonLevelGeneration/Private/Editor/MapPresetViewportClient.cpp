@@ -1,6 +1,8 @@
-#include "Editor/MapPresetViewportClient.h"
+// Copyright (c) 2025 Code1133. All rights reserved.
 
+#include "Editor/MapPresetViewportClient.h"
 #include "Editor/MapPresetEditorToolkit.h"
+
 
 FMapPresetViewportClient::FMapPresetViewportClient(TSharedPtr<class FMapPresetEditorToolkit> InToolkit, UWorld* InWorld,
                                                    TSharedPtr<SEditorViewport> InEditorViewportWidget)

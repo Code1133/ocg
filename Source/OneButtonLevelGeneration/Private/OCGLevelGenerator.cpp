@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2025 Code1133. All rights reserved.
 
 #include "OCGLevelGenerator.h"
 
@@ -56,9 +55,9 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (RiverGenerateComponent && MapGenerateComponent && LandscapeGenerateComponent && MapPreset)
 	{
-		float SeaHeight = MapPreset->MinHeight + 
+		float SeaHeight = MapPreset->MinHeight +
 			(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
-		
+
 		RiverGenerateComponent->SetMapData(
 			MapGenerateComponent->GetHeightMapData(),
 			MapPreset

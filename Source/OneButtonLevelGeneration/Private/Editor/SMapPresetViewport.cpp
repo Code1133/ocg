@@ -1,5 +1,8 @@
+// Copyright (c) 2025 Code1133. All rights reserved.
+
 #include "Editor/SMapPresetViewport.h"
 #include "Editor/MapPresetViewportClient.h"
+
 
 void SMapPresetViewport::Construct(const FArguments& InArgs)
 {

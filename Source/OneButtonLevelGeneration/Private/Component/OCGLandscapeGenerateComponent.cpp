@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright (c) 2025 Code1133. All rights reserved.
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"

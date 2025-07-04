@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2025 Code1133. All rights reserved.
 
 #pragma once
 
@@ -281,7 +281,7 @@ public:
 	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129"))
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
-	
+
 public:
 	// Generates River
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings")
@@ -290,7 +290,7 @@ public:
 	// Count of rivers to generate
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (ClampMin = "0", ClampMax = "10", UIMin = "0", UIMax = "10"))
 	int32 RiverCount = 1;
-	
+
 	// Determines river's start point. 1.0 means the river will start at the highest point of the landscape, 0.5 means it will start at the middle height;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
 	float RiverStartPointThresholdMultiplier = 0.8f;
@@ -299,7 +299,7 @@ public:
 	// The Material used for Landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
-	
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hierarchy Data Settings")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
