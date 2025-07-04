@@ -66,10 +66,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bShowDebugPoints = false;
 
-	/** Whether to show debug points for angle-based debugging. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	bool bShowDebugPointsAngle = false;
-
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;
