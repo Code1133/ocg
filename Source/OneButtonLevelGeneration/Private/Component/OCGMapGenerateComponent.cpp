@@ -72,7 +72,8 @@ void UOCGMapGenerateComponent::GenerateMaps()
     if (MapPreset->bModifyTerrainByBiome)
         ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
     //침식 진행
-    ErosionPass(MapPreset, HeightMapData);
+    if (MapPreset->bErosion)
+        ErosionPass(MapPreset, HeightMapData);
     GetMaxMinHeight(MapPreset, HeightMapData);
     //FinalizeHeightMap(MapPreset, HeightMapData);
     ExportMap(MapPreset, HeightMapData, "HeightMap.png");
