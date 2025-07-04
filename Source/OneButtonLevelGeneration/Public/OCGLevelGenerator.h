@@ -11,6 +11,7 @@ struct FOCGBiomeSettings;
 class UOCGLandscapeGenerateComponent;
 class UOCGTerrainGenerateComponent;
 class UOCGMapGenerateComponent;
+class UOCGRiverGeneratorComponent;
 class AStaticMeshActor;
 class UMapPreset;
 
@@ -59,4 +60,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TerrainGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGTerrainGenerateComponent> TerrainGenerateComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RiverGenerator", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UOCGRiverGeneratorComponent> RiverGenerateComponent;
 };

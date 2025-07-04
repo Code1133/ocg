@@ -6,6 +6,7 @@
 #include "Landscape.h"
 #include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
+#include "Component/OCGRiverGeneratorComponent.h"
 #include "Component/OCGTerrainGenerateComponent.h"
 #include "Data/MapPreset.h"
 #include "Engine/StaticMeshActor.h"
@@ -15,6 +16,7 @@ AOCGLevelGenerator::AOCGLevelGenerator()
 	MapGenerateComponent = CreateDefaultSubobject<UOCGMapGenerateComponent>(TEXT("MapGenerateComponent"));
 	LandscapeGenerateComponent = CreateDefaultSubobject<UOCGLandscapeGenerateComponent>(TEXT("LandscapeGenerateComponent"));
 	TerrainGenerateComponent = CreateDefaultSubobject<UOCGTerrainGenerateComponent>(TEXT("TerrainGenerateComponent"));
+	RiverGenerateComponent = CreateDefaultSubobject<UOCGRiverGeneratorComponent>(TEXT("RiverGenerateComponent"));
 }
 
 void AOCGLevelGenerator::Generate()
@@ -50,6 +52,19 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 	if (TerrainGenerateComponent)
 	{
 		TerrainGenerateComponent->GenerateTerrain(InWorld);
+	}
+
+	if (RiverGenerateComponent && MapGenerateComponent && LandscapeGenerateComponent && MapPreset)
+	{
+		float SeaHeight = MapPreset->MinHeight + 
+			(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
+		
+		RiverGenerateComponent->SetMapData(
+			MapGenerateComponent->GetHeightMapData(),
+			MapPreset
+		);
+
+		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
 	}
 
 	AddWaterPlane(InWorld);
