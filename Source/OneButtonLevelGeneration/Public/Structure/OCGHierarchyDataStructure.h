@@ -27,7 +27,7 @@ struct FOCGMeshInfo
 	bool bEnableDefaultCollision = false;
 
 	/** The layer name this mesh belongs to. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 };
 
@@ -106,11 +106,11 @@ struct FLandscapeHierarchyData
 	FName BiomeName;
 
 	/** Internal name used when matching Landscape Layer in PCG. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, DisplayName = "Selected Landscape Layer Name", Category = "OCG")
 	FName LayerName_Internal;
 
 	/** Internal name used when filtering Meshes in PCG. */
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 
 	/** Weight of the blended layer. Values between 0 and 1, higher values increase this layer's influence. */
