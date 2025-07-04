@@ -84,11 +84,11 @@ public:
 	bool ApplyScaleToNoise = true;
 	
 	// Decides the Blend radius(pixel) between different biomes
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0", ClampMax = "50"))
 	int32 BiomeBlendRadius = 10;
 
 	// Decides the Blend radius(pixel) between water and other biomes
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0", ClampMax = "50"))
 	int32 WaterBlendRadius = 10;
 	
 	// Landscapes Minimum Height (Minimum -25600)
@@ -104,11 +104,11 @@ public:
 	float SeaLevel = 0.4f;
 
 	// Landscapes Minimum Temperature
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature", meta = (ClampMin = -273.15))
 	float MinTemp = -30.0f;
 
 	// Landscapes Maximum Temperature
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature", meta = (ClampMin = -273.15))
 	float MaxTemp = 80.0f;
 
 	// Decides the amount of temperature drop per 1000 units of height
@@ -130,8 +130,8 @@ public:
 
 	// Decides the sharpness of island edge and island's size
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.1))
-	float IslandFaloffExponent = 2.0f;
+		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.1, ClampMax = 3.0))
+	float IslandFalloffExponent = 2.0f;
 
 	// Decides irregularity of island shape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
@@ -164,7 +164,7 @@ public:
 
 	// Larger radius gives smaller spike height difference at biome borders
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-			meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0"))
+			meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0", ClampMax = "50"))
 	int32 BiomeHeightBlendRadius = 5;
 	
 public:
@@ -174,7 +174,7 @@ public:
 	float StandardNoiseOffset = 10000.f;
 
 	// Decides how much the noise is spread out
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0"))
 	float RedistributionFactor = 2.5f;
 	
 	// Decides the frequency of Mountains
@@ -190,11 +190,11 @@ public:
 	float TemperatureNoiseScale = 0.002f;
 
 	// Larger Octaves gives more detail to the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1"))
 	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
 
 	// Larger Lancunarity gives more tight detail
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.01"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0"))
 	float Lacunarity = 2.0f; // 주파수 변화율 (클수록 더 작고 촘촘한 노이즈 추가)
 
 	// Larger Persistence give more height change detail
@@ -212,8 +212,8 @@ public:
 
 	// Decides the size of erosion
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "1"))
-	int32 ErosionRadius = 2;
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "3"))
+	int32 ErosionRadius = 3;
 
 	// Larger Inertia gives more smooth flow of erosion droplets
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
@@ -232,17 +232,17 @@ public:
 
 	// Decides the speed of erosion
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0"))
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
 	float ErodeSpeed = 0.3f; // 침식 속도
 
 	// Decides the speed of deposit
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0"))
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
 	float DepositSpeed = 0.3f; // 퇴적 속도
 
 	// Decides how fast the droplet evaporates
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0"))
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
 	float EvaporateSpeed = 0.01f; // 증발 속도
 
 	// Decides the gravity effect on droplets

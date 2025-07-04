@@ -165,7 +165,7 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const UMapPreset* M
     float Frequency = 1.0f;
     float TerrainNoise = 0.0f;
     float MaxPossibleAmplitude = 0.0f;
-
+    
     for (int32 i = 0; i < MapPreset->Octaves; ++i)
     {
         float NoiseInputX = (InX * MapPreset->TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
@@ -222,7 +222,7 @@ float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const UMapPreset* M
         float IslandMask = 1.f - DistortedDistance;
         IslandMask *= 3.f;
         IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
-        IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFaloffExponent);
+        IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFalloffExponent);
         IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
         Height *= IslandMask;
         Height = FMath::Clamp(Height, 0.f, 1.f);
@@ -258,6 +258,8 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
         SeaLevelHeight = MapPreset->MinHeight;
     }
 
+    float LandscapeScale = MapPreset->LandscapeScale * 100.f;
+
     // 3. 메인 시뮬레이션 루프
     for (int i = 0; i < MapPreset->NumErosionIterations; ++i)
     {
@@ -284,7 +286,8 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
 
             // 현재 위치의 높이와 경사 계산
             FVector2D Gradient;
-            float CurrentHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
+            float CurrentHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, LandscapeScale, PosX, PosY, Gradient);
+            
             // 관성을 적용하여 새로운 방향 계산
             DirX = (DirX * MapPreset->DropletInertia) - (Gradient.X * (1 - MapPreset->DropletInertia));
             DirY = (DirY * MapPreset->DropletInertia) - (Gradient.Y * (1 - MapPreset->DropletInertia));
@@ -308,7 +311,7 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
             }
             
             // 이동 후 높이와 높이 차이 계산
-            float NewHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, PosX, PosY, Gradient);
+            float NewHeight = CalculateHeightAndGradient(MapPreset, HeightMapFloat, LandscapeScale, PosX, PosY, Gradient);
             if (NewHeight <= SeaLevelHeight)
                 break;
             float HeightDifference = NewHeight - CurrentHeight;
@@ -418,7 +421,7 @@ void UOCGMapGenerateComponent::InitializeErosionBrush()
     CurrentErosionRadius = MapPreset->ErosionRadius;
 }
 
-float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap,
+float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap, const float LandscapeScale, 
     float PosX, float PosY,FVector2D& OutGradient)
 {
     int32 CoordX = static_cast<int32>(PosX);
@@ -441,8 +444,8 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
     float Height_11 = HeightMap[Index_11];
 
     // 경사(Gradient) 계산
-    OutGradient.X = (Height_10 - Height_00) * (1 - y) + (Height_11 - Height_01) * y;
-    OutGradient.Y = (Height_01 - Height_00) * (1 - x) + (Height_11 - Height_10) * x;
+    OutGradient.X = (Height_10 - Height_00) * (1 - y) + (Height_11 - Height_01) * y / LandscapeScale;
+    OutGradient.Y = (Height_01 - Height_00) * (1 - x) + (Height_11 - Height_10) * x / LandscapeScale;
 
     // 높이(Bilinear Interpolation) 계산
     return Height_00 * (1 - x) * (1 - y) + Height_10 * x * (1 - y) + Height_01 * (1 - x) * y + Height_11 * x * y;
@@ -663,7 +666,7 @@ void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, cons
     float Min = MapPreset->MaxHeight;
     for (int32 i=0; i < TotalPixel; i++)
     {
-        HeightMapFloat[i] = (InHeightMap[i] - 32768.f)*100.f/128.f;
+        HeightMapFloat[i] = (InHeightMap[i] - 32768.f) * 100.f * MapPreset->LandscapeScale / 128.f;
         if (HeightMapFloat[i] > Max)
             Max = HeightMapFloat[i];
         if (HeightMapFloat[i] < Min)
