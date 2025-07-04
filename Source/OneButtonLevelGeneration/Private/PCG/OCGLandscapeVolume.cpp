@@ -19,6 +19,7 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
 	PCGComponent->SetIsPartitioned(true);
+	PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
@@ -35,4 +36,21 @@ void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
 
 	// Set the BoxComponent's extent to match the target actor's bounding box extent
 	BoxComponent->SetBoxExtent(BoxExtent);
+}
+
+void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (!PropertyChangedEvent.MemberProperty)
+	{
+		return;
+	}
+
+	const FName PropertyName = PropertyChangedEvent.GetMemberPropertyName();
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bEditorAutoGenerate))
+	{
+		PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
+	}
 }

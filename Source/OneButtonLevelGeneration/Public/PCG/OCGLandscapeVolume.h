@@ -26,12 +26,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "OneClickGeneration|Utilities")
 	void AdjustVolumeToBoundsOfActor(const AActor* TargetActor);
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
 	const UMapPreset* MapPreset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bShowDebugPoints = false;
+
+#if WITH_EDITOR
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
+	bool bEditorAutoGenerate = true;
+#endif
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

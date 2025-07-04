@@ -47,7 +47,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	bool bContainWater = true;
-	
+
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "OCG")
 	bool bExportMaps = false;
@@ -58,12 +58,19 @@ public:
 	FOCGBiomeSettings WaterBiome{TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f};
 
 public:
+	/** The PCG graph to be used for generation. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
 
+	/** Whether to show debug points for PCG generation. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bShowDebugPoints = false;
 
+	/** Whether to automatically generate the PCG graph. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	bool bAutoGenerate = true;
+
+	/** Forces the regeneration of the PCG graph in the editor. */
 	UFUNCTION(CallInEditor, Category = "PCG")
 	void ForceGenerate() const;
 
@@ -197,7 +204,7 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion")
 	bool bErosion = true;
-	
+
 	// More Iteration gives more erosion details
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
 		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "1"))
