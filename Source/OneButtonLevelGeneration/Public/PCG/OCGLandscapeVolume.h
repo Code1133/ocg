@@ -37,6 +37,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bShowDebugPoints = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OneClickGeneration")
+	bool bShowDebugPointsAngle = false;
+
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bEditorAutoGenerate = true;

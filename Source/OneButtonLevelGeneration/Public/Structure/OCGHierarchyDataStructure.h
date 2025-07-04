@@ -32,20 +32,26 @@ struct FOCGMeshInfo
 };
 
 /**
- * A structure that defines slope limits for mesh generation.
+ * Defines slope angle limits in degrees for mesh generation. Retrieves meshes within the Min to Max angle range.
  */
 USTRUCT(BlueprintType)
 struct FSlopeLimitInfo
 {
 	GENERATED_BODY()
 
-	/** The lower bound of the slope limit, normalized between 0 and 1. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
-	float LowerLimit = 0.5f;
+	/** The minimum slope angle in degrees (0-90). */
+	UPROPERTY(
+		EditAnywhere, BlueprintReadOnly, Category = "OCG",
+		meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 90.0f, UIMax = 90.0f, Units = "Degrees")
+	)
+	float MinAngle = 0.0f;
 
-	/** The upper bound of the slope limit, normalized between 0 and 1. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 1.0f, UIMax = 1.0f))
-	float UpperLimit = 1.0f;
+	/** The maximum slope angle in degrees (0-90). */
+	UPROPERTY(
+		EditAnywhere, BlueprintReadOnly, Category = "OCG",
+		meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 90.0f, UIMax = 90.0f, Units = "Degrees")
+	)
+	float MaxAngle = 45.0f;
 };
 
 /**
@@ -149,6 +155,10 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bOverrideTransformPoint"))
 	FTransformPointInfo TransformPoint;
 
+	/** Whether to prune (remove) meshes that overlap with each other. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bPruningOverlappedMeshes = true;
+
 	/** Distance at which world position offset gets disabled. 0 means always enabled. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
 	int32 WorldPositionOffsetDisableDistance = 0;
@@ -181,8 +191,8 @@ struct FLandscapeHierarchyData
 	TArray<FOCGMeshInfo> Meshes;
 
 	/** Color used to visualize this layer during debugging. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Debug", AdvancedDisplay)
-	FLinearColor DebugColor = FLinearColor::White;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "Point Debug Color", Category = "OCG|Debug", AdvancedDisplay)
+	FLinearColor DebugColorLinear = FLinearColor::White;
 
 	FLandscapeHierarchyData()
 		: Seed(FMath::Rand())
