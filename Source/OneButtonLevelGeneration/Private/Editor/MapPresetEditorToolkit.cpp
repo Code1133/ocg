@@ -3,6 +3,7 @@
 #include "Editor/MapPresetEditorToolkit.h"
 
 #include "FileHelpers.h"
+#include "Landscape.h"
 #include "OCGLevelGenerator.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
@@ -28,7 +29,7 @@ const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
 const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
 const FName GMapPresetEditor_MaterialDetailsTabId(TEXT("MapPresetEditor_MaterialDetails"));
 const FName GMapPresetEditor_EnvLightMixerTabId(TEXT("MapPresetEditor_EnvLightMixer"));
-
+const FName GMapPresetEditor_LandscapeDetailsTabId(TEXT("MapPresetEditor_LandscapeDetails"));
 
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
                                          const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
@@ -174,6 +175,9 @@ void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabMan
 
 	InTabManager->RegisterTabSpawner(GMapPresetEditor_EnvLightMixerTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab))
 		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer"))).SetGroup(MenuRoot);
+
+	InTabManager->RegisterTabSpawner(GMapPresetEditor_LandscapeDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_LandscapeTab))
+		.SetDisplayName(FText::FromString(TEXT("Landscape Details"))).SetGroup(MenuRoot);
 }
 
 void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
@@ -201,11 +205,11 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Details(const FSpawnTabAr
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Details")))
 		[
-			CreateTabBody()
+			CreateMapPresetTabBody()
 		];
 }
 
-TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
+TSharedRef<SWidget> FMapPresetEditorToolkit::CreateMapPresetTabBody()
 {
 	// Load PropertyEditorModule
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
@@ -227,6 +231,32 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateTabBody()
 		];
 }
 
+TSharedRef<SWidget> FMapPresetEditorToolkit::CreateLandscapeTabBody()
+{
+	// Load PropertyEditorModule
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	// Set Args
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.bHideSelectionTip = true;
+
+	LandscapeDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+	// Landscape 생성 전후에 안전하게 처리하기
+	ALandscape* SpawnedLandscape = LevelGenerator.IsValid()
+		? LevelGenerator->GetLandscape()
+		: nullptr;
+	
+	LandscapeDetailsView->SetObject(SpawnedLandscape);
+
+	// Create and return the vertical box containing the DetailsView
+	return SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.FillHeight(1.0f)
+		[
+			LandscapeDetailsView.ToSharedRef()
+		];
+}
+
 TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
@@ -234,6 +264,15 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FS
 	[
 		EnvironmentLightingViewer.ToSharedRef()
 	];
+}
+
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_LandscapeTab(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab)
+		.Label(FText::FromString(TEXT("Landscape Details")))
+		[
+			CreateLandscapeTabBody()
+		];
 }
 
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
@@ -425,6 +464,9 @@ void FMapPresetEditorToolkit::Generate() const
 	if (LevelGenerator.IsValid() && MapPresetEditorWorld)
 	{
 		LevelGenerator->OnClickGenerate(MapPresetEditorWorld);
+		
+		LandscapeDetailsView->SetObject(LevelGenerator->GetLandscape());
+		LandscapeDetailsView->ForceRefresh();
 	}
 }
 

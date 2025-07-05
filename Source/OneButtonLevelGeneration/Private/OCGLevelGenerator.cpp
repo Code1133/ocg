@@ -94,6 +94,11 @@ const ALandscape* AOCGLevelGenerator::GetLandscape() const
 	return LandscapeGenerateComponent->GetLandscape();
 }
 
+ALandscape* AOCGLevelGenerator::GetLandscape()
+{
+	return LandscapeGenerateComponent->GetLandscape();
+}
+
 void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;

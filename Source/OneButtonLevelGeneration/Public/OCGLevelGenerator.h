@@ -32,12 +32,14 @@ public:
 	
 	UOCGMapGenerateComponent* GetMapGenerateComponent() { return MapGenerateComponent; }
 	UOCGTerrainGenerateComponent* GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
+	UOCGLandscapeGenerateComponent* GetLandscapeGenerateComponent() { return LandscapeGenerateComponent; }
 
 	const TArray<uint16>& GetHeightMapData() const;
 	const TArray<uint16>& GetTemperatureMapData() const;
 	const TArray<uint16>& GetHumidityMapData() const;
 	const TMap<FName, TArray<uint8>>& GetWeightLayers() const;
 	const ALandscape* GetLandscape() const;
+	ALandscape* GetLandscape();
 
 	void SetMapPreset(UMapPreset* InMapPreset);
 

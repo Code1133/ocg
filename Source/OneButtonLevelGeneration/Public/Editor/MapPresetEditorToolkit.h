@@ -45,9 +45,12 @@ protected:
 	TSharedRef<SDockTab> SpawnTab_Details(const FSpawnTabArgs& Args);
 	// 환경 라이팅 믹서 탭 생성 함수
 	TSharedRef<SDockTab> SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args);
+
+	TSharedRef<SDockTab> SpawnTab_LandscapeTab(const FSpawnTabArgs& Args);
 	// 탭의 본문 위젯 생성 함수
-	TSharedRef<SWidget> CreateTabBody();
-	
+	TSharedRef<SWidget> CreateMapPresetTabBody();
+
+	TSharedRef<SWidget> CreateLandscapeTabBody();
 private:
 	// 편집 중인 UMapPreset 에셋
 	TWeakObjectPtr<UMapPreset> EditingPreset = nullptr;
@@ -58,6 +61,7 @@ private:
 	// 기본 액터 디테일 띄우기 위한 프로퍼티들
 	TSharedPtr<IDetailsView> DefaultActorDetails;
 
+	TSharedPtr<IDetailsView> LandscapeDetailsView;
 private:
 	/** 툴바에 버튼을 추가하는 함수 */
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
