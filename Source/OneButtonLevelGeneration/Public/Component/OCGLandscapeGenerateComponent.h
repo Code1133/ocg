@@ -35,6 +35,7 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 public:
 	ALandscape* GetLandscape() const { return TargetLandscape; }
+	const TArray<FIntPoint>& GetCachedRiverStartPoints() const { return CachedRiverStartPoints; }
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
 	TObjectPtr<ALandscape> TargetLandscape;
@@ -63,6 +64,9 @@ private:
 
 	bool CreateRuntimeVirtualTextureVolume(ALandscape* InLandscapeActor);
 
+	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
+	void CachePointsForRiverGeneration();
+
 	TObjectPtr<URuntimeVirtualTexture> ColorRVT = nullptr;
 	TObjectPtr<URuntimeVirtualTexture> HeightRVT = nullptr;
 	TObjectPtr<URuntimeVirtualTexture> DisplacementRVT = nullptr;
@@ -71,4 +75,6 @@ private:
 	float CachedGlobalMaxTemp;
 	float CachedGlobalMinHumidity;
 	float CachedGlobalMaxHumidity;
+
+	TArray<FIntPoint> CachedRiverStartPoints;
 };

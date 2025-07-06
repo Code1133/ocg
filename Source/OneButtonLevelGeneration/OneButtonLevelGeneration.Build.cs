@@ -51,7 +51,8 @@ public class OneButtonLevelGeneration : ModuleRules
 				"InputCore",
 				"DeveloperSettings", 
 				"VirtualTexturingEditor",
-				"Projects"
+				"Projects", 
+				"Water", "WaterEditor"
 			}  
 			);
 		

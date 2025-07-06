@@ -5,6 +5,7 @@
 #include "FileHelpers.h"
 #include "Landscape.h"
 #include "OCGLevelGenerator.h"
+#include "WaterBodyActor.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
 #include "Editor/MapPresetEditorCommands.h"
@@ -413,6 +414,12 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 		{
 			DuplicatedWorld->DestroyActor(Actor);
 		}
+
+		if (Actor && Actor->IsA<AWaterBody>())
+		{
+			AWaterBody* WaterBodyActor = Cast<AWaterBody>(Actor);
+			WaterBodyActor->GetWaterBodyComponent()->UpdateWaterZones();
+		}
 	}
 
 	if (DuplicatedLevel->Model != NULL
@@ -464,9 +471,11 @@ void FMapPresetEditorToolkit::Generate() const
 	if (LevelGenerator.IsValid() && MapPresetEditorWorld)
 	{
 		LevelGenerator->OnClickGenerate(MapPresetEditorWorld);
-		
-		LandscapeDetailsView->SetObject(LevelGenerator->GetLandscape());
-		LandscapeDetailsView->ForceRefresh();
+		if (LandscapeDetailsView)
+		{
+			LandscapeDetailsView->SetObject(LevelGenerator->GetLandscape());
+			LandscapeDetailsView->ForceRefresh();
+		}
 	}
 }
 

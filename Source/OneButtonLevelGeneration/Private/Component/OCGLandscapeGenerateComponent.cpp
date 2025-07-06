@@ -16,6 +16,7 @@
 #include "VT/RuntimeVirtualTextureVolume.h"
 #include "Components/RuntimeVirtualTextureComponent.h"
 #include "RuntimeVirtualTextureSetBounds.h"
+#include "Component/OCGMapGenerateComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_EDITOR
@@ -211,6 +212,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
     
     CreateRuntimeVirtualTextureVolume(TargetLandscape);
+    CachePointsForRiverGeneration();
 #endif
 }
 
@@ -491,4 +493,75 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
 
     return true;
 #endif
+}
+
+FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
+{
+    if (!TargetLandscape || !GetLevelGenerator())
+    {
+        UE_LOG(LogTemp , Error, TEXT("TargetLandscape or MapPreset is not set. Cannot get world position."));
+        return FVector::ZeroVector;
+    }
+
+    const UMapPreset* MapPreset = GetLevelGenerator()->GetMapPreset();
+
+    float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
+    float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
+	
+    FVector WorldLocation = LandscapeOrigin + FVector(
+        2 * (MapPoint.X / (float)MapPreset->MapResolution.X) * LandscapeExtent.X + OffsetX,
+        2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y + OffsetY,
+        0.0f 
+    );
+
+    int Index = MapPoint.Y * MapPreset->MapResolution.X + MapPoint.X;
+    float HeightMapValue = GetLevelGenerator()->GetHeightMapData()[Index];
+
+    WorldLocation.Z  = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; // Adjust height based on the height map value and scale
+	
+    return WorldLocation;
+}
+
+void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
+{
+    if (!TargetLandscape || !GetLevelGenerator() || !GetLevelGenerator()->GetMapPreset())
+    {
+        UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
+        return;
+    }
+
+    if (GetLevelGenerator()->GetMapPreset()->bGenerateRiver == false)
+    {
+        return;
+    }
+
+    CachedRiverStartPoints.Empty();
+    
+    const UMapPreset* MapPreset = GetLevelGenerator()->GetMapPreset();
+    
+    // Ensure the multiplier is within a reasonable range
+	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverStartPointThresholdMultiplier, 0.0f, 1.0f);
+    float MaxHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMaxHeight() * MapPreset->LandscapeScale;
+    float MinHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMinHeight() * MapPreset->LandscapeScale;
+    
+    float SeaHeight = MinHeight + 
+        (MaxHeight - MinHeight) * MapPreset->SeaLevel - 1;
+    
+    uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
+    UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
+
+    FBox LandscapeBounds = TargetLandscape->GetComponentsBoundingBox();
+    FVector LandscapeOrigin = LandscapeBounds.GetCenter();
+    FVector LandscapeExtent = LandscapeBounds.GetExtent();
+    for (int32 y = 0; y < MapPreset->MapResolution.Y; ++y)
+    {
+        for (int32 x = 0; x < MapPreset->MapResolution.X; ++x)
+        {
+            FVector WorldLocation = GetLandscapePointWorldPosition(FIntPoint(x, y), LandscapeOrigin, LandscapeExtent);
+            if (WorldLocation.Z >= HighThreshold)
+            {
+                CachedRiverStartPoints.Add(FIntPoint(x, y));
+            }
+        }
+    }
 }

@@ -60,7 +60,9 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 		RiverGenerateComponent->SetMapData(
 			MapGenerateComponent->GetHeightMapData(),
-			MapPreset
+			MapPreset, 
+			MapGenerateComponent->GetMinHeight(),
+			MapGenerateComponent->GetMaxHeight()
 		);
 
 		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
