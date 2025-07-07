@@ -21,6 +21,7 @@ UOCGRiverGeneratorComponent::UOCGRiverGeneratorComponent()
 
 void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape)
 {
+	TargetLandscape = InLandscape;
 	// Clear previously generated rivers
 	for (AWaterBodyRiver* River : GeneratedRivers)
 	{
@@ -116,8 +117,9 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 					{
 						CostSoFar.Add(Neighbor, NewCost);
 						int32 nIdx = Neighbor.Y * MapResolution.X + Neighbor.X;
-						float Heuristic = HeightMapData[nIdx] - SeaHeight; 
-						float NewPriority = NewCost + Heuristic;
+						// float Heuristic = HeightMapData[nIdx] - SeaHeight; 
+						// float NewPriority = NewCost + Heuristic;
+						float NewPriority = HeightMapData[nIdx];
 						Frontier.Add({Neighbor, NewPriority});
 						CameFrom.Add(Neighbor, Current);
 					}
@@ -138,7 +140,7 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 			Algo::Reverse(RiverPath);
 			
 			TArray<FVector> SimplifiedRiverPath;
-			SimplifyPathRDP(RiverPath, SimplifiedRiverPath, 1000.0f);
+			SimplifyPathRDP(RiverPath, SimplifiedRiverPath, MapPreset->RiverSpineSimplifyEpsilon);
 
 			// Generate AWaterBodyRiver Actor
 			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent);
@@ -157,8 +159,8 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 					WaterZone->SetZoneExtent(FVector2D(LandscapeSize.X, LandscapeSize.Y));
 				}
 			}
+			SetRiverWidth(WaterBodyRiver, SimplifiedRiverPath);
 			SetDefaultRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
-
 			GeneratedRivers.Add(WaterBodyRiver);
 		}
 	}
@@ -180,14 +182,30 @@ void UOCGRiverGeneratorComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, c
 		return;
 	}
 
+	UCurveFloat* RiverWidthCurve = MapPreset ? MapPreset->RiverWidthCurve : nullptr;
 	UWaterSplineMetadata* SplineMetadata = Cast<UWaterSplineMetadata>(InRiverActor->GetWaterBodyComponent()->GetWaterSpline()->GetSplinePointsMetadata());
-	if (!SplineMetadata)
+	
+	if (!SplineMetadata || !RiverWidthCurve)
 	{
 		return;
 	}
 
+	const int32 NumPoints = InRiverPath.Num();
+
+	SplineMetadata->RiverWidth.Points.SetNum(NumPoints);
+	for (int32 i = 0; i < NumPoints; ++i)
+	{
+		const float NormalizedDistance = (NumPoints > 1) ? static_cast<float>(i) / (NumPoints - 1) : 0.0f;
+		const float DesiredWidth = RiverWidthCurve->GetFloatValue(NormalizedDistance);
+
+		SplineMetadata->RiverWidth.Points[i].InVal = NormalizedDistance;
+		SplineMetadata->RiverWidth.Points[i].OutVal = DesiredWidth;
+	}
+	FOnWaterBodyChangedParams Params;
+	Params.bShapeOrPositionChanged = true; // Spline 등 Shape이 바뀌었음을 명시
+	Params.bUserTriggered = true;          // (선택) 사용자 직접 트리거
 	
-	
+	InRiverActor->GetWaterBodyComponent()->UpdateAll(Params);
 }
 
 FVector UOCGRiverGeneratorComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
@@ -207,8 +225,15 @@ FVector UOCGRiverGeneratorComponent::GetLandscapePointWorldPosition(const FIntPo
 	int Index = MapPoint.Y * MapPreset->MapResolution.X + MapPoint.X;
 	float HeightMapValue = HeightMapData[Index];
 
-	WorldLocation.Z  = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; // Adjust height based on the height map value and scale
-	
+	TOptional<float> Height = TargetLandscape->GetHeightAtLocation(WorldLocation);
+	if (Height.IsSet())
+	{
+		WorldLocation.Z = Height.GetValue();
+	}
+	else
+	{
+		WorldLocation.Z = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; // Default to 0 if height is not set
+	}
 	return WorldLocation;
 }
 

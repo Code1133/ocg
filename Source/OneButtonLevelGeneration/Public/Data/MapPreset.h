@@ -283,17 +283,25 @@ public:
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
 
 public:
-	// Generates River
+	// Generates River. If true, the following river settings will be displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings")
-	uint8 bGenerateRiver : 1;
+	uint8 bGenerateRiver : 1 = false;
 
-	// Count of rivers to generate
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (ClampMin = "0", ClampMax = "10", UIMin = "0", UIMax = "10"))
+	// Count of rivers to generate.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0", ClampMax = "10", UIMin = "0", UIMax = "10"))
 	int32 RiverCount = 1;
 
-	// Determines river's start point. 1.0 means the river will start at the highest point of the landscape, 0.5 means it will start at the middle height;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
+	// Determines river's start point. 1.0 means the river will start at the highest point of the landscape, 0.5 means it will start at the middle height.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
 	float RiverStartPointThresholdMultiplier = 0.8f;
+
+	// Intensity of Simplifing River Path. Higher value means more simplification, lower value means less simplification.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
+	float RiverSpineSimplifyEpsilon = 200.f;
+
+	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverWidthCurve;
 
 public:
 	// The Material used for Landscape

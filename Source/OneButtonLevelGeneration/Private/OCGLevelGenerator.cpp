@@ -119,6 +119,7 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 		return;
 	}
 
+	// !TODO : WaterBodyCustom으로 교체
 	// GetPlaneStaticMesh
 	const FString PlaneMeshPath = TEXT("/Engine/BasicShapes/Plane.Plane");
 	UStaticMesh* PlaneMesh = LoadObject<UStaticMesh>(nullptr, *PlaneMeshPath);

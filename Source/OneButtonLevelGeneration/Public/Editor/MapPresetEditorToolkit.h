@@ -72,6 +72,7 @@ private:
 	/** 툴킷의 UI 커맨드 리스트 */
 	TSharedPtr<FUICommandList> ToolkitCommands;
 
+	UWorld* CreateEditorWorld();
 	void SetupDefaultActors();
 	void ExportPreviewSceneToLevel();
 	void Generate() const;

@@ -9,16 +9,6 @@
 class UMapPreset;
 class AWaterBodyRiver;
 
-struct FCompareNode
-{
-	bool operator()(const TTuple<FIntPoint, float>& A, const TTuple<FIntPoint, float>& B) const
-	{
-		// B의 우선순위가 더 낮으면(값이 크면) A가 앞으로 가야 하므로 true를 반환합니다.
-		// 즉, A의 우선순위 값이 더 작을 때 true가 됩니다.
-		return A.Get<1>() < B.Get<1>();
-	}
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ONEBUTTONLEVELGENERATION_API UOCGRiverGeneratorComponent : public UActorComponent
 {
@@ -56,6 +46,9 @@ private:
 	// Generated rivers
 	UPROPERTY(Transient)
 	TArray<AWaterBodyRiver*> GeneratedRivers;
+
+	UPROPERTY(Transient)
+	TObjectPtr<ALandscape> TargetLandscape;
 	
 	TSet<FIntPoint> UsedRiverStartPoints;
 };

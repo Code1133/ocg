@@ -23,6 +23,7 @@
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
+#include "Factories/WorldFactory.h"
 
 class ADirectionalLight;
 
@@ -50,13 +51,14 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	EditingPreset = MapPreset;
 	EditingPreset->EditorToolkit = SharedThis(this);
 
-	MapPresetEditorWorld = UWorld::CreateWorld(
-		EWorldType::Editor,
-		true,
-		TEXT("MapPresetEditorWorld"),
-		GetTransientPackage(),
-		true
-		);
+	// MapPresetEditorWorld = UWorld::CreateWorld(
+	// 	EWorldType::Editor,
+	// 	true,
+	// 	TEXT("MapPresetEditorWorld"),
+	// 	GetTransientPackage(),
+	// 	true
+	// 	);
+	MapPresetEditorWorld = CreateEditorWorld();
 
 	if (MapPresetEditorWorld)
 	{
@@ -361,6 +363,23 @@ FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 	ExportPreviewSceneToLevel();
 	
 	return FReply::Handled();
+}
+
+UWorld* FMapPresetEditorToolkit::CreateEditorWorld()
+{
+	UWorldFactory* Factory = NewObject<UWorldFactory>();
+	Factory->WorldType = EWorldType::Editor;
+	Factory->bCreateWorldPartition = true;
+	Factory->bInformEngineOfWorld = true;
+	Factory->FeatureLevel = GEditor->DefaultWorldFeatureLevel;
+	UPackage* Pkg = GetTransientPackage();
+	EObjectFlags Flags = RF_Public | RF_Standalone;
+
+	UWorld* NewWorld = CastChecked<UWorld>(Factory->FactoryCreateNew(UWorld::StaticClass(), Pkg, TEXT("MapPresetTransientWorld"), Flags, NULL, GWarn));
+	NewWorld->AddToRoot();
+	NewWorld->UpdateWorldComponents(true, true);
+
+	return NewWorld;
 }
 
 void FMapPresetEditorToolkit::SetupDefaultActors()
