@@ -52,6 +52,10 @@ struct FSlopeLimitInfo
 		meta = (ClampMin = 0.0f, UIMin = 0.0f, ClampMax = 90.0f, UIMax = 90.0f, Units = "Degrees")
 	)
 	float MaxAngle = 45.0f;
+
+	/** If true, retrieves meshes outside the angle range instead of inside. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bInvert = false;
 };
 
 /**
