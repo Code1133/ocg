@@ -38,6 +38,14 @@ void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
 	BoxComponent->SetBoxExtent(BoxExtent);
 }
 
+void AOCGLandscapeVolume::AdjustVolumeToBoundsOfComponent(const UPrimitiveComponent* Comp)
+{
+	// 방법1: 컴포넌트의 Bounds 프로퍼티 사용
+	const FBoxSphereBounds B = Comp->Bounds;
+	SetActorLocation(B.Origin);
+	BoxComponent->SetBoxExtent(B.BoxExtent);
+}
+
 void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

@@ -37,7 +37,7 @@ void AOCGLevelGenerator::Generate()
 
 	if (TerrainGenerateComponent)
 	{
-		
+		TerrainGenerateComponent->GenerateTerrain(GetWorld());
 	}
 }
 

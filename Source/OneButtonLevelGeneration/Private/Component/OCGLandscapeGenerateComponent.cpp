@@ -20,6 +20,7 @@
 #include "RuntimeVirtualTextureSetBounds.h"
 
 #include "Component/OCGMapGenerateComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_EDITOR
@@ -145,7 +146,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
     FIntPoint MapResolution = MapPreset->MapResolution;
 	
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
     	//InitializeLandscapeSetting(World);
     }
 	
@@ -196,7 +197,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
     }
 
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
     	// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
     	//
     	// const float RawScaleX = MapPreset->Landscape_Kilometer * 1000.f * 100.f / MapResolution.X;
@@ -266,7 +267,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
     );
 
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
     	// TargetLandscape->Import(
     	// 	FGuid::NewGuid(),
     	// 	0, 0,
@@ -280,6 +281,8 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     	// 	TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
     	// );    
     }
+
+	FActorLabelUtilities::SetActorLabelUnique(TargetLandscape, ALandscape::StaticClass()->GetName());
 	
     AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 
@@ -288,16 +291,57 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     // 액터 등록 및 뷰포트 업데이트
     TargetLandscape->RegisterAllComponents();
     GEditor->RedrawAllViewports();
+	
+	TargetLandscape->ForceUpdateLayersContent(true);
 
-    TargetLandscape->ForceUpdateLayersContent(true);
+	// 1) 저장할 레벨 패키지 가져오기
+	ULevel* Level = World->PersistentLevel;
+	UPackage* LevelPackage = Level->GetOutermost();
 
-    TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
-    TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
-    TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
-    
-    CreateRuntimeVirtualTextureVolume(TargetLandscape);
-    CachePointsForRiverGeneration();
+	TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
+	TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
+	TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+
+	// 2) 언리얼 에디터용 파일유틸로 체크아웃(소스컨트롤) 및 저장
+	FEditorFileUtils::EPromptReturnCode Result = FEditorFileUtils::PromptForCheckoutAndSave(
+		{ LevelPackage },
+		/*bCheckDirty=*/ false,
+		/*bPromptToSave=*/ false
+	);
+
+	if (Result == FEditorFileUtils::PR_Success)
+	{
+		CreateRuntimeVirtualTextureVolume(TargetLandscape);
+	}
+	
+	//CachePointsForRiverGeneration();
 #endif
+}
+
+void UOCGLandscapeGenerateComponent::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bPromptUser)
+{
+	if (!World || !World->IsEditorWorld())
+		return;
+
+	if (World != GetWorld())
+		return;
+
+	for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
+	{
+		if (ALandscape* CurLandscape = Cast<ALandscape>(It->GetLandscapeActor()))
+		{
+			if (CurLandscape == TargetLandscape)
+			{
+				// 한 번만 실행할 로직
+				CurLandscape->RuntimeVirtualTextures.Add(ColorRVT);
+				CurLandscape->RuntimeVirtualTextures.Add(HeightRVT);
+				CurLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+		
+				CreateRuntimeVirtualTextureVolume(CurLandscape);
+				break;
+			}
+		}
+	}
 }
 
 void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(UWorld* World)
@@ -383,9 +427,15 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
 #if WITH_EDITOR
     ULandscapeInfo* LandscapeInfo = Landscape->GetLandscapeInfo();
     ALandscapeProxy* LandscapeProxy = nullptr;
+	AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+	UMapPreset* MapPreset = nullptr;
+	if (LevelGenerator)
+	{
+		MapPreset = LevelGenerator->GetMapPreset();
+	}
     
     ULandscapeSubsystem* LandscapeSubsystem = World->GetSubsystem<ULandscapeSubsystem>();
-    LandscapeSubsystem->ChangeGridSize(LandscapeInfo, WorldPartitionGridSize);
+    LandscapeSubsystem->ChangeGridSize(LandscapeInfo, MapPreset->WorldPartitionGridSize);
 	
     if (LandscapeInfo)
     {
@@ -399,12 +449,6 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
 	}
     
 	bool bLandscapeLargerThanRegion = false;
-	AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-	UMapPreset* MapPreset = nullptr;
-	if (LevelGenerator)
-	{
-		MapPreset = LevelGenerator->GetMapPreset();
-	}
 	
 	if (MapPreset)
 	{
@@ -875,7 +919,12 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     {
         return false;
     }
-
+	for (ARuntimeVirtualTextureVolume* RVTVolume : CachedRuntimeVirtualTextureVolumes)
+	{
+		RVTVolume->Destroy();
+	}
+	CachedRuntimeVirtualTextureVolumes.Empty();
+	
     TArray<URuntimeVirtualTexture*> VirtualTextureVolumesToCreate;
     GetMissingRuntimeVirtualTextureVolumes(InLandscapeActor, VirtualTextureVolumesToCreate);
     if (VirtualTextureVolumesToCreate.Num() == 0)
@@ -885,12 +934,14 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     
     for (URuntimeVirtualTexture* VirtualTexture : VirtualTextureVolumesToCreate)
     {
-        ARuntimeVirtualTextureVolume* NewVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
-        NewVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
-        NewVolume->VirtualTextureComponent->SetBoundsAlignActor(InLandscapeActor);
-        RuntimeVirtualTexture::SetBounds(NewVolume->VirtualTextureComponent);
-        
-        NewVolume->VirtualTextureComponent->SetBoundsAlignActor(nullptr);
+    	ARuntimeVirtualTextureVolume* NewRVTVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
+    	NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
+    	
+    	NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
+    	NewRVTVolume->VirtualTextureComponent->SetBoundsAlignActor(InLandscapeActor);
+  
+    	RuntimeVirtualTexture::SetBounds(NewRVTVolume->VirtualTextureComponent);
+    	CachedRuntimeVirtualTextureVolumes.Add(NewRVTVolume);
     }
 
     return true;

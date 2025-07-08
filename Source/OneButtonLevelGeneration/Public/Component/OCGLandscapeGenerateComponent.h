@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGLandscapeGenerateComponent.generated.h"
 
+class ARuntimeVirtualTextureVolume;
 class UMapPreset;
 class ALandscapeProxy;
 class ULandscapeLayerInfoObject;
@@ -63,6 +64,8 @@ public:
 	void GenerateLandscape(UWorld* World);
 	
 private:
+	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bPromptUser);
+	
 	void InitializeLandscapeSetting(UWorld* World);
 	
 	void AddTargetLayers(ALandscape* Landscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
@@ -82,7 +85,6 @@ private:
 		Algo::Transform(InObjects, Packages, [](UObject* InObject) { return InObject->GetPackage(); });
 		UEditorLoadingAndSavingUtils::SavePackages(Packages, /* bOnlyDirty = */ false);
 	}
-
 	
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset);
 
@@ -109,4 +111,6 @@ private:
 	float CachedGlobalMaxHumidity;
 
 	TArray<FIntPoint> CachedRiverStartPoints;
+
+	TArray<ARuntimeVirtualTextureVolume*> CachedRuntimeVirtualTextureVolumes;
 };

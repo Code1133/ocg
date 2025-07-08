@@ -33,5 +33,8 @@ private:
 	TObjectPtr<AOCGLandscapeVolume> OCGVolumeInstance;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
+	TArray<TObjectPtr<AOCGLandscapeVolume>> OCGVolumeInstances;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
 	TSubclassOf<AOCGLandscapeVolume> TargetVolumeClass;
 };
