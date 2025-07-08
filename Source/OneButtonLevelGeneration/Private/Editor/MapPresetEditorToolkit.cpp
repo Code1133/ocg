@@ -24,6 +24,7 @@
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Factories/WorldFactory.h"
+#include "Grid/PCGPartitionActor.h"
 
 class ADirectionalLight;
 
@@ -419,27 +420,39 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 	Parameters.DestClass = SourceWorld->GetClass();
 	Parameters.DuplicateMode = EDuplicateMode::World;
 	Parameters.PortFlags = PPF_Duplicate;
-
+	
 	UWorld* DuplicatedWorld = CastChecked<UWorld>(StaticDuplicateObjectEx(Parameters));
 	DuplicatedWorld->SetFeatureLevel(SourceWorld->GetFeatureLevel());
-
+	
 	ULevel* SourceLevel = SourceWorld->PersistentLevel;
 	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
-
+	
 	// Remove OCGLevelGenerator actors from the duplicated level
+	TArray<AActor*> ActorsToDestroy;
+	
 	for (AActor* Actor : DuplicatedLevel->Actors)
 	{
-		if (Actor && Actor->IsA<AOCGLevelGenerator>())
+		if (Actor && (Actor->IsA<AOCGLevelGenerator>() || Actor->IsA<APCGPartitionActor>()))
 		{
-			DuplicatedWorld->DestroyActor(Actor);
+			ActorsToDestroy.Add(Actor);
 		}
-
+	
 		if (Actor && Actor->IsA<AWaterBody>())
 		{
 			AWaterBody* WaterBodyActor = Cast<AWaterBody>(Actor);
 			WaterBodyActor->GetWaterBodyComponent()->UpdateWaterZones();
 		}
 	}
+
+	for (AActor* Actor : ActorsToDestroy)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+
+	CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
 
 	if (DuplicatedLevel->Model != NULL
 		&& DuplicatedLevel->Model == SourceLevel->Model
@@ -453,7 +466,7 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 			DstComponent->CopyElementsFrom(SrcComponent);
 		}
 	}
-
+	
 	// Enable World Bounds Checks
 	DuplicatedWorld->GetWorldSettings()->bEnableWorldBoundsChecks = true;
 	
@@ -469,13 +482,13 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 	{
 		DestWorldPackage->ClearFlags(RF_Standalone);
 		DestWorldPackage->MarkAsGarbage();
-	
+		
 		GEngine->DestroyWorldContext(DuplicatedWorld);
 		DuplicatedWorld->DestroyWorld(true);
 		DuplicatedWorld->MarkAsGarbage();
 		DuplicatedWorld->SetFlags(RF_Transient);
 		DuplicatedWorld->Rename(nullptr, GetTransientPackage(), REN_NonTransactional | REN_DontCreateRedirectors);
-
+		
 		CollectGarbage(RF_NoFlags);
 
 		// Show error message

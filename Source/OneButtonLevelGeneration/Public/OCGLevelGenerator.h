@@ -46,13 +46,14 @@ public:
 	const UMapPreset* GetMapPreset() const { return MapPreset; }
 
 	void AddWaterPlane(UWorld* InWorld);
+	void SetDefaultWaterProperties(class AWaterBody* InWaterBody);
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMapPreset> MapPreset;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<AStaticMeshActor> PlaneActor;
+	TObjectPtr<class AWaterBodyCustom> SeaLevelWaterBody;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;

@@ -117,9 +117,9 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 					{
 						CostSoFar.Add(Neighbor, NewCost);
 						int32 nIdx = Neighbor.Y * MapResolution.X + Neighbor.X;
-						// float Heuristic = HeightMapData[nIdx] - SeaHeight; 
-						// float NewPriority = NewCost + Heuristic;
-						float NewPriority = HeightMapData[nIdx];
+						float Heuristic = HeightMapData[nIdx] - SeaHeight; 
+						float NewPriority = NewCost + Heuristic;
+						//float NewPriority = HeightMapData[nIdx];
 						Frontier.Add({Neighbor, NewPriority});
 						CameFrom.Add(Neighbor, Current);
 					}

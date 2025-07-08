@@ -3,6 +3,11 @@
 #include "OCGLevelGenerator.h"
 
 #include "Landscape.h"
+#include "WaterBodyActor.h"
+#include "WaterBodyComponent.h"
+#include "WaterBodyCustomActor.h"
+#include "WaterEditorSettings.h"
+#include "WaterSplineComponent.h"
 #include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "Component/OCGRiverGeneratorComponent.h"
@@ -108,10 +113,10 @@ void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
 
 void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 {
-	if (PlaneActor)
+	if (SeaLevelWaterBody)
 	{
-		PlaneActor->Destroy();
-		PlaneActor = nullptr;
+		SeaLevelWaterBody->Destroy();
+		SeaLevelWaterBody = nullptr;
 	}
 
 	if (!InWorld || !MapPreset || !MapPreset->bContainWater)
@@ -120,35 +125,21 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	}
 
 	// !TODO : WaterBodyCustom으로 교체
-	// GetPlaneStaticMesh
-	const FString PlaneMeshPath = TEXT("/Engine/BasicShapes/Plane.Plane");
-	UStaticMesh* PlaneMesh = LoadObject<UStaticMesh>(nullptr, *PlaneMeshPath);
+
+	SeaLevelWaterBody = InWorld->SpawnActor<AWaterBodyCustom>(AWaterBodyCustom::StaticClass());
+
+	SetDefaultWaterProperties(SeaLevelWaterBody);
 	
-	if (!PlaneMesh)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load Plane mesh at path: %s"), *PlaneMeshPath);
-		return;
-	}
-
-	const FString WaterMaterialPath = TEXT("/DatasmithContent/Materials/Water/M_Water.M_Water");
-	UMaterialInterface* WaterMaterial = LoadObject<UMaterialInterface>(nullptr, *WaterMaterialPath);
-
-	if (!WaterMaterial)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load Water material at path: %s"), *WaterMaterialPath);
-	}
-
 	// Linear Interpolation for sea height
 	float SeaHeight = MapPreset->MinHeight + 
 		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
 	SeaHeight *= MapPreset->LandscapeScale;	
-	FTransform PlaneTransform = FTransform::Identity;
+	FTransform SeaLevelWaterbodyTransform = FTransform::Identity;
 	
-	PlaneTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
-	
-	PlaneActor = InWorld->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), PlaneTransform);
+	SeaLevelWaterbodyTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
 	
 	ALandscape* Landscape = LandscapeGenerateComponent->GetLandscape();
+	
 	if (Landscape)
 	{
 		FVector Extent = Landscape->GetLoadedBounds().GetExtent();
@@ -158,14 +149,56 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 		
 		const FVector RequiredScale(ScaleX, ScaleY, 1.0f);
 		
-		PlaneActor->SetActorScale3D(RequiredScale);
+		SeaLevelWaterBody->SetActorScale3D(RequiredScale);
+	}
+}
+
+void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
+{
+	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InWaterBody)->GetWaterBodyComponent();
+	check(WaterBodyComponent);
+
+	// if (const FWaterBrushActorDefaults* WaterBrushActorDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults.brush)
+	// {
+	// 	WaterBodyComponent->CurveSettings = WaterBrushActorDefaults->CurveSettings;
+	// 	WaterBodyComponent->WaterHeightmapSettings = WaterBrushActorDefaults->HeightmapSettings;
+	// 	WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults->LayerWeightmapSettings;
+	// }
+
+	if (const FWaterBodyDefaults* WaterBodyDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults)
+	{
+		WaterBodyComponent->SetWaterMaterial(WaterBodyDefaults->GetWaterMaterial());
+		WaterBodyComponent->SetWaterStaticMeshMaterial(WaterBodyDefaults->GetWaterStaticMeshMaterial());
+		WaterBodyComponent->SetHLODMaterial(WaterBodyDefaults->GetWaterHLODMaterial());
+		WaterBodyComponent->SetUnderwaterPostProcessMaterial(WaterBodyDefaults->GetUnderwaterPostProcessMaterial());
+
+		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
+		WaterSpline->WaterSplineDefaults = WaterBodyDefaults->SplineDefaults;
 	}
 
-	UStaticMeshComponent* MeshComponent = PlaneActor->GetStaticMeshComponent();
-	if (MeshComponent)
+	// If the water body is spawned into a zone which is using local only tessellation, we must default to enabling static meshes.
+	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
 	{
-		MeshComponent->SetStaticMesh(PlaneMesh);
-		MeshComponent->SetMaterial(0, WaterMaterial);
+		if (WaterZone->IsLocalOnlyTessellationEnabled())
+		{
+			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
+		}
 	}
+
+	AWaterBodyCustom* WaterBodyCustom = CastChecked<AWaterBodyCustom>(InWaterBody);
+	WaterBodyCustom->GetWaterBodyComponent()->SetWaterMeshOverride(GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults.GetWaterMesh());
+
+	UWaterSplineComponent* WaterSpline = WaterBodyCustom->GetWaterSpline();
+	WaterSpline->ResetSpline({ FVector(0, 0, 0) });
+
+	InWaterBody->PostEditChange();
+	InWaterBody->PostEditMove(true);
+
+	FOnWaterBodyChangedParams Params;
+	Params.bShapeOrPositionChanged = true; // Spline 등 Shape이 바뀌었음을 명시
+	Params.bUserTriggered = true;          // (선택) 사용자 직접 트리거
+	
+	InWaterBody->GetWaterBodyComponent()->UpdateAll(Params); // 또는 UpdateAll()
+	InWaterBody->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 
