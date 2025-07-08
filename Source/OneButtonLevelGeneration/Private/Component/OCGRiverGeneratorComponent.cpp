@@ -62,6 +62,9 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 	FVector LandscapeOrigin = InLandscape->GetActorLocation();
 	FVector LandscapeExtent = InLandscape->GetComponentsBoundingBox().GetSize() * 0.5f;
 
+	if (LandscapeExtent.IsNearlyZero())
+		return;
+
 	// Generate River Spline
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
