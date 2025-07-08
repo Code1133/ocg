@@ -75,6 +75,21 @@ public:
 	void ForceGenerate() const;
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	FRotator Landscape_Rotation;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	FVector Landscape_Location;
+	
+	UPROPERTY(EditAnywhere, Category = "World Settings | Basics | Landscape Settings")
+	uint32 Landscape_RegionKilometer = 1;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16))
+	int32 WorldPartitionGridSize = 2;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64))
+	int32 WorldPartitionRegionSize = 16;
+	
 	// Decides Landscape Size(Changes Landscape Actor Scale)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 0.1f))
 	float LandscapeScale = 1;

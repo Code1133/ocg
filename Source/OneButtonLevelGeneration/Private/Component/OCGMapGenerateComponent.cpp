@@ -59,7 +59,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
     //Height Map 채우기
-     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
+    GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
     //온도 맵 생성
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
     //습도 맵 계산
@@ -145,7 +145,7 @@ void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, co
     }
 }
 
-float UOCGMapGenerateComponent::CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const
+float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const
 {
 	const float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
 	// ==========================================================

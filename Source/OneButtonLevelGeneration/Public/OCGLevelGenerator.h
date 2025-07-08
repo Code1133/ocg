@@ -44,6 +44,7 @@ public:
 	void SetMapPreset(UMapPreset* InMapPreset);
 
 	const UMapPreset* GetMapPreset() const { return MapPreset; }
+	UMapPreset* GetMapPreset() { return MapPreset; }
 
 	void AddWaterPlane(UWorld* InWorld);
 	void SetDefaultWaterProperties(class AWaterBody* InWaterBody);

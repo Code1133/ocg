@@ -2,8 +2,10 @@
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
+
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
+#include "PCGCommon.h"
 #include "VisualizeTexture.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/SkyLightComponent.h"
@@ -16,16 +18,27 @@
 #include "VT/RuntimeVirtualTextureVolume.h"
 #include "Components/RuntimeVirtualTextureComponent.h"
 #include "RuntimeVirtualTextureSetBounds.h"
+
 #include "Component/OCGMapGenerateComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeSettings.h"
+#include "LandscapeSubsystem.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
 #include "Util/OCGFileUtils.h"
 #include "Util/OCGMaterialEditTool.h"
+
+#include "LandscapeProxy.h"
+#include "LandscapeSettings.h"
+#include "LandscapeSubsystem.h"
+#include "LocationVolume.h"
+#include "Builders/CubeBuilder.h"
+#include "LandscapeStreamingProxy.h"
+#include "ActorFactories/ActorFactory.h"
+#include "WorldPartition/WorldPartition.h"
 #endif
 
 static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)
@@ -125,17 +138,26 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 {
 #if WITH_EDITOR
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    UMapPreset* MapPreset = nullptr;
+	if (LevelGenerator)
+	{
+		MapPreset = LevelGenerator->GetMapPreset();
+	}
     FIntPoint MapResolution = MapPreset->MapResolution;
+	
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    	//InitializeLandscapeSetting(World);
+    }
+	
     
     // 랜드스케이프 생성
-    const int32 QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
-    const int32 ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-    const int32 ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-    const int32 QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
+    QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+    ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+    ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+    QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
     
-    const int32 SizeX = ComponentCountX * QuadsPerComponent + 1;
-    const int32 SizeY = ComponentCountY * QuadsPerComponent + 1;
+    SizeX = ComponentCountX * QuadsPerComponent + 1;
+    SizeY = ComponentCountY * QuadsPerComponent + 1;
     const int32 NumPixels = SizeX * SizeY;
 
     if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
@@ -144,26 +166,68 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         return;
     }
     
-    if (TargetLandscape)
-    {
-        TargetLandscape->Destroy();
-    }
+	TArray<ALandscapeStreamingProxy*> ProxiesToDelete;
+	for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
+	{
+		ALandscapeStreamingProxy* Proxy = *It;
+		if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape)
+		{ 
+			ProxiesToDelete.Add(Proxy);
+		}
+	}
+
+	// 2. Proxy 삭제
+	for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
+	{
+		if (Proxy)
+		{
+			Proxy->Destroy();
+		}
+	}
+
+	// 3. Landscape 삭제
+	TargetLandscape->Destroy();
     
     if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
     {
         UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
     }
-    
-    TargetLandscape = World->SpawnActor<ALandscape>();
+
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    	// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
+    	//
+    	// const float RawScaleX = MapPreset->Landscape_Kilometer * 1000.f * 100.f / MapResolution.X;
+    	// const float RawScaleY = MapPreset->Landscape_Kilometer * 1000.f * 100.f / MapResolution.Y;
+    	// const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
+    	//
+    	// // 올림 후 uint32 변환
+    	// const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
+    	// const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
+    	// const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
+    	//    
+    	// const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
+    	// const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * QuadsPerComponent / 2, 0));
+    	//
+    	// TargetLandscape = World->SpawnActor<ALandscape>(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
+    	//TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
+    }
+
+	TargetLandscape = World->SpawnActor<ALandscape>();
     if (!TargetLandscape)
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to spawn ALandscape actor."));
         return;
     }
     TargetLandscape->bCanHaveLayersContent = true;
-    TargetLandscape->bCanHaveLayersContent = true;
     TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
-    
+
+	// automatically calculate a lighting LOD that won't crash lightmass (hopefully)
+	// < 2048x2048 -> LOD0
+	// >=2048x2048 -> LOD1
+	// >= 4096x4096 -> LOD2
+	// >= 8192x8192 -> LOD3
+	TargetLandscape->StaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((SizeX * SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
+	
     // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
     // 키(Key)는 레이어의 고유 ID(GUID)이고, 값(Value)은 해당 레이어의 하이트맵 데이터입니다.
     // 우리는 기본 레이어 하나만 있으므로, 하나만 만들어줍니다.
@@ -178,14 +242,14 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     // 트랜잭션 시작 (Undo/Redo를 위함)
     FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "LandscapeEditor_CreateLandscape", "Create Landscape"));
 
-    // 랜드스케이프의 기본 속성 설정
+    //랜드스케이프의 기본 속성 설정
     float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetZ = (MapPreset->MaxHeight - MapPreset->MinHeight) / 2.f;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
     TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f) * MapPreset->LandscapeScale);
     
-    // Import 함수 호출 (변경된 시그니처에 맞춰서)
+    //Import 함수 호출 (변경된 시그니처에 맞춰서)
     TargetLandscape->Import(
         FGuid::NewGuid(),
         0, 0,
@@ -197,9 +261,26 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         MaterialLayerDataPerLayer,
         ELandscapeImportAlphamapType::Additive,
         TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
-    );    
-    
-    FinalizeLayerInfos(TargetLandscape, MaterialLayerDataPerLayer);
+    );
+
+    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직
+    	// TargetLandscape->Import(
+    	// 	FGuid::NewGuid(),
+    	// 	0, 0,
+    	// 	SizeX - 1, SizeY - 1,
+    	// 	MapPreset->Landscape_SectionsPerComponent,
+    	// 	QuadsPerSection,
+    	// 	HeightmapDataPerLayer,
+    	// 	nullptr,
+    	// 	MaterialLayerDataPerLayer,
+    	// 	ELandscapeImportAlphamapType::Additive,
+    	// 	TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
+    	// );    
+    }
+	
+    AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+
+	ManageLandscapeRegions(World, TargetLandscape);
 
     // 액터 등록 및 뷰포트 업데이트
     TargetLandscape->RegisterAllComponents();
@@ -216,8 +297,40 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 #endif
 }
 
-void UOCGLandscapeGenerateComponent::FinalizeLayerInfos(ALandscape* Landscape,
-	const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers)
+void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(UWorld* World)
+{
+#if WITH_EDITOR
+    AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    
+    bool bIsWorldPartition = false;
+    if (World && World->GetSubsystem<ULandscapeSubsystem>())
+    {
+        bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
+    }
+    
+    bool bLandscapeLargerThanRegion = false;
+    if (MapPreset)
+    {
+        bLandscapeLargerThanRegion = static_cast<int32>(MapPreset->WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.X || static_cast<int32>(MapPreset->WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.Y;
+    }
+    const bool bNeedsLandscapeRegions =  bIsWorldPartition && bLandscapeLargerThanRegion;
+
+    // 랜드스케이프 생성
+    QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+    TotalLandscapeComponentSize = FIntPoint(MapPreset->Landscape_ComponentCount.X, MapPreset->Landscape_ComponentCount.Y);
+    ComponentCountX = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, TotalLandscapeComponentSize.X) : TotalLandscapeComponentSize.X;
+    ComponentCountY = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, TotalLandscapeComponentSize.Y) : TotalLandscapeComponentSize.Y;
+
+    QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
+
+    SizeX = ComponentCountX * QuadsPerComponent + 1;
+    SizeY = ComponentCountY * QuadsPerComponent + 1;
+#endif
+}
+
+void UOCGLandscapeGenerateComponent::AddTargetLayers(ALandscape* Landscape,
+                                                        const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers)
 {
 #if WITH_EDITOR
     if (!Landscape) return;
@@ -260,6 +373,292 @@ void UOCGLandscapeGenerateComponent::FinalizeLayerInfos(ALandscape* Landscape,
         }
     }
 #endif
+}
+
+void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALandscape* Landscape)
+{
+#if WITH_EDITOR
+    ULandscapeInfo* LandscapeInfo = Landscape->GetLandscapeInfo();
+    ALandscapeProxy* LandscapeProxy = nullptr;
+    
+    ULandscapeSubsystem* LandscapeSubsystem = World->GetSubsystem<ULandscapeSubsystem>();
+    LandscapeSubsystem->ChangeGridSize(LandscapeInfo, WorldPartitionGridSize);
+	
+    if (LandscapeInfo)
+    {
+        LandscapeProxy = LandscapeInfo->GetLandscapeProxy();
+    }
+
+	bool bIsWorldPartition = false;
+	if (World && World->GetSubsystem<ULandscapeSubsystem>())
+	{
+		bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
+	}
+    
+	bool bLandscapeLargerThanRegion = false;
+	AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+	UMapPreset* MapPreset = nullptr;
+	if (LevelGenerator)
+	{
+		MapPreset = LevelGenerator->GetMapPreset();
+	}
+	
+	if (MapPreset)
+	{
+		bLandscapeLargerThanRegion = static_cast<int32>(MapPreset->WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.X || static_cast<int32>(MapPreset->WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.Y;
+	}
+	const bool bNeedsLandscapeRegions = bIsWorldPartition && bLandscapeLargerThanRegion;
+
+    if (bNeedsLandscapeRegions)
+    {
+    	TArray<FIntPoint> NewComponents;
+    	NewComponents.Empty(TotalLandscapeComponentSize.X * TotalLandscapeComponentSize.Y);
+    	for (int32 Y = 0; Y < TotalLandscapeComponentSize.Y; Y++)
+    	{
+    		for (int32 X = 0; X < TotalLandscapeComponentSize.X; X++)
+    		{
+    			NewComponents.Add(FIntPoint(X, Y));
+    		}
+    	}
+    	
+    	TArray<ALocationVolume*> RegionVolumes;
+    	FBox LandscapeBounds;
+    	auto AddComponentsToRegion = [this, World, LandscapeProxy, LandscapeInfo, LandscapeSubsystem, &RegionVolumes, &LandscapeBounds, MapPreset](const FIntPoint& RegionCoordinate, const TArray<FIntPoint>& NewComponents)
+    	{
+    		TRACE_CPUPROFILER_EVENT_SCOPE(AddComponentsToRegion);
+    		
+    		// Create a LocationVolume around the region 
+    		int32 RegionSizeXTexels = QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
+    		int32 RegionSizeYTexels = QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
+		
+    		double RegionSizeX = RegionSizeXTexels * LandscapeProxy->GetActorScale3D().X;
+    		double RegionSizeY = RegionSizeYTexels * LandscapeProxy->GetActorScale3D().Y;
+    		ALocationVolume* RegionVolume = CreateLandscapeRegionVolume(World, LandscapeProxy, RegionCoordinate, RegionSizeX);
+    		if (RegionVolume)
+    		{
+    			RegionVolumes.Add(RegionVolume);
+    		}
+		
+    		TArray<ALandscapeProxy*> CreatedStreamingProxies;
+    		AddLandscapeComponent(LandscapeInfo, LandscapeSubsystem, NewComponents, CreatedStreamingProxies);
+		
+    		// ensures all the final height textures have been updated.
+    		LandscapeInfo->ForceLayersFullUpdate();
+    		TRACE_CPUPROFILER_EVENT_SCOPE(SaveCreatedActors);
+    		UWorldPartition::FDisableNonDirtyActorTrackingScope Scope(World->GetWorldPartition(), true);
+    		SaveObjects(MakeArrayView(CreatedStreamingProxies));
+    		LandscapeBounds += LandscapeInfo->GetCompleteBounds();
+			
+    		return true;
+    	};
+
+    	SaveObjects(MakeArrayView(MakeArrayView(TArrayView<ALandscape*>(TArray<ALandscape*> { LandscapeInfo->LandscapeActor.Get() }))));
+
+    	ForEachComponentByRegion(WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
+
+    	// update the zcomponent of the volumes 
+    	//const float ZScale =  LandscapeBounds.Max.Z - LandscapeBounds.Min.Z;
+    	for (ALocationVolume* RegionVolume : RegionVolumes)
+    	{
+    		const FVector Scale = RegionVolume->GetActorScale();
+    		const FVector NewScale{ Scale.X, Scale.Y, 1000000.0f}; //ZScale * 10.0 
+    		RegionVolume->SetActorScale3D(NewScale);
+    	}
+    	
+    	SaveObjects(MakeArrayView(RegionVolumes));
+    	TArray<ALandscapeProxy*> AllProxies;
+		
+    	// save the initial region & unload it
+    	LandscapeInfo->ForEachLandscapeProxy([&AllProxies](ALandscapeProxy* Proxy) {
+			if (Proxy->IsA<ALandscapeStreamingProxy>())
+			{		
+				AllProxies.Add(Proxy);
+				
+			}
+			return true;
+		});
+
+    	TRACE_CPUPROFILER_EVENT_SCOPE(SaveCreatedActors);
+    	UWorldPartition::FDisableNonDirtyActorTrackingScope Scope(World->GetWorldPartition(), true);
+    	SaveObjects(MakeArrayView(AllProxies));
+    }
+#endif
+}
+
+void UOCGLandscapeGenerateComponent::AddLandscapeComponent(ULandscapeInfo* InLandscapeInfo,
+                                                           ULandscapeSubsystem* InLandscapeSubsystem, const TArray<FIntPoint>& InComponentCoordinates,
+                                                           TArray<ALandscapeProxy*>& OutCreatedStreamingProxies)
+{
+    TArray<ULandscapeComponent*> NewComponents;
+	InLandscapeInfo->Modify();
+
+	for (const FIntPoint& ComponentCoordinate : InComponentCoordinates)
+	{
+		ULandscapeComponent* LandscapeComponent = InLandscapeInfo->XYtoComponentMap.FindRef(ComponentCoordinate);
+		if (LandscapeComponent)
+		{
+			continue;
+		}
+
+		// Add New component...
+		FIntPoint ComponentBase = ComponentCoordinate * InLandscapeInfo->ComponentSizeQuads;
+
+		ALandscapeProxy* LandscapeProxy = InLandscapeSubsystem->FindOrAddLandscapeProxy(InLandscapeInfo, ComponentBase);
+		if (!LandscapeProxy)
+		{
+			continue;
+		}
+
+		OutCreatedStreamingProxies.Add(LandscapeProxy);
+
+		LandscapeComponent = NewObject<ULandscapeComponent>(LandscapeProxy, NAME_None, RF_Transactional);
+		NewComponents.Add(LandscapeComponent);
+		LandscapeComponent->Init(
+			ComponentBase.X, ComponentBase.Y,
+			LandscapeProxy->ComponentSizeQuads,
+			LandscapeProxy->NumSubsections,
+			LandscapeProxy->SubsectionSizeQuads
+		);
+
+		TArray<FColor> HeightData;
+		const int32 ComponentVerts = (LandscapeComponent->SubsectionSizeQuads + 1) * LandscapeComponent->NumSubsections;
+		const FColor PackedMidpoint = LandscapeDataAccess::PackHeight(LandscapeDataAccess::GetTexHeight(0.0f));
+		HeightData.Init(PackedMidpoint, FMath::Square(ComponentVerts));
+
+		LandscapeComponent->InitHeightmapData(HeightData, true);
+		LandscapeComponent->UpdateMaterialInstances();
+
+		InLandscapeInfo->XYtoComponentMap.Add(ComponentCoordinate, LandscapeComponent);
+		InLandscapeInfo->XYtoAddCollisionMap.Remove(ComponentCoordinate);
+	}
+
+	// Need to register to use general height/xyoffset data update
+	for (int32 Idx = 0; Idx < NewComponents.Num(); Idx++)
+	{
+		NewComponents[Idx]->RegisterComponent();
+	}
+
+	const bool bHasXYOffset = false;
+	ALandscape* Landscape = InLandscapeInfo->LandscapeActor.Get();
+
+	bool bHasLandscapeLayersContent = Landscape && Landscape->HasLayersContent();
+
+	for (ULandscapeComponent* NewComponent : NewComponents)
+	{
+		if (bHasLandscapeLayersContent)
+		{
+			TArray<ULandscapeComponent*> ComponentsUsingHeightmap;
+			ComponentsUsingHeightmap.Add(NewComponent);
+
+			for (const FLandscapeLayer& Layer : Landscape->GetLayers())
+			{
+				// Since we do not share heightmap when adding new component, we will provided the required array, but they will only be used for 1 component
+				TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
+				NewComponent->AddDefaultLayerData(Layer.Guid, ComponentsUsingHeightmap, CreatedHeightmapTextures);
+			}
+		}
+
+		// Update Collision
+		NewComponent->UpdateCachedBounds();
+		NewComponent->UpdateBounds();
+		NewComponent->MarkRenderStateDirty();
+
+		if (!bHasLandscapeLayersContent)
+		{
+			ULandscapeHeightfieldCollisionComponent* CollisionComp = NewComponent->GetCollisionComponent();
+			if (CollisionComp && !bHasXYOffset)
+			{
+				CollisionComp->MarkRenderStateDirty();
+				CollisionComp->RecreateCollision();
+			}
+		}
+	}
+
+	if (Landscape)
+	{
+		GEngine->BroadcastOnActorMoved(Landscape);
+	}
+}
+
+ALocationVolume* UOCGLandscapeGenerateComponent::CreateLandscapeRegionVolume(UWorld* InWorld,
+    ALandscapeProxy* InParentLandscapeActor, const FIntPoint& InRegionCoordinate, double InRegionSize)
+{
+    const double Shrink = 0.95;
+
+    FVector ParentLocation = InParentLandscapeActor->GetActorLocation();
+    FVector Location = ParentLocation + FVector(InRegionCoordinate.X * InRegionSize, InRegionCoordinate.Y * InRegionSize, 0.0) + FVector(InRegionSize / 2.0, InRegionSize / 2.0, 0.0);
+    FRotator Rotation;
+    FActorSpawnParameters SpawnParameters;
+
+    const FString Label = FString::Printf(TEXT("LandscapeRegion_%i_%i"), InRegionCoordinate.X, InRegionCoordinate.Y);
+    SpawnParameters.Name = FName(*Label);
+    SpawnParameters.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
+
+    ALocationVolume* LocationVolume = InWorld->SpawnActor<ALocationVolume>(Location, Rotation, SpawnParameters);
+    if (LocationVolume == nullptr)
+    {
+        return nullptr;
+    }
+    LocationVolume->SetActorLabel(Label);
+
+    LocationVolume->AttachToActor(InParentLandscapeActor, FAttachmentTransformRules::KeepWorldTransform);
+    FVector Scale{ InRegionSize * Shrink,  InRegionSize * Shrink, InRegionSize * 0.5f };
+    LocationVolume->SetActorScale3D(Scale);
+
+    // Specify a cube shape for the LocationVolume
+    UCubeBuilder* Builder = NewObject<UCubeBuilder>();
+    Builder->X = 1.0f;
+    Builder->Y = 1.0f;
+    Builder->Z = 1.0f;
+    UActorFactory::CreateBrushForVolumeActor(LocationVolume, Builder);
+
+    LocationVolume->Tags.Add(FName("LandscapeRegion"));
+    return LocationVolume;
+}
+
+void UOCGLandscapeGenerateComponent::ForEachComponentByRegion(int32 RegionSize,
+    const TArray<FIntPoint>& ComponentCoordinates,
+    TFunctionRef<bool(const FIntPoint&, const TArray<FIntPoint>&)> RegionFn)
+{
+    if (RegionSize <= 0)
+    {
+        return;
+    }
+
+    TMap<FIntPoint, TArray< FIntPoint>> Regions;
+    for (FIntPoint ComponentCoordinate : ComponentCoordinates)
+    {
+        FIntPoint RegionCoordinate;
+        RegionCoordinate.X = (ComponentCoordinate.X) / RegionSize;
+        RegionCoordinate.Y = (ComponentCoordinate.Y) / RegionSize;
+
+        if (TArray<FIntPoint>* ComponentIndices = Regions.Find(RegionCoordinate))
+        {
+            ComponentIndices->Add(ComponentCoordinate);
+        }
+        else
+        {
+            Regions.Add(RegionCoordinate, TArray<FIntPoint> {ComponentCoordinate});
+        }
+    }
+
+    auto Sorter = [](const FIntPoint& A, const FIntPoint& B)
+    {
+        if (A.Y == B.Y)
+            return A.X < B.X;
+
+        return A.Y < B.Y;
+    };
+
+    Regions.KeySort(Sorter);
+
+    for (const TPair< FIntPoint, TArray< FIntPoint>>& RegionIt : Regions)
+    {
+        if (!RegionFn(RegionIt.Key, RegionIt.Value))
+        {
+            break;
+        }
+    }
 }
 
 TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::PrepareLandscapeLayerData(
