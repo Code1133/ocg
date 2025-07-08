@@ -298,6 +298,9 @@ public:
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
 
 public:
+	// Generates River.
+	UFUNCTION(CallInEditor, Category = "World Settings")
+	void RegenerateRiver();
 	// Generates River. If true, the following river settings will be displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings")
 	uint8 bGenerateRiver : 1 = false;
@@ -314,6 +317,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
 	float RiverSpineSimplifyEpsilon = 200.f;
 
+	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverWidthBaseValue = 2048.0f;
+
+	// Base of the river depth. RiverDepthCurve value will be normalized and multiplied by this value to get the final depth of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverDepthBaseValue = 1024.0f;
+
+	// Base of the river velocity. RiverVelocityCurve value will be normalized and multiplied by this value to get the final velocity of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverVelocityBaseValue = 100.0f;
+	
 	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverWidthCurve;

@@ -3,8 +3,10 @@
 #include "Data/MapPreset.h"
 
 #include "EngineUtils.h"
+#include "OCGLevelGenerator.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
+#include "Component/OCGRiverGeneratorComponent.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
 
@@ -214,5 +216,26 @@ void UMapPreset::ForceGenerate() const
 	if (const AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
 	{
 		VolumeActor->GetPCGComponent()->Generate(true);
+	}
+}
+
+void UMapPreset::RegenerateRiver()
+{
+	if (!OwnerWorld)
+		return;
+
+	AActor* FoundActor = nullptr;
+	for (AActor* Actor : TActorRange<AActor>(OwnerWorld))
+	{
+		if (Actor->IsA<AOCGLevelGenerator>())
+		{
+			FoundActor = Actor;
+			break;
+		}
+	}
+
+	if (AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(FoundActor))
+	{
+		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(OwnerWorld, LevelGenerator->GetLandscape());
 	}
 }

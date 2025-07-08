@@ -33,6 +33,7 @@ public:
 	UOCGMapGenerateComponent* GetMapGenerateComponent() { return MapGenerateComponent; }
 	UOCGTerrainGenerateComponent* GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
 	UOCGLandscapeGenerateComponent* GetLandscapeGenerateComponent() { return LandscapeGenerateComponent; }
+	UOCGRiverGeneratorComponent* GetRiverGenerateComponent() { return RiverGenerateComponent; }
 
 	const TArray<uint16>& GetHeightMapData() const;
 	const TArray<uint16>& GetTemperatureMapData() const;
