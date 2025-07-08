@@ -186,8 +186,11 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 
 	// 3. Landscape 삭제
-	TargetLandscape->Destroy();
-    
+	if (TargetLandscape)
+	{
+		TargetLandscape->Destroy();
+	}
+	
     if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
     {
         UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
