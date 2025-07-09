@@ -685,7 +685,6 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
         return;
     
     FIntPoint MapSize = MapPreset->MapResolution;
-    int32 TotalPixels = MapSize.X * MapSize.Y;
     
     const float SpikeThreshold = (FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle)) *
         100.f * MapPreset->LandscapeScale) * 128.f / LandscapeZScale;
@@ -710,9 +709,6 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
                 const int32 Index = y*MapSize.X + x;
                 float CenterHeight = InOutHeightMap[Index];
 
-                float LargestHeightDiff = 0;
-                int32 SteepestNeighborIndex = -1;
-
                 for (int i=0; i < Neighbors.Num(); i++)
                 {
                     const int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
@@ -724,19 +720,9 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
                     
                     if (HeightDiff > CurrentThreshold)
                     {
-                        if (HeightDiff > LargestHeightDiff)
-                        {
-                            LargestHeightDiff = HeightDiff;
-                            SteepestNeighborIndex = NeighborIndex;
-                        }
+                        uint16 NewHeight = InOutHeightMap[NeighborIndex] + HeightDiff - CurrentThreshold;
+                        InOutHeightMap[NeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
                     }
-                }
-                
-                if (LargestHeightDiff != 0)
-                {
-                    uint16 NewHeight = static_cast<uint16>(InOutHeightMap[SteepestNeighborIndex] + (LargestHeightDiff - SpikeThreshold));
-                    InOutHeightMap[SteepestNeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
-                    SpikeCount++;
                 }
             }
         }
