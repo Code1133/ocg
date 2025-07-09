@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "FileHelpers.h"
-#include "FileHelpers.h"
+#include "ActorPartition/ActorPartitionSubsystem.h"
 #include "Components/ActorComponent.h"
 #include "OCGLandscapeGenerateComponent.generated.h"
 
@@ -99,6 +99,10 @@ private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
 	bool CreateRuntimeVirtualTextureVolume(ALandscape* InLandscapeActor);
+
+	bool ChangeGridSize(UWorld* InWorld, ULandscapeInfo* InLandscapeInfo, uint32 InNewGridSizeInComponents);
+
+	static ALandscapeProxy* FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem, ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord);
 
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 	void CachePointsForRiverGeneration();
