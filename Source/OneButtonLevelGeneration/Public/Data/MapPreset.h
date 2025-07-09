@@ -14,6 +14,8 @@
 class AOCGLevelGenerator;
 class AOCGLandscapeVolume;
 class UPCGGraph;
+
+
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
 UENUM(BlueprintType)
 enum class ELandscapeQuadsPerSection : uint8
@@ -25,6 +27,13 @@ enum class ELandscapeQuadsPerSection : uint8
 	Q63  = 63   UMETA(DisplayName = "63"),
 	Q127 = 127  UMETA(DisplayName = "127"),
 	Q255 = 255  UMETA(DisplayName = "255"),
+};
+
+UENUM(BlueprintType)
+enum class EOCGGenerationTrigger : uint8
+{
+	GenerateOnLoad    UMETA(ToolTip = "Generates only when the component is loaded into the level."),
+	GenerateAtRuntime UMETA(ToolTip = "Generates only when scheduled by the Runtime Generation Scheduler.")
 };
 
 UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
@@ -70,6 +79,10 @@ public:
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;
+
+	/** Whether to generate the PCG graph at runtime. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	EOCGGenerationTrigger GenerationTrigger = EOCGGenerationTrigger::GenerateOnLoad;
 
 	/** Forces the regeneration of the PCG graph in the editor. */
 	UFUNCTION(CallInEditor, Category = "PCG")

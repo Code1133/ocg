@@ -58,7 +58,10 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 			if (UPCGComponent* PCGComponent = OCGVolumeInstance->GetPCGComponent())
 			{
 				PCGComponent->SetGraph(PCGGraph);
-				PCGComponent->Generate(true);
+				if (PCGComponent->bRegenerateInEditor)
+				{
+					PCGComponent->Generate(true);
+				}
 			}
 		}
 	}

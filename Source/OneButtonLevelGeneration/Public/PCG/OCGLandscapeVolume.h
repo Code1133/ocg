@@ -26,9 +26,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "OneClickGeneration|Utilities")
 	void AdjustVolumeToBoundsOfActor(const AActor* TargetActor);
 
-	UFUNCTION(BlueprintCallable, Category = "OneClickGeneration|Utilities")
-	void AdjustVolumeToBoundsOfComponent(const UPrimitiveComponent* Comp);
-	
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif

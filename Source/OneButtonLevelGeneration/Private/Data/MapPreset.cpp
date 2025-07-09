@@ -56,6 +56,25 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		{
 			VolumeActor->GetPCGComponent()->bRegenerateInEditor = bAutoGenerate;
 		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, GenerationTrigger))
+		{
+			UPCGComponent* Comp = VolumeActor->GetPCGComponent();
+			switch (GenerationTrigger)
+			{
+			case EOCGGenerationTrigger::GenerateOnLoad:
+			{
+				Comp->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnLoad;
+				break;
+			}
+			case EOCGGenerationTrigger::GenerateAtRuntime:
+			{
+				Comp->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateAtRuntime;
+				break;
+			}
+			default:
+				check(0);
+			}
+		}
 	}
 
 	if (
