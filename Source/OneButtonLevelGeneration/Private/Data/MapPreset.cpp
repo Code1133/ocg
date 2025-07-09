@@ -32,14 +32,18 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 
 	// Find Volume Actor
 	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
+	if (LandscapeGenerator)
 	{
-		if (Actor->IsA<AOCGLandscapeVolume>())
+		for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
 		{
-			FoundActor = Actor;
-			break;
+			if (Actor->IsA<AOCGLandscapeVolume>())
+			{
+				FoundActor = Actor;
+				break;
+			}
 		}
 	}
+
 
 	// Update Volume Actor
 	if (AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
