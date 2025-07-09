@@ -32,6 +32,7 @@ void AOCGLevelGenerator::Generate()
 
 	if (LandscapeGenerateComponent)
 	{
+		LandscapeGenerateComponent->GetLandscapeZScale(MapGenerateComponent->GetZScale());
 		LandscapeGenerateComponent->GenerateLandscape(GetWorld());
 	}
 
@@ -39,6 +40,8 @@ void AOCGLevelGenerator::Generate()
 	{
 		TerrainGenerateComponent->GenerateTerrain(GetWorld());
 	}
+
+	AddWaterPlane(GetWorld());
 }
 
 void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
@@ -50,6 +53,7 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (LandscapeGenerateComponent)
 	{
+		LandscapeGenerateComponent->GetLandscapeZScale(MapGenerateComponent->GetZScale());
 		LandscapeGenerateComponent->GenerateLandscape(InWorld);
 	}
 
@@ -72,7 +76,7 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
 	}
-
+	
 	AddWaterPlane(InWorld);
 }
 
@@ -132,14 +136,15 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	
 	// Linear Interpolation for sea height
 	float SeaHeight = MapPreset->MinHeight + 
-		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
+		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 5;
 	SeaHeight *= MapPreset->LandscapeScale;	
-	FTransform SeaLevelWaterbodyTransform = FTransform::Identity;
-	
-	SeaLevelWaterbodyTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
+	// FTransform SeaLevelWaterbodyTransform = FTransform::Identity;
+	//
+	// SeaLevelWaterbodyTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
+
+	SeaLevelWaterBody->SetActorLocation(FVector(0.0f, 0.0f, SeaHeight));
 	
 	ALandscape* Landscape = LandscapeGenerateComponent->GetLandscape();
-	
 	if (Landscape)
 	{
 		FVector Extent = Landscape->GetLoadedBounds().GetExtent();
@@ -177,12 +182,16 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 	}
 
 	// If the water body is spawned into a zone which is using local only tessellation, we must default to enabling static meshes.
-	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
+	if (AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
 	{
 		if (WaterZone->IsLocalOnlyTessellationEnabled())
 		{
 			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
 		}
+
+		FVector Extent = GetLandscape()->GetLoadedBounds().GetExtent();
+		// 2. WaterZone의 ZoneExtent 프로퍼티를 랜드스케이프의 X, Y 크기로 설정합니다.
+		WaterZone->SetZoneExtent(FVector2D(Extent.X * 2, Extent.Y * 2));
 	}
 
 	AWaterBodyCustom* WaterBodyCustom = CastChecked<AWaterBodyCustom>(InWaterBody);

@@ -88,6 +88,17 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
     return FIntPoint(Fix(InResolution.X), Fix(InResolution.Y));
 }
 
+float UOCGMapGenerateComponent::HeightMapToWorldHeight(uint16 Height)
+{
+    return (Height - 32768.f) * LandscapeZScale / 128.f;
+}
+
+uint16 UOCGMapGenerateComponent::WorldHeightToHeightMap(float Height)
+{
+    return static_cast<uint16>(Height * 128.f / LandscapeZScale + 32768.f);
+}
+
+
 void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
 {
     Stream.Initialize(MapPreset->Seed);
@@ -676,24 +687,67 @@ void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, cons
     MinHeight = Min;
 }
 
-void UOCGMapGenerateComponent::FinalizeHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
+void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
-    int32 TotalPixel = InOutHeightMap.Num();
-    float Max = MapPreset->MaxHeight;
-    float Min = MapPreset->MinHeight;
-    uint16 LandscapeMax = 0;
-    uint16 LandscapeMin = 65535;
-    for (int32 i=0; i < TotalPixel; i++)
+    if (!MapPreset->bSmoothHeight)
+        return;
+    FIntPoint MapSize = MapPreset->MapResolution;
+    
+    const float SpikeThreshold = (FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle)) * 100.f) * 128.f / LandscapeZScale;
+
+    TArray<FIntPoint> Neighbors =
     {
-        float CurrentHeight = (InOutHeightMap[i] - 32768.f) * 100.f / 128.f;
-        float AdjustedHeight = Min + (CurrentHeight - MinHeight) * (Max - Min) / (MaxHeight - MinHeight);
-        InOutHeightMap[i] = FMath::Clamp(FMath::RoundToInt(AdjustedHeight*128.f/100.f + 32768.f), 0, 65535);
-        if (InOutHeightMap[i] > LandscapeMax)
-            LandscapeMax = InOutHeightMap[i];
-        if (InOutHeightMap[i] < LandscapeMin)
-            LandscapeMin = InOutHeightMap[i];
+        {0, -1}, {1,-1}, {1, 0}, {1, 1},
+        {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}
+    };
+
+    float SeaLevel;
+    if (MapPreset->bContainWater)
+        SeaLevel = MapPreset->SeaLevel;
+    else
+        SeaLevel = MapPreset->MinHeight;
+    
+    uint16 SeaLevelHeight = WorldHeightToHeightMap(MapPreset->MinHeight + SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight));
+
+    int32 SpikeCount = 0;
+    
+    for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
+    {
+        SpikeCount = 0;
+        for (int32 y=1; y<MapSize.Y-1; y++)
+        {
+            for (int32 x=1; x<MapSize.X-1; x++)
+            {
+                const int32 Index = y*MapSize.X + x;
+                float CenterHeight = InOutHeightMap[Index];
+
+                //if (CenterHeight < SeaLevelHeight)
+                //    continue;
+
+                float LargestHeightDiff = 0;
+                int32 SteepestNeighborIndex = Index;
+                
+                for (int i=0; i < Neighbors.Num(); i++)
+                {
+                    int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
+                    float NeighborHeight = InOutHeightMap[NeighborIndex];
+                    float HeightDiff = CenterHeight - NeighborHeight;
+                    if (HeightDiff > LargestHeightDiff)
+                    {
+                        LargestHeightDiff = HeightDiff;
+                        SteepestNeighborIndex = NeighborIndex;
+                    }
+                }
+
+                if (LargestHeightDiff > SpikeThreshold && SteepestNeighborIndex != Index)
+                {
+                    InOutHeightMap[SteepestNeighborIndex] += LargestHeightDiff - SpikeThreshold;
+                    SpikeCount++;
+                }
+            }
+        }
     }
-    UE_LOG(LogTemp, Display, TEXT("Max Height: %d, Min Height: %d"), LandscapeMax, LandscapeMin);
+    UE_LOG(LogTemp, Display, TEXT("SpikeCount: %d"), SpikeCount);
 }
 
 void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap)
@@ -935,7 +989,6 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
     const FIntPoint CurResolution = MapPreset->MapResolution;
     
     BiomeColorMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
-    TArray<FName> BiomeNameMap;
     BiomeNameMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
     OutBiomeMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
 
@@ -1025,10 +1078,10 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
         }
     }
     ExportMap(MapPreset, BiomeColorMap, "BiomeMap0.png");
-    BlendBiome(MapPreset, BiomeNameMap);
+    BlendBiome(MapPreset);
 }
 
-void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset, const TArray<FName>& InBiomeMap)
+void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
 {
     const FIntPoint CurResolution = MapPreset->MapResolution;
      // 초기화 및 원본 맵 복사
@@ -1049,9 +1102,9 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset, const TAr
     // 칼같이 나뉘는 초기 웨이트맵 생성 (복사본에)
     for (int32 i = 0; i < CurResolution.X * CurResolution.Y; ++i)
     {
-        if (OriginalWeightMaps.Contains(InBiomeMap[i]))
+        if (OriginalWeightMaps.Contains(BiomeNameMap[i]))
         {
-            OriginalWeightMaps[InBiomeMap[i]][i] = 255;
+            OriginalWeightMaps[BiomeNameMap[i]][i] = 255;
         }
     }
     

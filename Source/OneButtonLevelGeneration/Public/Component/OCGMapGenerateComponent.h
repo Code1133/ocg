@@ -41,6 +41,7 @@ private:
 	TArray<FColor> BiomeColorMap;
 	float MaxHeight;
 	float MinHeight;
+	float LandscapeZScale;
 public:
 	FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
 	FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
@@ -49,6 +50,7 @@ public:
 	FORCEINLINE const TArray<FColor>& GetBiomeColorMap() { return BiomeColorMap; }
 	FORCEINLINE const float GetMaxHeight() const { return MaxHeight; }
 	FORCEINLINE const float GetMinHeight() const { return MinHeight; }
+	FORCEINLINE const float GetZScale() const { return LandscapeZScale; }
 
 private:
 	UPROPERTY()
@@ -60,6 +62,7 @@ private:
 	float NoiseScale;
 	float PlainHeight;
 	FRandomStream Stream;
+	TArray<FName> BiomeNameMap;
 	//침식 관련 변수
 	TArray<TArray<int32>> ErosionBrushIndices;
 	TArray<TArray<float>> ErosionBrushWeights;
@@ -71,6 +74,8 @@ public:
 
 private:
 	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
+	float HeightMapToWorldHeight(uint16 Height);
+	uint16 WorldHeightToHeightMap(float Height);
 
 	void Initialize(const UMapPreset* MapPreset);
 	void InitializeNoiseOffsets(const UMapPreset* MapPreset);
@@ -79,7 +84,7 @@ private:
 	void GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
 	void GenerateHumidityMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
 	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
-	void BlendBiome(const UMapPreset* MapPreset, const TArray<FName>& InBiomeMap);
+	void BlendBiome(const UMapPreset* MapPreset);
 	void ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const;
 	void ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap, const FString& FileName) const;
 	void ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
@@ -90,7 +95,8 @@ private:
 	void BlurBiomeMinHeights(TArray<float>& OutMinHeights, const TArray<float>& InMinHeights, const UMapPreset* MapPreset);
 	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
 	void GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
-	void FinalizeHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void FinalizeBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
 	
 private:
 	float CachedGlobalMinTemp;

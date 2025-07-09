@@ -138,6 +138,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float TemperatureInfluenceOnHumidity = 0.7f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	bool bSmoothHeight = true;
+	
+	// Threshold Angle of the slope of the landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0"))
+	int32 SmoothingIteration = 5;
+	
+	// Threshold Angle of the slope of the landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0", ClampMax = "90.0"))
+	float MaxSlopeAngle = 60.f;
+	
 	//Island Properties
 	// Decides whether the landscape will be island or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
@@ -316,7 +329,7 @@ public:
 	// Intensity of Simplifing River Path. Higher value means more simplification, lower value means less simplification.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
 	float RiverSpineSimplifyEpsilon = 200.f;
-
+	
 	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverWidthBaseValue = 2048.0f;
