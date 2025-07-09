@@ -287,7 +287,6 @@ void SOCGWidget::FindExistingLevelGenerator()
             SetSelectedActor(*It); // Manually set the actor for the UI
 
             AOCGLevelGenerator* LevelGenerator = *It;
-
             break; // Only take the first found actor
         }
     }

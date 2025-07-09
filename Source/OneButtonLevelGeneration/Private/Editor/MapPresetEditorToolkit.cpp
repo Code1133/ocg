@@ -432,7 +432,7 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 	
 	for (AActor* Actor : DuplicatedLevel->Actors)
 	{
-		if (Actor && (Actor->IsA<AOCGLevelGenerator>() || Actor->IsA<APCGPartitionActor>()))
+		if (Actor && (Actor->IsA<APCGPartitionActor>()))
 		{
 			ActorsToDestroy.Add(Actor);
 		}

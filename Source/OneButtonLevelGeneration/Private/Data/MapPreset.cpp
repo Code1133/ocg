@@ -23,7 +23,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (!PropertyChangedEvent.MemberProperty || !EditorToolkit.IsValid())
+	if (!PropertyChangedEvent.MemberProperty)
 	{
 		return;
 	}
