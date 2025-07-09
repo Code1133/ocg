@@ -107,9 +107,23 @@ private:
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 	void CachePointsForRiverGeneration();
 
+public:
+	virtual void PostInitProperties() override;
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "RVT",  meta = (AllowPrivateAccess="true"))
 	TObjectPtr<URuntimeVirtualTexture> ColorRVT = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "RVT",  meta = (AllowPrivateAccess="true"))
 	TObjectPtr<URuntimeVirtualTexture> HeightRVT = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "RVT",  meta = (AllowPrivateAccess="true"))
 	TObjectPtr<URuntimeVirtualTexture> DisplacementRVT = nullptr;
+
+	UPROPERTY()
+	TSoftObjectPtr<URuntimeVirtualTexture> ColorRVTAsset;
+	UPROPERTY()
+	TSoftObjectPtr<URuntimeVirtualTexture> HeightRVTAsset;
+	UPROPERTY()
+	TSoftObjectPtr<URuntimeVirtualTexture> DisplacementRVTAsset;
 private:
 	float CachedGlobalMinTemp;
 	float CachedGlobalMaxTemp;

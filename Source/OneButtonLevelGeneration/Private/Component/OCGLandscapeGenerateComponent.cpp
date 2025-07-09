@@ -75,41 +75,44 @@ static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor,
 
 // Sets default values for this component's properties
 UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
+	: ColorRVTAsset(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color")))
+	, HeightRVTAsset(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height")))
+	, DisplacementRVTAsset(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement")))
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
-    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> ColorRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color'"));
-    if (ColorRVTFinder.Succeeded())
-    {
-        ColorRVT = ColorRVTFinder.Object;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
-    }
-
-    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> HeightRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height'"));
-    if (HeightRVTFinder.Succeeded())
-    {
-        HeightRVT = HeightRVTFinder.Object;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
-    }
-
-    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> DisplacementRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement'"));
-    if (DisplacementRVTFinder.Succeeded())
-    {
-        DisplacementRVT = DisplacementRVTFinder.Object;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
-    }
+	// // ...
+ //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> ColorRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color'"));
+ //    if (ColorRVTFinder.Succeeded())
+ //    {
+ //        ColorRVT = ColorRVTFinder.Object;
+ //    }
+ //    else
+ //    {
+ //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
+ //    }
+ //
+ //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> HeightRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height'"));
+ //    if (HeightRVTFinder.Succeeded())
+ //    {
+ //        HeightRVT = HeightRVTFinder.Object;
+ //    }
+ //    else
+ //    {
+ //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
+ //    }
+ //
+ //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> DisplacementRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement'"));
+ //    if (DisplacementRVTFinder.Succeeded())
+ //    {
+ //        DisplacementRVT = DisplacementRVTFinder.Object;
+ //    }
+ //    else
+ //    {
+ //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
+ //    }
 }
 
 
@@ -1237,4 +1240,28 @@ void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
             }
         }
     }
+}
+
+void UOCGLandscapeGenerateComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+	
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		ColorRVT = ColorRVTAsset.LoadSynchronous();
+		HeightRVT = HeightRVTAsset.LoadSynchronous();
+		DisplacementRVT = DisplacementRVTAsset.LoadSynchronous();
+		if (!ColorRVT)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load ColorRVT from %s"), *ColorRVTAsset.ToString());
+		}
+		if (!HeightRVT)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load HeightRVT from %s"), *HeightRVTAsset.ToString());
+		}
+		if (!DisplacementRVT)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to load DisplacementRVT from %s"), *DisplacementRVTAsset.ToString());
+		}
+	}
 }
