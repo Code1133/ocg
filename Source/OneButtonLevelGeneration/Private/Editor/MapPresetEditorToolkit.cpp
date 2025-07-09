@@ -67,7 +67,7 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		Context.SetCurrentWorld(MapPresetEditorWorld.Get());
 		// Deactive WorldBoundsChecks
 		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
-		EditingPreset->OwnerWorld = MapPresetEditorWorld.Get();
+		//EditingPreset->OwnerWorld = MapPresetEditorWorld.Get();
 
 		// Add LevelGenerator
 		LevelGenerator = MapPresetEditorWorld->SpawnActor<AOCGLevelGenerator>();

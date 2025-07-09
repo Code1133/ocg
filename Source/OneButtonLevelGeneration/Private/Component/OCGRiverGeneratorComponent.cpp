@@ -3,6 +3,7 @@
 
 #include "Component/OCGRiverGeneratorComponent.h"
 
+#include "EngineUtils.h"
 #include "Landscape.h"
 #include "OCGLevelGenerator.h"
 #include "WaterBodyRiverActor.h"
@@ -21,7 +22,29 @@ UOCGRiverGeneratorComponent::UOCGRiverGeneratorComponent()
 
 void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape)
 {
+	if (InWorld == nullptr)
+	{
+		return;
+	}
 	TargetLandscape = InLandscape;
+
+	if (TargetLandscape == nullptr)
+	{
+		// find landscape actor in the world
+		for (AActor* Actor : TActorRange<AActor>(InWorld))
+		{
+			if (Actor->IsA<ALandscape>())
+			{
+				TargetLandscape = Cast<ALandscape>(Actor);
+				break;
+			}
+		}
+	}
+
+	if (TargetLandscape == nullptr)
+	{
+		return;		
+	}
 	// Clear previously generated rivers
 	for (AWaterBodyRiver* River : GeneratedRivers)
 	{
@@ -48,7 +71,7 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 		}
 	}
 	
-	if (!InWorld || !InLandscape || !MapPreset)
+	if (!InWorld || !TargetLandscape || !MapPreset)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("River generation failed: Invalid world or landscape or map preset."));
 		return;
@@ -60,11 +83,7 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 	}
 
 	FVector LandscapeOrigin = InLandscape->GetActorLocation();
-	FVector LandscapeExtent = InLandscape->GetComponentsBoundingBox().GetSize() * 0.5f;
-
-	if (LandscapeExtent.IsNearlyZero())
-		return;
-
+	FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
 	// Generate River Spline
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
@@ -153,7 +172,7 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 			TArray<AActor*> FoundActors;
 			UGameplayStatics::GetAllActorsOfClass(InWorld, AWaterZone::StaticClass(), FoundActors);
 
-			FVector LandscapeSize = InLandscape->GetComponentsBoundingBox().GetSize();
+			FVector LandscapeSize = InLandscape->GetLoadedBounds().GetSize();
 			for (AActor* Actor : FoundActors)
 			{
 				if (AWaterZone* WaterZone = Cast<AWaterZone>(Actor))
@@ -262,10 +281,9 @@ FVector UOCGRiverGeneratorComponent::GetLandscapePointWorldPosition(const FIntPo
 		return FVector::ZeroVector;
 	}
 
-	
 	FVector WorldLocation = LandscapeOrigin + FVector(
 		2 * (MapPoint.X / (float)MapPreset->MapResolution.X) * LandscapeExtent.X,
-		2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y ,
+		2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y,
 		0.0f 
 	);
 

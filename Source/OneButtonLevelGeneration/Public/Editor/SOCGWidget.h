@@ -45,6 +45,8 @@ private:
 	void RegisterDelegates();
 	void UnregisterDelegates();
 
+	void FindExistingLevelGenerator();
+
 	TWeakObjectPtr<class AOCGLevelGenerator> LevelGeneratorActor;
 	TSharedPtr<IDetailsView> MapPresetDetailsView;
 	TSharedPtr<SBox> DetailsContainer;

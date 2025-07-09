@@ -32,7 +32,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 
 	// Find Volume Actor
 	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(OwnerWorld))
+	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
 	{
 		if (Actor->IsA<AOCGLandscapeVolume>())
 		{
@@ -204,7 +204,7 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 void UMapPreset::ForceGenerate() const
 {
 	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(OwnerWorld))
+	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
 	{
 		if (Actor->IsA<AOCGLandscapeVolume>())
 		{
@@ -221,11 +221,11 @@ void UMapPreset::ForceGenerate() const
 
 void UMapPreset::RegenerateRiver()
 {
-	if (!OwnerWorld)
+	if (!LandscapeGenerator || !LandscapeGenerator->GetWorld())
 		return;
 
 	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(OwnerWorld))
+	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
 	{
 		if (Actor->IsA<AOCGLevelGenerator>())
 		{
@@ -236,6 +236,6 @@ void UMapPreset::RegenerateRiver()
 
 	if (AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(FoundActor))
 	{
-		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(OwnerWorld, LevelGenerator->GetLandscape());
+		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(LandscapeGenerator->GetWorld(), LevelGenerator->GetLandscape());
 	}
 }

@@ -1,6 +1,7 @@
 #include "Editor/SOCGWidget.h"
 
 #include "AssetToolsModule.h"
+#include "EngineUtils.h"
 #include "OCGLevelGenerator.h"
 #include "PropertyCustomizationHelpers.h"
 #include "Selection.h"
@@ -16,7 +17,7 @@ void SOCGWidget::Construct(const FArguments& InArgs)
 {
     RegisterDelegates();
 
-    ChildSlot
+        ChildSlot
     [
         SNew(SVerticalBox)
 
@@ -27,6 +28,7 @@ void SOCGWidget::Construct(const FArguments& InArgs)
             SNew(SButton)
             .Text(FText::FromString(TEXT("Create Level Generator")))
             .OnClicked(this, &SOCGWidget::OnCreateLevelGeneratorClicked)
+            .IsEnabled_Lambda([this]{return !LevelGeneratorActor.IsValid();}) // Enable only if no actor is selected
         ]
         
         // Generate Level Button
@@ -74,9 +76,16 @@ void SOCGWidget::Construct(const FArguments& InArgs)
             SAssignNew(DetailsContainer, SBox)
         ]
     ];
-    
+
     // Set initial UI state
     UpdateSelectedActor();
+
+    if (!LevelGeneratorActor.IsValid())
+    {
+        FindExistingLevelGenerator();
+    }
+
+
 }
 
 SOCGWidget::~SOCGWidget()
@@ -121,7 +130,6 @@ FReply SOCGWidget::OnCreateNewMapPresetClicked()
     if (NewAsset && LevelGeneratorActor.IsValid())
     {
         UMapPreset* MapPreset = Cast<UMapPreset>(NewAsset);
-        MapPreset->OwnerWorld = GEditor->GetEditorWorldContext().World();
         
         LevelGeneratorActor->SetMapPreset(MapPreset);
         RefreshDetailsView();
@@ -225,17 +233,23 @@ void SOCGWidget::ShowMapPresetDetails()
     }
     
     MapPresetDetailsView->SetObject(LevelGeneratorActor->GetMapPreset());
-    DetailsContainer->SetContent(MapPresetDetailsView.ToSharedRef());
+    if (DetailsContainer.IsValid())
+    {
+        DetailsContainer->SetContent(MapPresetDetailsView.ToSharedRef());
+    }
 }
 
 void SOCGWidget::ClearDetailsView()
 {
     // Reset the details container to its initial message
-    DetailsContainer->SetContent(
-        SNew(STextBlock)
-        .Text(FText::FromString(TEXT("Please select or create a Level Generator Actor.")))
-        .Justification(ETextJustify::Center)
-    );
+    if (DetailsContainer.IsValid())
+    {
+        DetailsContainer->SetContent(
+            SNew(STextBlock)
+            .Text(FText::FromString(TEXT("Please select or create a Level Generator Actor.")))
+            .Justification(ETextJustify::Center)
+        );
+    }
     
     if (MapPresetDetailsView.IsValid())
     {
@@ -259,4 +273,22 @@ void SOCGWidget::UnregisterDelegates()
         GEngine->OnLevelActorDeleted().Remove(OnLevelActorDeletedDelegateHandle);
     }
     USelection::SelectionChangedEvent.RemoveAll(this);
+}
+
+void SOCGWidget::FindExistingLevelGenerator()
+{
+    // Find existing LevelGenerator actor in the current world
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    if (World)
+    {
+        for (TActorIterator<AOCGLevelGenerator> It(World); It; ++It)
+        {
+            GEditor->SelectActor(*It, true, true);
+            SetSelectedActor(*It); // Manually set the actor for the UI
+
+            AOCGLevelGenerator* LevelGenerator = *It;
+
+            break; // Only take the first found actor
+        }
+    }
 }

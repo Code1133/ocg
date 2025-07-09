@@ -11,6 +11,7 @@
  * 
  */
 
+class AOCGLevelGenerator;
 class AOCGLandscapeVolume;
 class UPCGGraph;
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
@@ -358,7 +359,7 @@ public:
 #if WITH_EDITOR
 public:
 	UPROPERTY(Transient)
-	TObjectPtr<UWorld> OwnerWorld = nullptr;
+	TObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
 
 	TWeakPtr<class FMapPresetEditorToolkit> EditorToolkit;
 #endif

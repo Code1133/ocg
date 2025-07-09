@@ -320,7 +320,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		CreateRuntimeVirtualTextureVolume(TargetLandscape);
 	}
 	
-	//CachePointsForRiverGeneration();
+	CachePointsForRiverGeneration();
 #endif
 }
 
@@ -1219,16 +1219,16 @@ void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
 	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverStartPointThresholdMultiplier, 0.0f, 1.0f);
     float MaxHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMaxHeight() * MapPreset->LandscapeScale;
     float MinHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMinHeight() * MapPreset->LandscapeScale;
-    
+
+	
     float SeaHeight = MinHeight + 
         (MaxHeight - MinHeight) * MapPreset->SeaLevel - 1;
     
     uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
     UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
 
-    FBox LandscapeBounds = TargetLandscape->GetComponentsBoundingBox();
-    FVector LandscapeOrigin = LandscapeBounds.GetCenter();
-    FVector LandscapeExtent = LandscapeBounds.GetExtent();
+    FVector LandscapeOrigin = TargetLandscape->GetLoadedBounds().GetCenter();
+    FVector LandscapeExtent = TargetLandscape->GetLoadedBounds().GetExtent();
     for (int32 y = 0; y < MapPreset->MapResolution.Y; ++y)
     {
         for (int32 x = 0; x < MapPreset->MapResolution.X; ++x)

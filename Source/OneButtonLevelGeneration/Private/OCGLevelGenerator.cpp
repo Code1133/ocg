@@ -113,6 +113,7 @@ ALandscape* AOCGLevelGenerator::GetLandscape()
 void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;
+	MapPreset->LandscapeGenerator = this;
 }
 
 void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
