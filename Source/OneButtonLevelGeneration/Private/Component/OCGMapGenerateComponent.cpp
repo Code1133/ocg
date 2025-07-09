@@ -685,6 +685,7 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
         return;
     
     FIntPoint MapSize = MapPreset->MapResolution;
+    int32 TotalPixels = MapSize.X * MapSize.Y;
     
     const float SpikeThreshold = (FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle)) *
         100.f * MapPreset->LandscapeScale) * 128.f / LandscapeZScale;
@@ -697,22 +698,25 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
         {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}
     };
 
-    TArray<uint16> TempHeightMap;
+    int32 SpikeCount = 0;
     
     for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
     {
-        TempHeightMap = InOutHeightMap;
+        SpikeCount = 0;
         for (int32 y=1; y<MapSize.Y-1; y++)
         {
             for (int32 x=1; x<MapSize.X-1; x++)
             {
                 const int32 Index = y*MapSize.X + x;
-                float CenterHeight = TempHeightMap[Index];
+                float CenterHeight = InOutHeightMap[Index];
+
+                float LargestHeightDiff = 0;
+                int32 SteepestNeighborIndex = -1;
 
                 for (int i=0; i < Neighbors.Num(); i++)
                 {
                     const int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
-                    const float NeighborHeight = TempHeightMap[NeighborIndex];
+                    const float NeighborHeight = InOutHeightMap[NeighborIndex];
                     const float HeightDiff = CenterHeight - NeighborHeight;
 
                     const bool bIsDiagonal = (Neighbors[i].X != 0 && Neighbors[i].Y != 0);
@@ -720,12 +724,23 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
                     
                     if (HeightDiff > CurrentThreshold)
                     {
-                        const float HeightToMove = (HeightDiff - CurrentThreshold) * 0.5f;
-                        InOutHeightMap[NeighborIndex] += static_cast<uint16>(HeightToMove);
+                        if (HeightDiff > LargestHeightDiff)
+                        {
+                            LargestHeightDiff = HeightDiff;
+                            SteepestNeighborIndex = NeighborIndex;
+                        }
                     }
+                }
+                
+                if (LargestHeightDiff != 0)
+                {
+                    uint16 NewHeight = static_cast<uint16>(InOutHeightMap[SteepestNeighborIndex] + (LargestHeightDiff - SpikeThreshold));
+                    InOutHeightMap[SteepestNeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
+                    SpikeCount++;
                 }
             }
         }
+        UE_LOG(LogTemp, Display, TEXT("SpikeCount: %d, Iteration: %d"), SpikeCount, Iteration);
     }
 }
 
@@ -1056,7 +1071,6 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
         }
     }
     BlendBiome(MapPreset);
-    ExportMap(MapPreset, BiomeColorMap, TEXT("BiomeMap1.png"));
 }
 
 void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
