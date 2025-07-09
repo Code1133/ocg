@@ -2,8 +2,10 @@
 
 #include "PCG/OCGLandscapeVolume.h"
 
+#include "Landscape.h"
 #include "PCGComponent.h"
 #include "Components/BoxComponent.h"
+#include "Conditions/MovieSceneScalabilityCondition.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 
@@ -26,11 +28,19 @@ void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
 {
 	check(TargetActor);
 
-	// GetActorBounds calculates the bounding box (FBox) that includes the actor and all its components.
-	FVector Origin;
-	FVector BoxExtent;
-	UKismetSystemLibrary::GetActorBounds(TargetActor, Origin, BoxExtent);
+	if (!TargetActor->IsA<ALandscape>())
+	{
+		return;
+	}
 
+	// GetActorBounds calculates the bounding box (FBox) that includes the actor and all its components.
+	FVector Origin = TargetActor->GetActorLocation();
+
+	const ALandscape* LandscapeActor = Cast<ALandscape>(TargetActor);
+	FVector BoxExtent = LandscapeActor->GetLoadedBounds().GetExtent();
+
+	// add offset
+	Origin += FVector(BoxExtent.X , BoxExtent.Y,0);
 	// Set the location of this actor (volume) to the center of the target actor's bounds
 	SetActorLocation(Origin);
 
