@@ -129,10 +129,8 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 		return;
 	}
 
-	// !TODO : WaterBodyCustom으로 교체
-
 	SeaLevelWaterBody = InWorld->SpawnActor<AWaterBodyCustom>(AWaterBodyCustom::StaticClass());
-
+	SeaLevelWaterBody->SetIsSpatiallyLoaded(false);
 	SetDefaultWaterProperties(SeaLevelWaterBody);
 	
 	// Linear Interpolation for sea height

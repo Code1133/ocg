@@ -22,6 +22,7 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
 	PCGComponent->SetIsPartitioned(true);
 	PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
+
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)

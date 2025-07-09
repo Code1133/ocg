@@ -42,6 +42,7 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 	if (TargetVolumeClass)
 	{
 		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>(TargetVolumeClass);
+		OCGVolumeInstance->SetIsSpatiallyLoaded(false);
 	}
 
 	if (OCGVolumeInstance)

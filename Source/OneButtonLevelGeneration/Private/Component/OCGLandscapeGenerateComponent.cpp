@@ -1193,8 +1193,15 @@ FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIn
     int Index = MapPoint.Y * MapPreset->MapResolution.X + MapPoint.X;
     float HeightMapValue = GetLevelGenerator()->GetHeightMapData()[Index];
 
-    WorldLocation.Z  = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; // Adjust height based on the height map value and scale
-	
+
+	if (TOptional<float> Height = TargetLandscape->GetHeightAtLocation(WorldLocation))
+	{
+		WorldLocation.Z = Height.GetValue();
+	}
+	else
+	{
+		WorldLocation.Z  = (HeightMapValue - 32768) / 128 * LandscapeZScale; // Adjust height based on the height map value and scale
+	}
     return WorldLocation;
 }
 
