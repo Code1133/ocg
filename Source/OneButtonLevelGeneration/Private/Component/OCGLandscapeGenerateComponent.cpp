@@ -256,7 +256,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetZ = (MapPreset->MaxHeight - MapPreset->MinHeight) / 2.f;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
-    TargetLandscape->SetActorScale3D(FVector(100.0f, 100.0f, 100.0f) * MapPreset->LandscapeScale);
+    TargetLandscape->SetActorScale3D(FVector(100.0f * MapPreset->LandscapeScale, 100.0f * MapPreset->LandscapeScale, LandscapeZScale));
     
     //Import 함수 호출 (변경된 시그니처에 맞춰서)
     TargetLandscape->Import(

@@ -138,7 +138,6 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	// Linear Interpolation for sea height
 	float SeaHeight = MapPreset->MinHeight + 
 		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 5;
-	SeaHeight *= MapPreset->LandscapeScale;	
 	// FTransform SeaLevelWaterbodyTransform = FTransform::Identity;
 	//
 	// SeaLevelWaterbodyTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
