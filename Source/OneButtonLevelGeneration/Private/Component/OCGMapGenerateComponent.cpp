@@ -709,6 +709,8 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
                 const int32 Index = y*MapSize.X + x;
                 float CenterHeight = InOutHeightMap[Index];
 
+                float TotalHeightToMove = 0;
+                
                 for (int i=0; i < Neighbors.Num(); i++)
                 {
                     const int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
@@ -720,9 +722,18 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
                     
                     if (HeightDiff > CurrentThreshold)
                     {
-                        uint16 NewHeight = InOutHeightMap[NeighborIndex] + HeightDiff - CurrentThreshold;
+                        float HeightToMove = HeightDiff - CurrentThreshold;
+                        uint16 NewHeight = InOutHeightMap[NeighborIndex] + HeightToMove;
+                        TotalHeightToMove += HeightToMove;
                         InOutHeightMap[NeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
                     }
+                }
+
+                if (TotalHeightToMove > 0)
+                {
+                    TotalHeightToMove = FMath::Min(TotalHeightToMove, SpikeThreshold);
+                    uint16 NewHeight = InOutHeightMap[Index] - TotalHeightToMove;
+                    InOutHeightMap[Index] = FMath::Clamp(NewHeight, 0, 65535);
                 }
             }
         }
