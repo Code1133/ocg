@@ -29,6 +29,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"CoreUObject",
 				"PCG",
 				"PCGGeometryScriptInterop",
+				"PCGWaterInterop",
 			}
 			);
 			
@@ -52,7 +53,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"DeveloperSettings", 
 				"VirtualTexturingEditor",
 				"Projects", 
-				"Water", 
+				"Water",
 				"WaterEditor",
 				"ToolMenus"
 			}  
