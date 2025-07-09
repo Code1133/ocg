@@ -27,12 +27,16 @@
 			"Enabled": true
 		},
 		{
-			"Name": "PCGGeometryScriptInterop",
+			"Name": "Water",
 			"Enabled": true
 		},
 		{
-			"Name": "Water",
+			"Name": "PCGGeometryScriptInterop",
 			"Enabled": true
-		}
+		},
+        {
+          "Name": "PCGWaterInterop",
+          "Enabled": true
+        }
 	]
 }
