@@ -55,7 +55,8 @@ public class OneButtonLevelGeneration : ModuleRules
 				"Projects", 
 				"Water", 
 				"WaterEditor",
-				"ToolMenus"
+				"ToolMenus",
+				"Foliage",
 			}  
 			);
 		
