@@ -338,23 +338,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
-		// 변경 사항을 컴포넌트에 반영		
-		// if (UWorldPartitionSubsystem* WPES = /* 에디터 모드에서만 존재하는 */ 
-		// TargetLandscape->GetWorld()->GetSubsystem<UWorldPartitionSubsystem>())
-		// {
-		// 	WPES
-		// }
-		// // 2) 언리얼 에디터용 파일유틸로 체크아웃(소스컨트롤) 및 저장
-		// FEditorFileUtils::EPromptReturnCode Result = FEditorFileUtils::PromptForCheckoutAndSave(
-		// 	{ LevelPackage },
-		// 	/*bCheckDirty=*/ false,
-		// 	/*bPromptToSave=*/ false
-		// );
-  //
-		// if (Result == FEditorFileUtils::PR_Success)
-  //       {
-  //       	CreateRuntimeVirtualTextureVolume(TargetLandscape);
-  //       }
 	}
 	else
 	{
@@ -413,8 +396,6 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 
 			auto RegionImporter = [this, &ImportLayers, &Progress, LandscapeInfo, CurrentLayerGuid, PaintRestriction](const FBox& RegionBounds, const TArray<ALandscapeProxy*>& Proxies)
 			{
-				// todo need a better way of working out the landscape bounds of the StreamingProxies in this region.
-				// What if some of the landscape is loaded?
 				FIntRect LandscapeLoadedExtent;
 				LandscapeInfo->GetLandscapeExtent(LandscapeLoadedExtent);
 				LandscapeLoadedExtent.Max.X += 1;
@@ -440,9 +421,6 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 			};
 				
 			ForEachRegion_LoadProcessUnload(LandscapeInfo, ImportRegion, World, RegionImporter);
-			
-			// FLandscapeImageFileCache& LandscapeImageFileCache = FModuleManager::GetModuleChecked<ILandscapeEditorModule>("LandscapeEditor").GetImageFileCache();
-			// LandscapeImageFileCache.Clear();
 		}
 		else
 		{
@@ -459,13 +437,8 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 
 			for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
 			{
-				if (Progress.ShouldCancel())
-				{
-					continue;
-				}
-
 				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeWeight", "Importing Landscape Weight"));
-
+				
 				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
 				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
 				FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
@@ -478,7 +451,7 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 #endif
 }
 
-void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(UWorld* World)
+void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(const UWorld* World)
 {
 #if WITH_EDITOR
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
@@ -784,7 +757,7 @@ ALocationVolume* UOCGLandscapeGenerateComponent::CreateLandscapeRegionVolume(UWo
     LocationVolume->SetActorLabel(Label);
 
     LocationVolume->AttachToActor(InParentLandscapeActor, FAttachmentTransformRules::KeepWorldTransform);
-    FVector Scale{ InRegionSize * Shrink,  InRegionSize * Shrink, InRegionSize * 0.5f };
+    const FVector Scale{ InRegionSize * Shrink,  InRegionSize * Shrink, InRegionSize * 0.5f };
     LocationVolume->SetActorScale3D(Scale);
 
     // Specify a cube shape for the LocationVolume
@@ -798,9 +771,9 @@ ALocationVolume* UOCGLandscapeGenerateComponent::CreateLandscapeRegionVolume(UWo
     return LocationVolume;
 }
 
-void UOCGLandscapeGenerateComponent::ForEachComponentByRegion(int32 RegionSize,
+void UOCGLandscapeGenerateComponent::ForEachComponentByRegion(const int32 RegionSize,
     const TArray<FIntPoint>& ComponentCoordinates,
-    TFunctionRef<bool(const FIntPoint&, const TArray<FIntPoint>&)> RegionFn)
+    const TFunctionRef<bool(const FIntPoint&, const TArray<FIntPoint>&)>& RegionFn)
 {
     if (RegionSize <= 0)
     {
@@ -845,13 +818,10 @@ void UOCGLandscapeGenerateComponent::ForEachComponentByRegion(int32 RegionSize,
 
 
 void UOCGLandscapeGenerateComponent::ForEachRegion_LoadProcessUnload(ULandscapeInfo* InLandscapeInfo,
-	const FIntRect& InDomain, UWorld* InWorld,
-	TFunctionRef<bool(const FBox&, const TArray<ALandscapeProxy*>)> InRegionFn)
+	const FIntRect& InDomain, const UWorld* InWorld,
+	const TFunctionRef<bool(const FBox&, const TArray<ALandscapeProxy*>)>& InRegionFn)
 {
 #if WITH_EDITOR
-	const int32 RegionSizeInTexels = InLandscapeInfo->ComponentSizeQuads * InLandscapeInfo->RegionSizeInComponents + 1;
-	const FIntRect RegionCoordinates = InDomain / RegionSizeInTexels;
-
 	TArray<AActor*> Children;
 	InLandscapeInfo->LandscapeActor->GetAttachedActors(Children);
 	TArray<ALocationVolume*> LandscapeRegions;
@@ -881,7 +851,7 @@ void UOCGLandscapeGenerateComponent::ForEachRegion_LoadProcessUnload(ULandscapeI
 		}
 
 		// Save the actor
-		bool bShouldExit = !InRegionFn(RegionBounds, LandscapeProxies);
+		const bool bShouldExit = !InRegionFn(RegionBounds, LandscapeProxies);
 
 		InLandscapeInfo->ForceLayersFullUpdate();
 
@@ -898,7 +868,7 @@ void UOCGLandscapeGenerateComponent::ForEachRegion_LoadProcessUnload(ULandscapeI
 }
 
 TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::PrepareLandscapeLayerData(
-    ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset)
+    ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset) const
 {
 #if WITH_EDITOR
     TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
@@ -994,8 +964,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(ALand
 
     if (LayerInfo)
     {
-        ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
-        if (LandscapeInfo)
+	    if (ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo())
         {
             // 랜드스케이프 정보에 새로 생성된 LayerInfo를 추가하거나 업데이트합니다.
             // 이 과정은 랜드스케이프가 해당 레이어를 인식하게 만듭니다.
@@ -1135,7 +1104,7 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
 #endif
 }
 
-bool UOCGLandscapeGenerateComponent::ChangeGridSize(UWorld* InWorld, ULandscapeInfo* InLandscapeInfo,
+bool UOCGLandscapeGenerateComponent::ChangeGridSize(const UWorld* InWorld, ULandscapeInfo* InLandscapeInfo,
 	uint32 InNewGridSizeInComponents)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(UOCGLandscapeGenerateComponent::ChangeGridSize);
@@ -1153,19 +1122,14 @@ bool UOCGLandscapeGenerateComponent::ChangeGridSize(UWorld* InWorld, ULandscapeI
 
 	InLandscapeInfo->LandscapeActor->Modify();
 	InLandscapeInfo->LandscapeActor->SetGridSize(GridSize);
-
-	// This needs to be done before moving components
 	InLandscapeInfo->LandscapeActor->InitializeLandscapeLayersWeightmapUsage();
-
-	// Make sure if actor didn't include grid size in name it now does. This will avoid recycling 
-	// LandscapeStreamingProxy actors and create new ones with the proper name.
+	
 	InLandscapeInfo->LandscapeActor->bIncludeGridSizeInNameForLandscapeActors = true;
 
 	FIntRect Extent;
 	InLandscapeInfo->GetLandscapeExtent(Extent.Min.X, Extent.Min.Y, Extent.Max.X, Extent.Max.Y);
-	const FBox Bounds(FVector(Extent.Min), FVector(Extent.Max));
 
-	UWorld* World = InLandscapeInfo->LandscapeActor->GetWorld();
+	const UWorld* World = InLandscapeInfo->LandscapeActor->GetWorld();
 	UActorPartitionSubsystem* ActorPartitionSubsystem = World->GetSubsystem<UActorPartitionSubsystem>();
 
 	TArray<ULandscapeComponent*> LandscapeComponents;
@@ -1174,8 +1138,7 @@ bool UOCGLandscapeGenerateComponent::ChangeGridSize(UWorld* InWorld, ULandscapeI
 	{
 		LandscapeComponents.Add(LandscapeComponent);
 	});
-
-	TSet<ALandscapeProxy*> ProxiesToDelete;
+	
 	{
 		const uint32 ActorPartitionSubsystemGridSize = GridSize > 0 ? GridSize : ALandscapeStreamingProxy::StaticClass()->GetDefaultObject<APartitionActor>()->GetDefaultGridSize(World->PersistentLevel->GetWorld());
 		const UActorPartitionSubsystem::FCellCoord MinCellCoords = UActorPartitionSubsystem::FCellCoord::GetCellCoord(Extent.Min, World->PersistentLevel, ActorPartitionSubsystemGridSize);
@@ -1190,38 +1153,27 @@ bool UOCGLandscapeGenerateComponent::ChangeGridSize(UWorld* InWorld, ULandscapeI
 		FScopedSlowTask SlowTask(TotalSteps, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "Create LandscapeStreamingProxy", "Creating LandscapeStreamingProxies..."));
 		SlowTask.MakeDialog(/*bShowCancelButton=*/ false);
     		
-		FActorPartitionGridHelper::ForEachIntersectingCell(ALandscapeStreamingProxy::StaticClass(), Extent, World->PersistentLevel, [&SlowTask, TotalSteps, ActorPartitionSubsystem, InLandscapeInfo, InNewGridSizeInComponents, &LandscapeComponents, &ProxiesToDelete](const UActorPartitionSubsystem::FCellCoord& CellCoord, const FIntRect& CellBounds)
+		FActorPartitionGridHelper::ForEachIntersectingCell(ALandscapeStreamingProxy::StaticClass(), Extent, World->PersistentLevel, [&SlowTask, TotalSteps, ActorPartitionSubsystem, InLandscapeInfo, InNewGridSizeInComponents, &LandscapeComponents](const UActorPartitionSubsystem::FCellCoord& CellCoord, const FIntRect& CellBounds)
 		{
 			// // 진행도 1 증가
 			SlowTask.EnterProgressFrame(1.0f, FText::Format(
-				NSLOCTEXT("Landscape", "ProcessingCell", "Processing cell {0}/{1}..."),
+				NSLOCTEXT("Landscape", "ProcessingCell", "Processing Landscape cell {0}/{1}..."),
 				FText::AsNumber(SlowTask.CompletedWork),
 				FText::AsNumber(TotalSteps)
 			));
 			
 			TMap<ULandscapeComponent*, UMaterialInterface*> ComponentMaterials;
-			TMap<ULandscapeComponent*, UMaterialInterface*> ComponentHoleMaterials;
-			TMap <ULandscapeComponent*, TMap<int32, UMaterialInterface*>> ComponentLODMaterials;
 
 			TArray<ULandscapeComponent*> ComponentsToMove;
-			const int32 MaxComponents = (int32)(InNewGridSizeInComponents * InNewGridSizeInComponents);
+			const int32 MaxComponents = static_cast<int32>(InNewGridSizeInComponents * InNewGridSizeInComponents);
 			ComponentsToMove.Reserve(MaxComponents);
 			for (int32 i = 0; i < LandscapeComponents.Num();)
 			{
-				ULandscapeComponent* LandscapeComponent = LandscapeComponents[i];
-				if (CellBounds.Contains(LandscapeComponent->GetSectionBase()))
+				if (ULandscapeComponent* LandscapeComponent = LandscapeComponents[i]; CellBounds.Contains(LandscapeComponent->GetSectionBase()))
 				{
 					ComponentMaterials.FindOrAdd(LandscapeComponent, LandscapeComponent->GetLandscapeMaterial());
-					ComponentHoleMaterials.FindOrAdd(LandscapeComponent, LandscapeComponent->GetLandscapeHoleMaterial());
-					TMap<int32, UMaterialInterface*>& LODMaterials = ComponentLODMaterials.FindOrAdd(LandscapeComponent);
-					for (int8 LODIndex = 0; LODIndex <= 8; ++LODIndex)
-					{
-						LODMaterials.Add(LODIndex, LandscapeComponent->GetLandscapeMaterial(LODIndex));
-					}
-
 					ComponentsToMove.Add(LandscapeComponent);
 					LandscapeComponents.RemoveAtSwap(i);
-					ProxiesToDelete.Add(LandscapeComponent->GetTypedOuter<ALandscapeProxy>());
 				}
 				else
 				{
@@ -1235,88 +1187,34 @@ bool UOCGLandscapeGenerateComponent::ChangeGridSize(UWorld* InWorld, ULandscapeI
 				ALandscapeProxy* LandscapeProxy = UOCGLandscapeGenerateComponent::FindOrAddLandscapeStreamingProxy(ActorPartitionSubsystem, InLandscapeInfo, CellCoord);
 				check(LandscapeProxy);
 				InLandscapeInfo->MoveComponentsToProxy(ComponentsToMove, LandscapeProxy);
-
-				// Make sure components retain their Materials if they don't match with their parent proxy
+				
 				for (ULandscapeComponent* MovedComponent : ComponentsToMove)
 				{
 					UMaterialInterface* PreviousLandscapeMaterial = ComponentMaterials.FindChecked(MovedComponent);
-					UMaterialInterface* PreviousLandscapeHoleMaterial = ComponentHoleMaterials.FindChecked(MovedComponent);
-					TMap<int32, UMaterialInterface*> PreviousLandscapeLODMaterials = ComponentLODMaterials.FindChecked(MovedComponent);
-
+					
 					MovedComponent->OverrideMaterial = nullptr;
 					if (PreviousLandscapeMaterial != nullptr && PreviousLandscapeMaterial != MovedComponent->GetLandscapeMaterial())
 					{
-						// If Proxy doesn't differ from Landscape override material there first
 						if(LandscapeProxy->GetLandscapeMaterial() == LandscapeProxy->GetLandscapeActor()->GetLandscapeMaterial())
 						{
 							LandscapeProxy->LandscapeMaterial = PreviousLandscapeMaterial; 
 						}
-						else // If it already differs it means that the component differs from it, override on component
+						else
 						{
 							MovedComponent->OverrideMaterial = PreviousLandscapeMaterial;
 						}
 					}
-
-					MovedComponent->OverrideHoleMaterial = nullptr;
-					if (PreviousLandscapeHoleMaterial != nullptr && PreviousLandscapeHoleMaterial != MovedComponent->GetLandscapeHoleMaterial())
-					{
-						// If Proxy doesn't differ from Landscape override material there first
-						if (LandscapeProxy->GetLandscapeHoleMaterial() == LandscapeProxy->GetLandscapeActor()->GetLandscapeHoleMaterial())
-						{
-							LandscapeProxy->LandscapeHoleMaterial = PreviousLandscapeHoleMaterial;
-						}
-						else // If it already differs it means that the component differs from it, override on component
-						{
-							MovedComponent->OverrideHoleMaterial = PreviousLandscapeHoleMaterial;
-						}
-					}
-
-					TArray<FLandscapePerLODMaterialOverride> PerLODOverrideMaterialsForComponent;
-					TArray<FLandscapePerLODMaterialOverride> PerLODOverrideMaterialsForProxy = LandscapeProxy->GetPerLODOverrideMaterials();
-					for (int8 LODIndex = 0; LODIndex <= 8; ++LODIndex)
-					{
-						UMaterialInterface* PreviousLODMaterial = PreviousLandscapeLODMaterials.FindChecked(LODIndex);
-						// If Proxy doesn't differ from Landscape override material there first
-						if (PreviousLODMaterial != nullptr && PreviousLODMaterial != MovedComponent->GetLandscapeMaterial(LODIndex))
-						{
-							if (LandscapeProxy->GetLandscapeMaterial(LODIndex) == LandscapeProxy->GetLandscapeActor()->GetLandscapeMaterial(LODIndex))
-							{
-								PerLODOverrideMaterialsForProxy.Add({ LODIndex, TObjectPtr<UMaterialInterface>(PreviousLODMaterial) });
-							}
-							else // If it already differs it means that the component differs from it, override on component
-							{
-								PerLODOverrideMaterialsForComponent.Add({ LODIndex, TObjectPtr<UMaterialInterface>(PreviousLODMaterial) });
-							}
-						}
-					}
-					MovedComponent->SetPerLODOverrideMaterials(PerLODOverrideMaterialsForComponent);
-					LandscapeProxy->SetPerLODOverrideMaterials(PerLODOverrideMaterialsForProxy);
 				}
 			}
 
 			return true;
 		}, GridSize);
 	}
-
-	TSet<AActor*> ActorsToDelete;
-	// Only delete Proxies that where not reused
-	for (ALandscapeProxy* ProxyToDelete : ProxiesToDelete)
-	{
-		if (ProxyToDelete->LandscapeComponents.Num() > 0 || ProxyToDelete->IsA<ALandscape>())
-		{
-			check(ProxyToDelete->GetGridSize() == GridSize);
-			continue;
-		}
-
-		ActorsToDelete.Add(ProxyToDelete);
-	}
-
+	
 	if (InLandscapeInfo->CanHaveLayersContent())
 	{
 		InLandscapeInfo->ForceLayersFullUpdate();
 	}
-	
-	check(!ActorsToDelete.Num());
 
 	return true;
 }
