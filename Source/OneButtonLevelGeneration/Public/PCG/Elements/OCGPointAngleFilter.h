@@ -19,7 +19,7 @@ public:
 	//~Begin UPCGSettings interface
 #if WITH_EDITOR
 	virtual FName GetDefaultNodeName() const override { return FName(TEXT("PointAngleFilter")); }
-	virtual FText GetDefaultNodeTitle() const override { return NSLOCTEXT("OCGPointAngleFilterSettings", "NodeTitle", "Slope Angle Filter"); }
+	virtual FText GetDefaultNodeTitle() const override { return NSLOCTEXT("OCGPointAngleFilterSettings", "NodeTitle", "Point Angle Filter"); }
 	virtual EPCGSettingsType GetType() const override { return EPCGSettingsType::Filter; }
 #endif
 
