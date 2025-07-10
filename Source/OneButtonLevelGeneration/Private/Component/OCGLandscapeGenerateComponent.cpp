@@ -23,6 +23,8 @@
 #include "Component/OCGMapGenerateComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "UObject/ConstructorHelpers.h"
+#include "WorldPartition/WorldPartitionHelpers.h"
+#include "WorldPartition/WorldPartitionSubsystem.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
@@ -336,7 +338,12 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
-
+		// 변경 사항을 컴포넌트에 반영		
+		// if (UWorldPartitionSubsystem* WPES = /* 에디터 모드에서만 존재하는 */ 
+		// TargetLandscape->GetWorld()->GetSubsystem<UWorldPartitionSubsystem>())
+		// {
+		// 	WPES
+		// }
 		// // 2) 언리얼 에디터용 파일유틸로 체크아웃(소스컨트롤) 및 저장
 		// FEditorFileUtils::EPromptReturnCode Result = FEditorFileUtils::PromptForCheckoutAndSave(
 		// 	{ LevelPackage },
@@ -354,6 +361,10 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
 
 	}
+
+	//TargetLandscape->MarkComponentsRenderStateDirty();
+	// 또는
+	TargetLandscape->ReregisterAllComponents();
 	CreateRuntimeVirtualTextureVolume(TargetLandscape);
 	//CachePointsForRiverGeneration();
 #endif
