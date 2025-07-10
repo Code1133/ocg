@@ -29,7 +29,7 @@ void AOCGLevelGenerator::Generate()
 	{
 		MapGenerateComponent->GenerateMaps();
 	}
-
+	
 	if (LandscapeGenerateComponent)
 	{
 		LandscapeGenerateComponent->GetLandscapeZScale(MapGenerateComponent->GetZScale());

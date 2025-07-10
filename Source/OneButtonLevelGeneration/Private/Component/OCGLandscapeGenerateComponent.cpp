@@ -1337,7 +1337,7 @@ void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
 
 	
     float SeaHeight = MinHeight + 
-        (MaxHeight - MinHeight) * MapPreset->SeaLevel - 1;
+        (MaxHeight - MinHeight) * MapPreset->SeaLevel - 5;
     
     uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
     UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);

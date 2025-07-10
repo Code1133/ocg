@@ -60,6 +60,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
 
     //Height Map 채우기
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
+    ExportMap(MapPreset, HeightMapData, "HeightMap1.png");
     //온도 맵 생성
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
     //습도 맵 계산
@@ -68,15 +69,14 @@ void UOCGMapGenerateComponent::GenerateMaps()
     TArray<const FOCGBiomeSettings*> BiomeMap; 
     DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     //바이옴 별 특징 적용
-    if (MapPreset->bModifyTerrainByBiome)
-        ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
+    ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
     //하이트맵 부드럽게 만들기
     SmoothHeightMap(MapPreset, HeightMapData);
+    MedianSmooth(MapPreset, HeightMapData);
     //수정된 하이트맵에 따라서 물 바이옴 다시 계산
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     //침식 진행
-    if (MapPreset->bErosion)
-        ErosionPass(MapPreset, HeightMapData);
+    ErosionPass(MapPreset, HeightMapData);
     GetMaxMinHeight(MapPreset, HeightMapData);
     ExportMap(MapPreset, HeightMapData, "HeightMap.png");
 }
@@ -142,6 +142,9 @@ void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPrese
 
     IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
     IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+
+    SlopeNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    SlopeNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
 }
 
 void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
@@ -163,7 +166,6 @@ void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, co
 
 float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const
 {
-	const float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
 	// ==========================================================
     //            1. 낮은 주파수로 거대한 산맥 생성
     // ==========================================================
@@ -196,6 +198,7 @@ float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* 
     TerrainNoise /= MaxPossibleAmplitude;
     TerrainNoise *= 0.3f;
     MountainHeight += TerrainNoise;
+    MountainHeight = FMath::Clamp(MountainHeight, -1.f, 1.f);
     
     // ==========================================================
     //            3. 평야와 산맥을 결합할 블렌드 마스크 생성
@@ -211,12 +214,14 @@ float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* 
         float Pow1_X = FMath::Pow(1-BlendNoise, MapPreset->RedistributionFactor);
         BlendNoise = PowX/(PowX + Pow1_X);
     }
+    BlendNoise = FMath::SmoothStep(0.f, 1.f, BlendNoise);
 
     // ==========================================================
     //            4. 블렌드 마스크에 따라 최종 높이 결정
     // ==========================================================
     MountainHeight = MountainHeight * 0.5f + 0.5f;
     float Height = FMath::Lerp(PlainHeight, MountainHeight, BlendNoise);
+    Height = FMath::Clamp(Height, 0.f, 1.f);
 
     // ==========================================================
     //            5. 섬 모양 적용
@@ -239,6 +244,7 @@ float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* 
         IslandMask *= 3.f;
         IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
         IslandMask = FMath::Pow(IslandMask, MapPreset->IslandFalloffExponent);
+        IslandMask = FMath::SmoothStep(0.f, 1.0f, IslandMask);
         IslandMask = FMath::Clamp(IslandMask, 0.f, 1.f);
         Height *= IslandMask;
         Height = FMath::Clamp(Height, 0.f, 1.f);
@@ -249,7 +255,7 @@ float UOCGMapGenerateComponent:: CalculateHeightForCoordinate(const UMapPreset* 
 
 void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
-    if (MapPreset->NumErosionIterations <= 0) return;
+    if (MapPreset->NumErosionIterations <= 0 || !MapPreset->bErosion) return;
 
     // 1. 침식 브러시 인덱스 미리 계산 (최적화)
     InitializeErosionBrush();
@@ -470,6 +476,8 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
 
 void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap)
 {
+    if (!MapPreset->bModifyTerrainByBiome)
+        return;
     TArray<float> MinHeights;
     TArray<float> BlurredMinHeights;
     //각 바이옴 구역의 최소 높이를 월드 기준 float로 반환
@@ -509,10 +517,11 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
             
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) *
                 MapPreset->BiomeNoiseScale) * MapPreset->BiomeNoiseAmplitude + MapPreset->BiomeNoiseAmplitude;
-            float MountainHeight = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f/LandscapeZScale;
+            float HeightToAdd = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f/LandscapeZScale;
+            float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0, 65535);
 
-            uint16 NewHeight = FMath::Lerp(TargetPlainHeight, TargetPlainHeight + MountainHeight, MtoPRatio);
-            NewHeight = FMath::Max(NewHeight, SeaLevelHeight);
+            uint16 NewHeight = FMath::Lerp(TargetPlainHeight, MountainHeight, MtoPRatio);
+            NewHeight = FMath::Clamp(FMath::Max(NewHeight, SeaLevelHeight), 0, 65535);
             InOutHeightMap[Index] = NewHeight;
         }
     }
@@ -706,38 +715,93 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
         {
             for (int32 x=1; x<MapSize.X-1; x++)
             {
+                float ThresholdNoise = FMath::PerlinNoise2D((FVector2D(x, y) + SlopeNoiseOffset) * MapPreset->ThresholdNoiseScale) * 0.5f + 1.0f;
+                float RadomizedThreshold = SpikeThreshold * ThresholdNoise;
+                float RandomizedDiagonalThreshold = DiagonalSpikeThreshold * ThresholdNoise;
+                
                 const int32 Index = y*MapSize.X + x;
                 float CenterHeight = InOutHeightMap[Index];
-
-                float TotalHeightToMove = 0;
+                float MaxHeightMoved = 0;
                 
                 for (int i=0; i < Neighbors.Num(); i++)
                 {
                     const int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
                     const float NeighborHeight = InOutHeightMap[NeighborIndex];
-                    const float HeightDiff = CenterHeight - NeighborHeight;
+                    const float HeightDiff = NeighborHeight - CenterHeight;
 
                     const bool bIsDiagonal = (Neighbors[i].X != 0 && Neighbors[i].Y != 0);
-                    const float CurrentThreshold = bIsDiagonal ? DiagonalSpikeThreshold : SpikeThreshold;
+                    const float CurrentThreshold = bIsDiagonal ? RandomizedDiagonalThreshold : RadomizedThreshold;
                     
                     if (HeightDiff > CurrentThreshold)
                     {
-                        float HeightToMove = HeightDiff - CurrentThreshold;
-                        uint16 NewHeight = InOutHeightMap[NeighborIndex] + HeightToMove;
-                        TotalHeightToMove += HeightToMove;
+                        float HeightToMove = (HeightDiff - CurrentThreshold) * MapPreset->SmoothingStrength;
+                        if (HeightToMove > MaxHeightMoved)
+                            MaxHeightMoved = HeightToMove;
+                        uint16 NewHeight = InOutHeightMap[NeighborIndex] - HeightToMove;
                         InOutHeightMap[NeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
+                        SpikeCount ++;
                     }
                 }
-
-                if (TotalHeightToMove > 0)
+                if (MaxHeightMoved > 0)
                 {
-                    TotalHeightToMove = FMath::Min(TotalHeightToMove, SpikeThreshold);
-                    uint16 NewHeight = InOutHeightMap[Index] - TotalHeightToMove;
-                    InOutHeightMap[Index] = FMath::Clamp(NewHeight, 0, 65535);
+                    float NewHeight = FMath::Clamp(CenterHeight + MaxHeightMoved, 0, 65535);
+                    InOutHeightMap[Index] = static_cast<uint16>(NewHeight);
                 }
             }
         }
         UE_LOG(LogTemp, Display, TEXT("SpikeCount: %d, Iteration: %d"), SpikeCount, Iteration);
+    }
+}
+
+void UOCGMapGenerateComponent::ApplyGausianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
+    TArray<uint16>& OutBlurredMap)
+{
+    int32 Radius = MapPreset->GausianBlurRadius;
+
+    FIntPoint MapSize = MapPreset->MapResolution;
+    int32 TotalPixels = MapSize.X * MapSize.Y;
+
+    OutBlurredMap.SetNumUninitialized(TotalPixels);
+    
+    TArray<float> TempMap;
+    TempMap.SetNum(TotalPixels);
+
+    // 수평 블러
+    for (int32 y=0; y<MapSize.Y; y++)
+    {
+        for (int32 x=0; x<MapSize.X; x++)
+        {
+            float Sum = 0;
+            float WeightSum = 0;
+            for (int32 i=-Radius; i<=Radius; i++)
+            {
+                int32 SampleX = FMath::Clamp(x+i, 0, MapSize.X-1);
+                int32 Index = y*MapSize.X + SampleX;
+                float Weight = FMath::Exp(-(i*i) / (2.f * Radius * Radius));
+                Sum += InOutHeightMap[Index] * Weight;
+                WeightSum += Weight;
+            }
+            TempMap[y*MapSize.X + x] = Sum / WeightSum;
+        }
+    }
+
+    // 수직 블러
+    for (int32 x = 0; x < MapSize.X; ++x)
+    {
+        for (int32 y = 0; y < MapSize.Y; ++y)
+        {
+            float Sum = 0;
+            float WeightSum = 0;
+            for (int32 i = -Radius; i <= Radius; ++i)
+            {
+                int32 SampleY = FMath::Clamp(y + i, 0, MapSize.Y - 1);
+                int32 Index = SampleY * MapSize.X + x;
+                float Weight = FMath::Exp(-(i * i) / (2.0f * Radius * Radius));
+                Sum += TempMap[Index] * Weight;
+                WeightSum += Weight;
+            }
+            OutBlurredMap[y * MapSize.X + x] = FMath::Clamp(FMath::RoundToInt(Sum / WeightSum), 0, 65535);
+        }
     }
 }
 
@@ -1143,6 +1207,41 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
     }
     ExportMap(MapPreset, BiomeColorMap, "BiomeMap.png");
     BlendBiome(MapPreset);
+}
+
+void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
+{
+    if (!MapPreset->bSmoothByMediumHeight)
+        return;
+    const int32 Radius = MapPreset->MedianSmoothRadius;
+    const FIntPoint MapSize = MapPreset->MapResolution;
+
+    TArray<uint16> OriginalHeightMap = InOutHeightMap;
+    TArray<uint16> Window;
+    Window.Reserve((Radius * 2 + 1) * (Radius * 2 + 1));
+
+    for (int32 y = Radius; y < MapSize.Y - Radius; ++y)
+    {
+        for (int32 x = Radius; x < MapSize.X - Radius; ++x)
+        {
+            Window.Reset();
+            // 주변 픽셀(Window)의 높이 값 수집
+            for (int32 wy = -Radius; wy <= Radius; ++wy)
+            {
+                for (int32 wx = -Radius; wx <= Radius; ++wx)
+                {
+                    Window.Add(OriginalHeightMap[(y + wy) * MapSize.X + (x + wx)]);
+                }
+            }
+
+            // 높이 값 정렬
+            Window.Sort();
+
+            // 정렬된 값들 중 중앙값을 현재 픽셀의 새 높이로 설정
+            // 중앙값은 극단적인 값(스파이크)의 영향을 받지 않습니다.
+            InOutHeightMap[y * MapSize.X + x] = Window[Window.Num() / 2];
+        }
+    }
 }
 
 void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)

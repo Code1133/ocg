@@ -59,6 +59,7 @@ private:
 	FVector2D BlendNoiseOffset;
 	FVector2D DetailNoiseOffset;
 	FVector2D IslandNoiseOffset;
+	FVector2D SlopeNoiseOffset;
 	float NoiseScale;
 	float PlainHeight;
 	FRandomStream Stream;
@@ -96,7 +97,9 @@ private:
 	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
 	void GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
 	void SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void ApplyGausianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, TArray<uint16>& OutBlurredMap);
 	void FinalizeBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
+	void MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	
 private:
 	float CachedGlobalMinTemp;

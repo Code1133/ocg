@@ -153,17 +153,40 @@ public:
 	float TemperatureInfluenceOnHumidity = 0.7f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bSmoothHeight = true;
+	bool bSmoothByMediumHeight = false;
+
+	// Threshold Angle of the slope of the landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0"))
+	int32 MedianSmoothRadius = 3;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	bool bSmoothHeight = false;
 	
 	// Threshold Angle of the slope of the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0"))
 	int32 SmoothingIteration = 5;
+
+	// Larger Radius gives softer smoothing effect
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0", ClampMax = "25"))
+	int32 GausianBlurRadius = 5;
+	
+	// Larger Value gives larger smoothing effect
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
+	float SmoothingStrength = 0.5f;
 	
 	// Threshold Angle of the slope of the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0", ClampMax = "90.0"))
 	float MaxSlopeAngle = 60.f;
+
+	// Larger scale gives less pyramiding effect
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0.001", ClampMax = "1.0"))
+	float ThresholdNoiseScale = 0.05f;
 	
 	//Island Properties
 	// Decides whether the landscape will be island or not
@@ -188,7 +211,7 @@ public:
 	// Modify Terrain Properties
 	// Decides whether the Mountain Ratio of biomes will be applied or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bModifyTerrainByBiome = true;
+	bool bModifyTerrainByBiome = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = 0.0f, ClampMax = 1.0f))
