@@ -2,7 +2,7 @@
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
-#include "LandscapeConfigHelper.h"
+#include "NaniteSceneProxy.h"
 
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
@@ -19,7 +19,6 @@
 #include "VT/RuntimeVirtualTextureVolume.h"
 #include "Components/RuntimeVirtualTextureComponent.h"
 #include "RuntimeVirtualTextureSetBounds.h"
-
 
 #include "Component/OCGMapGenerateComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -42,6 +41,14 @@
 #include "LandscapeStreamingProxy.h"
 #include "ActorFactories/ActorFactory.h"
 #include "WorldPartition/WorldPartition.h"
+
+#include "LandscapeConfigHelper.h"
+#include "LandscapeEdit.h"
+#include "LandscapeEditorObject.h"
+#include "LandscapeEditorUtils.h"
+
+#include "Editor/LandscapeEditor/Private/LandscapeImageFileCache.h"
+#include "LandscapeEditorModule.h"
 #endif
 
 static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)
@@ -71,6 +78,23 @@ static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor,
             OutVirtualTextures.Add(VirtualTexture);
         }
     }
+}
+
+static int32 NumLandscapeRegions(ULandscapeInfo* InLandscapeInfo)
+{
+#if WITH_EDITOR
+	int32 NumRegions = 0;
+	TArray<AActor*> Children;
+	InLandscapeInfo->LandscapeActor->GetAttachedActors(Children);
+	TArray<ALocationVolume*> LandscapeRegions;
+
+	for (AActor* Child : Children)
+	{
+		NumRegions += Child->IsA<ALocationVolume>() ? 1 : 0;
+	}
+
+	return NumRegions;
+#endif
 }
 
 // Sets default values for this component's properties
@@ -149,57 +173,16 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	{
 		MapPreset = LevelGenerator->GetMapPreset();
 	}
-    FIntPoint MapResolution = MapPreset->MapResolution;
 	
     {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
     	//InitializeLandscapeSetting(World);
     }
 	
-    
-    // 랜드스케이프 생성
-    QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
-    ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-    ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-    QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
-    
-    SizeX = ComponentCountX * QuadsPerComponent + 1;
-    SizeY = ComponentCountY * QuadsPerComponent + 1;
-    const int32 NumPixels = SizeX * SizeY;
 
     if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
     {
         UE_LOG(LogTemp, Error, TEXT("유효한 에디터 월드가 아닙니다."));
         return;
-    }
-    
-	TArray<ALandscapeStreamingProxy*> ProxiesToDelete;
-	for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
-	{
-		ALandscapeStreamingProxy* Proxy = *It;
-		if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape)
-		{ 
-			ProxiesToDelete.Add(Proxy);
-		}
-	}
-
-	// 2. Proxy 삭제
-	for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
-	{
-		if (Proxy)
-		{
-			Proxy->Destroy();
-		}
-	}
-
-	// 3. Landscape 삭제
-	if (TargetLandscape)
-	{
-		TargetLandscape->Destroy();
-	}
-	
-    if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
     }
 
     {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
@@ -221,20 +204,62 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     	//TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
     }
 
-	TargetLandscape = World->SpawnActor<ALandscape>();
-    if (!TargetLandscape)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to spawn ALandscape actor."));
-        return;
-    }
+	bool IsCreateNewLandscape = false;
+	if (ShouldCreateNewLandscape(MapPreset))
+	{
+		TArray<ALandscapeStreamingProxy*> ProxiesToDelete;
+		for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
+		{
+			ALandscapeStreamingProxy* Proxy = *It;
+			if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape)
+			{ 
+				ProxiesToDelete.Add(Proxy);
+			}
+		}
+		
+		// 2. Proxy 삭제
+		for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
+		{
+			if (Proxy)
+			{
+				Proxy->Destroy();
+			}
+		}
+		
+		// 3. Landscape 삭제
+		if (TargetLandscape)
+		{
+			TargetLandscape->Destroy();
+		}
+		
+		TargetLandscape = World->SpawnActor<ALandscape>();
+		if (!TargetLandscape)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to spawn ALandscape actor."));
+			return;
+		}
+		IsCreateNewLandscape = true;
+	}
+
     TargetLandscape->bCanHaveLayersContent = true;
     TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
 
-	// automatically calculate a lighting LOD that won't crash lightmass (hopefully)
-	// < 2048x2048 -> LOD0
-	// >=2048x2048 -> LOD1
-	// >= 4096x4096 -> LOD2
-	// >= 8192x8192 -> LOD3
+	FIntPoint MapResolution = MapPreset->MapResolution;
+	
+	QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+	ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
+    
+	SizeX = ComponentCountX * QuadsPerComponent + 1;
+	SizeY = ComponentCountY * QuadsPerComponent + 1;
+	const int32 NumPixels = SizeX * SizeY;
+	
+	if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
+	}
+	
 	TargetLandscape->StaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((SizeX * SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
 	
     // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
@@ -257,97 +282,189 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     float OffsetZ = (MapPreset->MaxHeight - MapPreset->MinHeight) / 2.f;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, 0));
     TargetLandscape->SetActorScale3D(FVector(100.0f * MapPreset->LandscapeScale, 100.0f * MapPreset->LandscapeScale, LandscapeZScale));
-    
-    //Import 함수 호출 (변경된 시그니처에 맞춰서)
-    TargetLandscape->Import(
-        FGuid::NewGuid(),
-        0, 0,
-        MapResolution.X - 1, MapResolution.Y - 1,
-        MapPreset->Landscape_SectionsPerComponent,
-        QuadsPerSection,
-        HeightmapDataPerLayer,
-        nullptr,
-        MaterialLayerDataPerLayer,
-        ELandscapeImportAlphamapType::Additive,
-        TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
-    );
 
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
-    	// TargetLandscape->Import(
-    	// 	FGuid::NewGuid(),
-    	// 	0, 0,
-    	// 	SizeX - 1, SizeY - 1,
-    	// 	MapPreset->Landscape_SectionsPerComponent,
-    	// 	QuadsPerSection,
-    	// 	HeightmapDataPerLayer,
-    	// 	nullptr,
-    	// 	MaterialLayerDataPerLayer,
-    	// 	ELandscapeImportAlphamapType::Additive,
-    	// 	TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
-    	// );    
-    }
-
-	FActorLabelUtilities::SetActorLabelUnique(TargetLandscape, ALandscape::StaticClass()->GetName());
-	
-    AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
-	
-	ManageLandscapeRegions(World, TargetLandscape);
-    
-	
-    // 액터 등록 및 뷰포트 업데이트
-    TargetLandscape->RegisterAllComponents();
-    GEditor->RedrawAllViewports();
-	
-	TargetLandscape->ForceUpdateLayersContent(true);
-
-	// 1) 저장할 레벨 패키지 가져오기
-	ULevel* Level = World->PersistentLevel;
-	UPackage* LevelPackage = Level->GetOutermost();
-
-	TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
-	TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
-	TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
-
-	// 2) 언리얼 에디터용 파일유틸로 체크아웃(소스컨트롤) 및 저장
-	FEditorFileUtils::EPromptReturnCode Result = FEditorFileUtils::PromptForCheckoutAndSave(
-		{ LevelPackage },
-		/*bCheckDirty=*/ false,
-		/*bPromptToSave=*/ false
-	);
-
-	if (Result == FEditorFileUtils::PR_Success)
+	if (IsCreateNewLandscape)
 	{
-		CreateRuntimeVirtualTextureVolume(TargetLandscape);
-	}
+		//Import 함수 호출 (변경된 시그니처에 맞춰서)
+		TargetLandscape->Import(
+			FGuid::NewGuid(),
+			0, 0,
+			MapResolution.X - 1, MapResolution.Y - 1,
+			MapPreset->Landscape_SectionsPerComponent,
+			QuadsPerSection,
+			HeightmapDataPerLayer,
+			nullptr,
+			MaterialLayerDataPerLayer,
+			ELandscapeImportAlphamapType::Additive,
+			TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
+		);
+
+		{	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
+			// TargetLandscape->Import(
+			// 	FGuid::NewGuid(),
+			// 	0, 0,
+			// 	SizeX - 1, SizeY - 1,
+			// 	MapPreset->Landscape_SectionsPerComponent,
+			// 	QuadsPerSection,
+			// 	HeightmapDataPerLayer,
+			// 	nullptr,
+			// 	MaterialLayerDataPerLayer,
+			// 	ELandscapeImportAlphamapType::Additive,
+			// 	TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
+			// );    
+		}
+		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
+		
+		FActorLabelUtilities::SetActorLabelUnique(TargetLandscape, ALandscape::StaticClass()->GetName());
+		
+		LandscapeInfo->UpdateLayerInfoMap(TargetLandscape);
 	
-	CachePointsForRiverGeneration();
+		AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+	
+		ManageLandscapeRegions(World, TargetLandscape);
+	
+		// 액터 등록 및 뷰포트 업데이트
+		TargetLandscape->RegisterAllComponents();
+		GEditor->RedrawAllViewports();
+	
+		//TargetLandscape->ForceUpdateLayersContent(true);
+
+		// 1) 저장할 레벨 패키지 가져오기
+		ULevel* Level = World->PersistentLevel;
+		UPackage* LevelPackage = Level->GetOutermost();
+
+		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
+		TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
+		TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+
+		// // 2) 언리얼 에디터용 파일유틸로 체크아웃(소스컨트롤) 및 저장
+		// FEditorFileUtils::EPromptReturnCode Result = FEditorFileUtils::PromptForCheckoutAndSave(
+		// 	{ LevelPackage },
+		// 	/*bCheckDirty=*/ false,
+		// 	/*bPromptToSave=*/ false
+		// );
+  //
+		// if (Result == FEditorFileUtils::PR_Success)
+  //       {
+  //       	CreateRuntimeVirtualTextureVolume(TargetLandscape);
+  //       }
+	}
+	else
+	{
+		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
+
+	}
+	CreateRuntimeVirtualTextureVolume(TargetLandscape);
+	//CachePointsForRiverGeneration();
 #endif
 }
 
-void UOCGLandscapeGenerateComponent::OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bPromptUser)
+void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLandscapeImportLayerInfo> ImportLayers)
 {
-	if (!World || !World->IsEditorWorld())
+#if WITH_EDITOR
+	if (World == nullptr)
 		return;
 
-	if (World != GetWorld())
+	if (TargetLandscape == nullptr)
 		return;
-
-	for (TActorIterator<ALandscapeProxy> It(World); It; ++It)
+	
+	if (ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo())
 	{
-		if (ALandscape* CurLandscape = Cast<ALandscape>(It->GetLandscapeActor()))
+		FIntRect LandscapeExtent;
+		LandscapeInfo->GetLandscapeExtent(LandscapeExtent);
+
+		LandscapeExtent.Max.X += 1;
+		LandscapeExtent.Max.Y += 1;
+
+		FIntRect ImportRegion = LandscapeExtent;
+
+		FGuid CurrentLayerGuid = TargetLandscape->GetLayerConst(0)->Guid;
+
+		const ELandscapeLayerPaintingRestriction PaintRestriction = ELandscapeLayerPaintingRestriction::None;
+		const bool bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
+		if (bIsWorldPartition && NumLandscapeRegions(LandscapeInfo) > 0)
 		{
-			if (CurLandscape == TargetLandscape)
+			TArray<ALocationVolume*> LandscapeRegions;
+			TArray<AActor*> Children;
+			LandscapeInfo->LandscapeActor->GetAttachedActors(Children);
+			for (AActor* Child : Children)
 			{
-				// 한 번만 실행할 로직
-				CurLandscape->RuntimeVirtualTextures.Add(ColorRVT);
-				CurLandscape->RuntimeVirtualTextures.Add(HeightRVT);
-				CurLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
-		
-				CreateRuntimeVirtualTextureVolume(CurLandscape);
-				break;
+				if (Child->IsA<ALocationVolume>())
+				{
+					LandscapeRegions.Add(Cast<ALocationVolume>(Child));
+				}
 			}
+
+			int32 NumRegions = LandscapeRegions.Num();
+
+			FScopedSlowTask Progress(static_cast<float>(NumRegions), NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "Importing Landscape Regions", "Importing Landscape Regions"));
+			Progress.MakeDialog(/*bShowCancelButton = */ false);
+
+			auto RegionImporter = [this, &ImportLayers, &Progress, LandscapeInfo, CurrentLayerGuid, PaintRestriction](const FBox& RegionBounds, const TArray<ALandscapeProxy*>& Proxies)
+			{
+				// todo need a better way of working out the landscape bounds of the StreamingProxies in this region.
+				// What if some of the landscape is loaded?
+				FIntRect LandscapeLoadedExtent;
+				LandscapeInfo->GetLandscapeExtent(LandscapeLoadedExtent);
+				LandscapeLoadedExtent.Max.X += 1;
+				LandscapeLoadedExtent.Max.Y += 1;
+
+				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "Importing Landscape Regions", "Importing Landscape Regions"));
+				{
+					ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
+					FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+					FHeightmapAccessor<false> HeightmapAccessor(LandscapeInfo);
+					HeightmapAccessor.SetData(LandscapeLoadedExtent.Min.X, LandscapeLoadedExtent.Min.Y, LandscapeLoadedExtent.Max.X - 1, LandscapeLoadedExtent.Max.Y - 1, GetLevelGenerator()->GetHeightMapData().GetData());
+				}
+				
+				for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
+				{
+					ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
+					FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+					FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
+					AlphamapAccessor.SetData(LandscapeLoadedExtent.Min.X, LandscapeLoadedExtent.Min.Y, LandscapeLoadedExtent.Max.X - 1, LandscapeLoadedExtent.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
+				}
+
+				return !Progress.ShouldCancel();
+			};
+				
+			ForEachRegion_LoadProcessUnload(LandscapeInfo, ImportRegion, World, RegionImporter);
+			
+			// FLandscapeImageFileCache& LandscapeImageFileCache = FModuleManager::GetModuleChecked<ILandscapeEditorModule>("LandscapeEditor").GetImageFileCache();
+			// LandscapeImageFileCache.Clear();
+		}
+		else
+		{
+			FScopedSlowTask Progress(static_cast<float>(1 + ImportLayers.Num()), NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscape", "Importing Landscape"));
+			Progress.MakeDialog(/*bShowCancelButton = */ false);
+
+			{
+				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeHeight", "Importing Landscape Height"));
+				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
+				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+				FHeightmapAccessor<false> HeightmapAccessor(LandscapeInfo);
+				HeightmapAccessor.SetData(ImportRegion.Min.X, ImportRegion.Min.Y, ImportRegion.Max.X - 1, ImportRegion.Max.Y - 1, GetLevelGenerator()->GetHeightMapData().GetData());
+			}
+
+			for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
+			{
+				if (Progress.ShouldCancel())
+				{
+					continue;
+				}
+
+				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeWeight", "Importing Landscape Weight"));
+
+				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
+				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+				FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
+				AlphamapAccessor.SetData(ImportRegion.Min.X, ImportRegion.Min.Y, ImportRegion.Max.X - 1, ImportRegion.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
+			}
+			
+			LandscapeInfo->ForceLayersFullUpdate();
 		}
 	}
+#endif
 }
 
 void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(UWorld* World)
@@ -715,6 +832,60 @@ void UOCGLandscapeGenerateComponent::ForEachComponentByRegion(int32 RegionSize,
     }
 }
 
+
+void UOCGLandscapeGenerateComponent::ForEachRegion_LoadProcessUnload(ULandscapeInfo* InLandscapeInfo,
+	const FIntRect& InDomain, UWorld* InWorld,
+	TFunctionRef<bool(const FBox&, const TArray<ALandscapeProxy*>)> InRegionFn)
+{
+#if WITH_EDITOR
+	const int32 RegionSizeInTexels = InLandscapeInfo->ComponentSizeQuads * InLandscapeInfo->RegionSizeInComponents + 1;
+	const FIntRect RegionCoordinates = InDomain / RegionSizeInTexels;
+
+	TArray<AActor*> Children;
+	InLandscapeInfo->LandscapeActor->GetAttachedActors(Children);
+	TArray<ALocationVolume*> LandscapeRegions;
+
+	for (AActor* Child : Children)
+	{
+		if (Child->IsA<ALocationVolume>())
+		{
+			LandscapeRegions.Add(Cast<ALocationVolume>(Child));
+		}
+	}
+
+	for (ALocationVolume* Region : LandscapeRegions)
+	{
+		Region->Load();
+
+		FBox RegionBounds = Region->GetComponentsBoundingBox();
+
+		TArray<AActor*> AllActors = InWorld->GetLevel(0)->Actors;
+		TArray<ALandscapeProxy*> LandscapeProxies;
+		for (AActor* Actor : AllActors)
+		{
+			if (ALandscapeStreamingProxy* Proxy = Cast<ALandscapeStreamingProxy>(Actor))
+			{
+				LandscapeProxies.Add(Proxy);
+			}
+		}
+
+		// Save the actor
+		bool bShouldExit = !InRegionFn(RegionBounds, LandscapeProxies);
+
+		InLandscapeInfo->ForceLayersFullUpdate();
+
+		SaveObjects(MakeArrayView(LandscapeProxies));
+
+		Region->Unload();
+
+		if (bShouldExit)
+		{
+			break;
+		}
+	}
+#endif
+}
+
 TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::PrepareLandscapeLayerData(
     ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset)
 {
@@ -943,8 +1114,6 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     {
     	ARuntimeVirtualTextureVolume* NewRVTVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
     	NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
-    	
-    	NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
     	NewRVTVolume->VirtualTextureComponent->SetBoundsAlignActor(InLandscapeActor);
   
     	RuntimeVirtualTexture::SetBounds(NewRVTVolume->VirtualTextureComponent);
@@ -1169,6 +1338,36 @@ ALandscapeProxy* UOCGLandscapeGenerateComponent::FindOrAddLandscapeStreamingProx
 	ALandscapeProxy* LandscapeProxy = Cast<ALandscapeProxy>(InActorPartitionSubsystem->GetActor(ALandscapeStreamingProxy::StaticClass(), InCellCoord, bCreate, InLandscapeInfo->LandscapeGuid, Landscape->GetGridSize(), bBoundsSearch, LandscapeProxyCreated));
 	check(!LandscapeProxy || LandscapeProxy->GetGridSize() == Landscape->GetGridSize());
 	return LandscapeProxy;
+}
+
+bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(UMapPreset* InMapPreset) const
+{
+	if (TargetLandscape == nullptr)
+	{
+		return true;
+	}
+	
+	// 1) preset 로부터 기대값 계산
+	int32 ExpectedQuadsPerSection    = int32(InMapPreset->Landscape_QuadsPerSection);
+	int32 ExpectedSectionsPerComponent = InMapPreset->Landscape_SectionsPerComponent;
+	int32 ExpectedQuadsPerComponent  = ExpectedQuadsPerSection * ExpectedSectionsPerComponent;
+	int32 ExpectedComponentCountX    = (InMapPreset->MapResolution.X - 1) / ExpectedQuadsPerComponent;
+	int32 ExpectedComponentCountY    = (InMapPreset->MapResolution.Y - 1) / ExpectedQuadsPerComponent;
+	int32 ExpectedSizeX              = ExpectedComponentCountX * ExpectedQuadsPerComponent + 1;
+	int32 ExpectedSizeY              = ExpectedComponentCountY * ExpectedQuadsPerComponent + 1;
+
+	// 2) 비교
+	if ( QuadsPerSection    != ExpectedQuadsPerSection
+	  || QuadsPerComponent  != ExpectedQuadsPerComponent
+	  || ComponentCountX    != ExpectedComponentCountX
+	  || ComponentCountY    != ExpectedComponentCountY
+	  || SizeX              != ExpectedSizeX
+	  || SizeY              != ExpectedSizeY )
+	{
+		return true;
+	}
+
+	return false;
 }
 
 FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const

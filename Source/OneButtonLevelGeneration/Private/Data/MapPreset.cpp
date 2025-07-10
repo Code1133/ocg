@@ -126,7 +126,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			MapResolution = NewMapResolution;
 		}
 	}
-
+	
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
 	{
 		UpdateInternalLandscapeFilterNames();

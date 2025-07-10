@@ -52,12 +52,19 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
 	int32 WorldPartitionRegionSize = 16;
 
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 QuadsPerSection;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	FIntPoint TotalLandscapeComponentSize;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 ComponentCountX;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 ComponentCountY;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 QuadsPerComponent;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 SizeX;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 SizeY;
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
@@ -66,6 +73,8 @@ public:
 	void GenerateLandscape(UWorld* World);
 	
 private:
+	void ImportMapDatas(UWorld* World, TArray<FLandscapeImportLayerInfo> ImportLayers);
+	
 	void OnPostSaveWorld(uint32 SaveFlags, UWorld* World, bool bPromptUser);
 	
 	void InitializeLandscapeSetting(UWorld* World);
@@ -80,6 +89,8 @@ private:
 
 	void ForEachComponentByRegion(int32 RegionSize, const TArray<FIntPoint>& ComponentCoordinates, TFunctionRef<bool(const FIntPoint&, const TArray<FIntPoint>&)> RegionFn);
 
+	void ForEachRegion_LoadProcessUnload(ULandscapeInfo* InLandscapeInfo, const FIntRect& InDomain, UWorld* InWorld, TFunctionRef<bool(const FBox&, const TArray<ALandscapeProxy*>)> InRegionFn);
+	
 	template<typename T>
 	void SaveObjects(TArrayView<T*> InObjects)
 	{
@@ -104,7 +115,10 @@ private:
 
 	static ALandscapeProxy* FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem, ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord);
 
+	bool ShouldCreateNewLandscape(UMapPreset* InMapPreset) const;
+	
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
+
 	void CachePointsForRiverGeneration();
 
 public:
