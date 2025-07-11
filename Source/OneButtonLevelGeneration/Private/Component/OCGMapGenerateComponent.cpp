@@ -428,9 +428,11 @@ void UOCGMapGenerateComponent::InitializeErosionBrush()
                     int32 CoordY = CenterY + y;
                     if (CoordX >= 0 && CoordX < MapPreset->MapResolution.X && CoordY >= 0 && CoordY < MapPreset->MapResolution.Y)
                     {
+                        int Index = CoordY * MapPreset->MapResolution.X + CoordX;
+                        Index = FMath::Clamp(Index, 0, MapPreset->MapResolution.X * MapPreset->MapResolution.Y - 1);
                         float Weight = 1.0f - (Dist / MapPreset->ErosionRadius);
                         WeightSum += Weight;
-                        Indices.Add(CoordY * MapPreset->MapResolution.X + CoordX);
+                        Indices.Add(Index);
                         Weights.Add(Weight);
                     }
                 }
