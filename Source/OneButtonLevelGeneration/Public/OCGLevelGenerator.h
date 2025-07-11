@@ -55,7 +55,7 @@ private:
 	TObjectPtr<UMapPreset> MapPreset;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class AWaterBodyCustom> SeaLevelWaterBody;
+	TObjectPtr<class AWaterBodyOcean> SeaLevelWaterBody;
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MapGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGMapGenerateComponent> MapGenerateComponent;

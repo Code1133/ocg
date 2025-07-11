@@ -33,7 +33,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 
 	// Find Volume Actor
 	TArray<AOCGLandscapeVolume*> Actors;
-	if (LandscapeGenerator)
+	if (LandscapeGenerator.IsValid())
 	{
 		Actors = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(LandscapeGenerator->GetWorld());
 	}
@@ -230,10 +230,8 @@ void UMapPreset::ForceGenerate() const
 
 void UMapPreset::RegenerateRiver()
 {
-	if (!LandscapeGenerator || !LandscapeGenerator->GetWorld())
-	{
+	if (!LandscapeGenerator.IsValid() || !LandscapeGenerator->GetWorld())
 		return;
-	}
 
 	TArray<AOCGLevelGenerator*> Actors =
 		FOCGUtils::GetAllActorsOfClass<AOCGLevelGenerator>(LandscapeGenerator->GetWorld());

@@ -395,7 +395,7 @@ public:
 #if WITH_EDITOR
 public:
 	UPROPERTY(Transient)
-	TObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
+	TWeakObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
 
 	TWeakPtr<class FMapPresetEditorToolkit> EditorToolkit;
 #endif

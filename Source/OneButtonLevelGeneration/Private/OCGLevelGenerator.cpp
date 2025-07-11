@@ -6,6 +6,8 @@
 #include "WaterBodyActor.h"
 #include "WaterBodyComponent.h"
 #include "WaterBodyCustomActor.h"
+#include "WaterBodyOceanActor.h"
+#include "WaterBodyOceanComponent.h"
 #include "WaterEditorSettings.h"
 #include "WaterSplineComponent.h"
 #include "Component/OCGMapGenerateComponent.h"
@@ -129,7 +131,7 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 		return;
 	}
 
-	SeaLevelWaterBody = InWorld->SpawnActor<AWaterBodyCustom>(AWaterBodyCustom::StaticClass());
+	SeaLevelWaterBody = InWorld->SpawnActor<AWaterBodyOcean>(AWaterBodyOcean::StaticClass());
 	SeaLevelWaterBody->SetIsSpatiallyLoaded(false);
 	SetDefaultWaterProperties(SeaLevelWaterBody);
 	
@@ -137,8 +139,6 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	float SeaHeight = MapPreset->MinHeight + 
 		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 5;
 	// FTransform SeaLevelWaterbodyTransform = FTransform::Identity;
-	//
-	// SeaLevelWaterbodyTransform.SetLocation(FVector(0.0f, 0.0f, SeaHeight));
 
 	SeaLevelWaterBody->SetActorLocation(FVector(0.0f, 0.0f, SeaHeight));
 	
@@ -160,15 +160,8 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 {
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InWaterBody)->GetWaterBodyComponent();
 	check(WaterBodyComponent);
-
-	// if (const FWaterBrushActorDefaults* WaterBrushActorDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults.brush)
-	// {
-	// 	WaterBodyComponent->CurveSettings = WaterBrushActorDefaults->CurveSettings;
-	// 	WaterBodyComponent->WaterHeightmapSettings = WaterBrushActorDefaults->HeightmapSettings;
-	// 	WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults->LayerWeightmapSettings;
-	// }
-
-	if (const FWaterBodyDefaults* WaterBodyDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults)
+	
+	if (const FWaterBodyDefaults* WaterBodyDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults)
 	{
 		WaterBodyComponent->SetWaterMaterial(WaterBodyDefaults->GetWaterMaterial());
 		WaterBodyComponent->SetWaterStaticMeshMaterial(WaterBodyDefaults->GetWaterStaticMeshMaterial());
@@ -192,11 +185,26 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 		WaterZone->SetZoneExtent(FVector2D(Extent.X * 2, Extent.Y * 2));
 	}
 
-	AWaterBodyCustom* WaterBodyCustom = CastChecked<AWaterBodyCustom>(InWaterBody);
-	WaterBodyCustom->GetWaterBodyComponent()->SetWaterMeshOverride(GetDefault<UWaterEditorSettings>()->WaterBodyCustomDefaults.GetWaterMesh());
+	AWaterBodyOcean* WaterBodyOcean = Cast<AWaterBodyOcean>(InWaterBody);
+	if (const UWaterWavesBase* DefaultWaterWaves = GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.WaterWaves)
+	{
+		UWaterWavesBase* WaterWaves = DuplicateObject(DefaultWaterWaves, InWaterBody, MakeUniqueObjectName(InWaterBody, DefaultWaterWaves->GetClass(), TEXT("OceanWaterWaves")));
+		WaterBodyOcean->SetWaterWaves(WaterWaves);
+	}
 
-	UWaterSplineComponent* WaterSpline = WaterBodyCustom->GetWaterSpline();
-	WaterSpline->ResetSpline({ FVector(0, 0, 0) });
+	UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
+	WaterSpline->ResetSpline({FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector });
+
+	if (const AWaterZone* OwningWaterZone = WaterBodyComponent->GetWaterZone())
+	{
+		if (UWaterBodyOceanComponent* OceanComponent = Cast<UWaterBodyOceanComponent>(WaterBodyComponent))
+		{
+			const double ExistingCollisionHeight = OceanComponent->GetCollisionExtents().Z;
+			OceanComponent->bAffectsLandscape = false;
+			OceanComponent->SetCollisionExtents(FVector(OwningWaterZone->GetZoneExtent() / 2.0, ExistingCollisionHeight));
+			OceanComponent->FillWaterZoneWithOcean();
+		}
+	}
 
 	InWaterBody->PostEditChange();
 	InWaterBody->PostEditMove(true);
