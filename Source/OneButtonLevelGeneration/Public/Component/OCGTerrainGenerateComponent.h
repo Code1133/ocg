@@ -28,8 +28,4 @@ public:
 
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
-
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
-	TObjectPtr<AOCGLandscapeVolume> OCGVolumeInstance;
 };
