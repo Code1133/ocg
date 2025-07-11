@@ -72,7 +72,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
     //하이트맵 부드럽게 만들기
     SmoothHeightMap(MapPreset, HeightMapData);
-    MedianSmooth(MapPreset, HeightMapData);
+    //MedianSmooth(MapPreset, HeightMapData);
     //수정된 하이트맵에 따라서 물 바이옴 다시 계산
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     //침식 진행
@@ -697,66 +697,45 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
     
     const float SpikeThreshold = (FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle)) *
         100.f * MapPreset->LandscapeScale) * 128.f / LandscapeZScale;
+    
+    TArray<uint16> OriginalHeightMap;
+    TArray<uint16> BlurredHeightMap;
 
-    const float DiagonalSpikeThreshold = SpikeThreshold * 1.41421f;
-
-    TArray<FIntPoint> Neighbors =
-    {
-        {0, -1}, {1,-1}, {1, 0}, {1, 1},
-        {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}
-    };
-
-    int32 SpikeCount = 0;
+    int32 SmoothedPixel = 0;
     
     for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
     {
-        SpikeCount = 0;
+        OriginalHeightMap = InOutHeightMap;
+        ApplyGaussianBlur(MapPreset, InOutHeightMap, BlurredHeightMap);
+        SmoothedPixel = 0;
         for (int32 y=1; y<MapSize.Y-1; y++)
         {
             for (int32 x=1; x<MapSize.X-1; x++)
             {
                 float ThresholdNoise = FMath::PerlinNoise2D((FVector2D(x, y) + SlopeNoiseOffset) * MapPreset->ThresholdNoiseScale) * 0.5f + 1.0f;
-                float RadomizedThreshold = SpikeThreshold * ThresholdNoise;
-                float RandomizedDiagonalThreshold = DiagonalSpikeThreshold * ThresholdNoise;
+                float RandomizedThreshold = SpikeThreshold * ThresholdNoise;
                 
                 const int32 Index = y*MapSize.X + x;
-                float CenterHeight = InOutHeightMap[Index];
-                float MaxHeightMoved = 0;
-                
-                for (int i=0; i < Neighbors.Num(); i++)
+                float CenterHeight = OriginalHeightMap[Index];
+                float BlurredHeight = BlurredHeightMap[Index];
+                float HeightDiff = CenterHeight - BlurredHeight;
+                if (HeightDiff>RandomizedThreshold)
                 {
-                    const int32 NeighborIndex = (Neighbors[i].Y + y) * MapSize.X + (Neighbors[i].X + x);
-                    const float NeighborHeight = InOutHeightMap[NeighborIndex];
-                    const float HeightDiff = NeighborHeight - CenterHeight;
-
-                    const bool bIsDiagonal = (Neighbors[i].X != 0 && Neighbors[i].Y != 0);
-                    const float CurrentThreshold = bIsDiagonal ? RandomizedDiagonalThreshold : RadomizedThreshold;
-                    
-                    if (HeightDiff > CurrentThreshold)
-                    {
-                        float HeightToMove = (HeightDiff - CurrentThreshold) * MapPreset->SmoothingStrength;
-                        if (HeightToMove > MaxHeightMoved)
-                            MaxHeightMoved = HeightToMove;
-                        uint16 NewHeight = InOutHeightMap[NeighborIndex] - HeightToMove;
-                        InOutHeightMap[NeighborIndex] = FMath::Clamp(NewHeight, 0, 65535);
-                        SpikeCount ++;
-                    }
-                }
-                if (MaxHeightMoved > 0)
-                {
-                    float NewHeight = FMath::Clamp(CenterHeight + MaxHeightMoved, 0, 65535);
-                    InOutHeightMap[Index] = static_cast<uint16>(NewHeight);
+                    float NewHeight = CenterHeight - (HeightDiff - RandomizedThreshold) * MapPreset->SmoothingStrength;
+                    InOutHeightMap[Index] = FMath::Clamp(FMath::RoundToInt(NewHeight), 0, 65535);
+                    SmoothedPixel++;
                 }
             }
         }
-        UE_LOG(LogTemp, Display, TEXT("SpikeCount: %d, Iteration: %d"), SpikeCount, Iteration);
+        if (SmoothedPixel == 0)
+            break;
     }
 }
 
-void UOCGMapGenerateComponent::ApplyGausianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
+void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
     TArray<uint16>& OutBlurredMap)
 {
-    int32 Radius = MapPreset->GausianBlurRadius;
+    int32 Radius = MapPreset->GaussianBlurRadius;
 
     FIntPoint MapSize = MapPreset->MapResolution;
     int32 TotalPixels = MapSize.X * MapSize.Y;
@@ -1211,6 +1190,7 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
 
 void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
+    /*
     if (!MapPreset->bSmoothByMediumHeight)
         return;
     const int32 Radius = MapPreset->MedianSmoothRadius;
@@ -1242,6 +1222,7 @@ void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<
             InOutHeightMap[y * MapSize.X + x] = Window[Window.Num() / 2];
         }
     }
+    */
 }
 
 void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)

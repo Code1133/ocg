@@ -152,13 +152,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float TemperatureInfluenceOnHumidity = 0.7f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bSmoothByMediumHeight = false;
-
-	// Threshold Angle of the slope of the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0"))
-	int32 MedianSmoothRadius = 3;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	//bool bSmoothByMediumHeight = false;
+	//
+	//// Threshold Angle of the slope of the landscape
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+	//	meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5"))
+	//int32 MedianSmoothRadius = 3;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
 	bool bSmoothHeight = false;
@@ -167,11 +167,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0"))
 	int32 SmoothingIteration = 5;
-
+	
 	// Larger Radius gives softer smoothing effect
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0", ClampMax = "25"))
-	int32 GausianBlurRadius = 5;
+			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25"))
+	int32 GaussianBlurRadius = 5;
 	
 	// Larger Value gives larger smoothing effect
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
