@@ -342,7 +342,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	// 또는
 	TargetLandscape->ReregisterAllComponents();
 	CreateRuntimeVirtualTextureVolume(TargetLandscape);
-	//CachePointsForRiverGeneration();
+	CachePointsForRiverGeneration();
 #endif
 }
 
@@ -1310,13 +1310,8 @@ void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
 {
     if (!TargetLandscape || !GetLevelGenerator() || !GetLevelGenerator()->GetMapPreset())
     {
-        UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
-        return;
-    }
-
-    if (GetLevelGenerator()->GetMapPreset()->bGenerateRiver == false)
-    {
-        return;
+	    UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
+    	return;
     }
 
     CachedRiverStartPoints.Empty();

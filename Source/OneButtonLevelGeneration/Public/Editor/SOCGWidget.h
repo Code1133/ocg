@@ -51,4 +51,10 @@ private:
 	TSharedPtr<IDetailsView> MapPresetDetailsView;
 	TSharedPtr<SBox> DetailsContainer;
 	FDelegateHandle OnLevelActorDeletedDelegateHandle;
+
+	bool bLevelGeneratorExistsInLevel = false;
+	void CheckForExistingLevelGenerator();
+	FText GetGeneratorButtonText() const;
+	FReply OnGeneratorButtonClicked();
+	bool IsGeneratorButtonEnabled() const;
 };

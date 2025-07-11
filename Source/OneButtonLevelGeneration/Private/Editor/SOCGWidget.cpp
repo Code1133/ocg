@@ -16,8 +16,9 @@
 void SOCGWidget::Construct(const FArguments& InArgs)
 {
     RegisterDelegates();
+    CheckForExistingLevelGenerator();
 
-        ChildSlot
+    ChildSlot
     [
         SNew(SVerticalBox)
 
@@ -26,9 +27,9 @@ void SOCGWidget::Construct(const FArguments& InArgs)
         .AutoHeight().Padding(5)
         [
             SNew(SButton)
-            .Text(FText::FromString(TEXT("Create Level Generator")))
-            .OnClicked(this, &SOCGWidget::OnCreateLevelGeneratorClicked)
-            .IsEnabled_Lambda([this]{return !LevelGeneratorActor.IsValid();}) // Enable only if no actor is selected
+            .Text(this, &SOCGWidget::GetGeneratorButtonText)
+            .OnClicked(this, &SOCGWidget::OnGeneratorButtonClicked)
+            .IsEnabled(this, &SOCGWidget::IsGeneratorButtonEnabled)
         ]
         
         // Generate Level Button
@@ -79,13 +80,6 @@ void SOCGWidget::Construct(const FArguments& InArgs)
 
     // Set initial UI state
     UpdateSelectedActor();
-
-    if (!LevelGeneratorActor.IsValid())
-    {
-        FindExistingLevelGenerator();
-    }
-
-
 }
 
 SOCGWidget::~SOCGWidget()
@@ -108,6 +102,7 @@ FReply SOCGWidget::OnCreateLevelGeneratorClicked()
         // Select the newly spawned actor in the editor
         GEditor->SelectActor(SpawnedActor, true, true);
         SetSelectedActor(SpawnedActor); // Manually set the actor for the UI
+        bLevelGeneratorExistsInLevel = true;
     }
     return FReply::Handled();
 }
@@ -171,6 +166,7 @@ void SOCGWidget::OnLevelActorDeleted(AActor* InActor)
     {
         LevelGeneratorActor.Reset();
         ClearUI();
+        CheckForExistingLevelGenerator();
     }
 }
 
@@ -290,4 +286,52 @@ void SOCGWidget::FindExistingLevelGenerator()
             break; // Only take the first found actor
         }
     }
+}
+
+void SOCGWidget::CheckForExistingLevelGenerator()
+{
+    bLevelGeneratorExistsInLevel = false;
+    UWorld* World = GEditor->GetEditorWorldContext().World();
+    if (World)
+    {
+        // TActorIterator를 사용해 월드에 해당 타입의 액터가 하나라도 있는지 확인합니다.
+        for (TActorIterator<AOCGLevelGenerator> It(World); It; ++It)
+        {
+            bLevelGeneratorExistsInLevel = true;
+            return; // 하나라도 찾으면 즉시 종료
+        }
+    }
+}
+
+FText SOCGWidget::GetGeneratorButtonText() const
+{
+    if (bLevelGeneratorExistsInLevel)
+    {
+        return FText::FromString(TEXT("Select Level Generator"));
+    }
+    else
+    {
+        return FText::FromString(TEXT("Create Level Generator"));
+    }
+}
+
+FReply SOCGWidget::OnGeneratorButtonClicked()
+{
+    if (bLevelGeneratorExistsInLevel)
+    {
+        // 액터가 존재하면, 기존의 선택 함수를 호출합니다.
+        FindExistingLevelGenerator();
+    }
+    else
+    {
+        // 액터가 없으면, 생성 함수를 호출합니다.
+        OnCreateLevelGeneratorClicked();
+    }
+    return FReply::Handled();
+}
+
+bool SOCGWidget::IsGeneratorButtonEnabled() const
+{
+    // 위젯에 LevelGenerator가 아직 할당되지 않았을 때만 버튼을 활성화합니다.
+    return !LevelGeneratorActor.IsValid();
 }
