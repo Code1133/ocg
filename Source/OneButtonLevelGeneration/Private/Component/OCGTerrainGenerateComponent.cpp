@@ -8,6 +8,7 @@
 #include "PCGGraph.h"
 #include "Data/MapPreset.h"
 #include "PCG/OCGLandscapeVolume.h"
+#include "Utils/OCGUtils.h"
 
 
 UOCGTerrainGenerateComponent::UOCGTerrainGenerateComponent()
@@ -31,8 +32,18 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 		return;
 	}
 
-	if (!OCGVolumeInstance)
+	AOCGLandscapeVolume* OCGVolumeInstance;
+	const TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+	if (Volumes.Num() == 1)
 	{
+		OCGVolumeInstance = Volumes[0];
+	}
+	else
+	{
+		for (AOCGLandscapeVolume* Volume : Volumes)
+		{
+			Volume->Destroy();
+		}
 		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
 	}
 
