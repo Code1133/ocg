@@ -34,7 +34,7 @@ void AOCGLevelGenerator::Generate()
 	
 	if (LandscapeGenerateComponent)
 	{
-		LandscapeGenerateComponent->GetLandscapeZScale(MapGenerateComponent->GetZScale());
+		LandscapeGenerateComponent->GetLandscapeZValues(MapGenerateComponent->GetZScale(), MapGenerateComponent->GetZOffset());
 		LandscapeGenerateComponent->GenerateLandscape(GetWorld());
 	}
 
@@ -55,7 +55,7 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (LandscapeGenerateComponent)
 	{
-		LandscapeGenerateComponent->GetLandscapeZScale(MapGenerateComponent->GetZScale());
+		LandscapeGenerateComponent->GetLandscapeZValues(MapGenerateComponent->GetZScale(), MapGenerateComponent->GetZOffset());
 		LandscapeGenerateComponent->GenerateLandscape(InWorld);
 	}
 

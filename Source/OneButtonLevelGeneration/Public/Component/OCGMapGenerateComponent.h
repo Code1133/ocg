@@ -42,6 +42,7 @@ private:
 	float MaxHeight;
 	float MinHeight;
 	float LandscapeZScale;
+	float ZOffset;
 public:
 	FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
 	FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
@@ -51,6 +52,7 @@ public:
 	FORCEINLINE const float GetMaxHeight() const { return MaxHeight; }
 	FORCEINLINE const float GetMinHeight() const { return MinHeight; }
 	FORCEINLINE const float GetZScale() const { return LandscapeZScale; }
+	FORCEINLINE const float GetZOffset() const { return ZOffset; }
 
 private:
 	UPROPERTY()

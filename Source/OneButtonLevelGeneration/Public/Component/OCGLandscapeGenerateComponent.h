@@ -42,7 +42,7 @@ public:
 public:
 	ALandscape* GetLandscape() const { return TargetLandscape; }
 	const TArray<FIntPoint>& GetCachedRiverStartPoints() const { return CachedRiverStartPoints; }
-	void GetLandscapeZScale(float ZScale) {LandscapeZScale = ZScale;}
+	void GetLandscapeZValues(float ZScale, float ZOffset) {LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset;}
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
 	TObjectPtr<ALandscape> TargetLandscape;
@@ -142,6 +142,7 @@ private:
 	float CachedGlobalMinHumidity;
 	float CachedGlobalMaxHumidity;
 	float LandscapeZScale;
+	float LandscapeZOffset;
 
 	TArray<FIntPoint> CachedRiverStartPoints;
 

@@ -60,7 +60,6 @@ void UOCGMapGenerateComponent::GenerateMaps()
 
     //Height Map 채우기
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
-    ExportMap(MapPreset, HeightMapData, "HeightMap1.png");
     //온도 맵 생성
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
     //습도 맵 계산
@@ -93,12 +92,12 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
 
 float UOCGMapGenerateComponent::HeightMapToWorldHeight(uint16 Height)
 {
-    return (Height - 32768.f) * LandscapeZScale / 128.f;
+    return (Height - 32768.f) * LandscapeZScale / 128.f + ZOffset;
 }
 
 uint16 UOCGMapGenerateComponent::WorldHeightToHeightMap(float Height)
 {
-    return static_cast<uint16>(Height * 128.f / LandscapeZScale + 32768.f);
+    return static_cast<uint16>((Height - ZOffset) * 128.f / LandscapeZScale + 32768.f);
 }
 
 
@@ -122,6 +121,12 @@ void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
         NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
 
     LandscapeZScale = (MapPreset->MaxHeight - MapPreset->MinHeight) * 0.001953125f;
+
+    float AbsMaxHeight = FMath::Abs(MapPreset->MaxHeight);
+    float AbsMinHeight = FMath::Abs(MapPreset->MinHeight);
+    float AbsOffset = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
+
+    ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
     
     WeightLayers.Empty();
 }
