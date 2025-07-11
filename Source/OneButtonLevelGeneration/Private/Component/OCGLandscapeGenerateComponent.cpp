@@ -2,18 +2,11 @@
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
-#include "NaniteSceneProxy.h"
 
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
-#include "PCGCommon.h"
-#include "VisualizeTexture.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "Components/SkyLightComponent.h"
 #include "Data/MapPreset.h"
-#include "Data/OCGBiomeSettings.h"
-#include "Engine/DirectionalLight.h"
-#include "Engine/SkyLight.h"
 
 #include "VT/RuntimeVirtualTexture.h"
 #include "VT/RuntimeVirtualTextureVolume.h"
@@ -21,23 +14,16 @@
 #include "RuntimeVirtualTextureSetBounds.h"
 
 #include "Component/OCGMapGenerateComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "UObject/ConstructorHelpers.h"
-#include "WorldPartition/WorldPartitionHelpers.h"
-#include "WorldPartition/WorldPartitionSubsystem.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeSettings.h"
 #include "LandscapeSubsystem.h"
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
-#include "Util/OCGFileUtils.h"
-#include "Util/OCGMaterialEditTool.h"
+#include "Utils/OCGFileUtils.h"
+#include "Utils/OCGMaterialEditTool.h"
 
 #include "LandscapeProxy.h"
-#include "LandscapeSettings.h"
-#include "LandscapeSubsystem.h"
 #include "LocationVolume.h"
 #include "Builders/CubeBuilder.h"
 #include "LandscapeStreamingProxy.h"
@@ -46,11 +32,7 @@
 
 #include "LandscapeConfigHelper.h"
 #include "LandscapeEdit.h"
-#include "LandscapeEditorObject.h"
-#include "LandscapeEditorUtils.h"
 
-#include "Editor/LandscapeEditor/Private/LandscapeImageFileCache.h"
-#include "LandscapeEditorModule.h"
 #endif
 
 static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)

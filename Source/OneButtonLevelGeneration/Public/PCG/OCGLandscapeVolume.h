@@ -40,6 +40,8 @@ public:
 #if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bEditorAutoGenerate = true;
+
+	void SetEditorAutoGenerate(bool bEnable);
 #endif
 
 protected:

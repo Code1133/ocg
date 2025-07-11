@@ -9,6 +9,7 @@
 #include "Component/OCGRiverGeneratorComponent.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
+#include "Utils/OCGUtils.h"
 
 #if WITH_EDITOR
 void UMapPreset::PostLoad()
@@ -31,22 +32,14 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	const FName PropertyName = PropertyChangedEvent.GetMemberPropertyName();
 
 	// Find Volume Actor
-	AActor* FoundActor = nullptr;
+	TArray<AOCGLandscapeVolume*> Actors;
 	if (LandscapeGenerator)
 	{
-		for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
-		{
-			if (Actor->IsA<AOCGLandscapeVolume>())
-			{
-				FoundActor = Actor;
-				break;
-			}
-		}
+		Actors = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(LandscapeGenerator->GetWorld());
 	}
 
-
 	// Update Volume Actor
-	if (AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
+	for (AOCGLandscapeVolume* VolumeActor : Actors)
 	{
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
 		{
@@ -58,7 +51,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bAutoGenerate))
 		{
-			VolumeActor->GetPCGComponent()->bRegenerateInEditor = bAutoGenerate;
+			VolumeActor->SetEditorAutoGenerate(bAutoGenerate);
 		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, GenerationTrigger))
 		{
@@ -226,17 +219,10 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 
 void UMapPreset::ForceGenerate() const
 {
-	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
-	{
-		if (Actor->IsA<AOCGLandscapeVolume>())
-		{
-			FoundActor = Actor;
-			break;
-		}
-	}
+	const TArray<AOCGLandscapeVolume*> Actors =
+		FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(LandscapeGenerator->GetWorld());
 
-	if (const AOCGLandscapeVolume* VolumeActor = Cast<AOCGLandscapeVolume>(FoundActor))
+	for (const AOCGLandscapeVolume* VolumeActor : Actors)
 	{
 		VolumeActor->GetPCGComponent()->Generate(true);
 	}
@@ -245,19 +231,14 @@ void UMapPreset::ForceGenerate() const
 void UMapPreset::RegenerateRiver()
 {
 	if (!LandscapeGenerator || !LandscapeGenerator->GetWorld())
-		return;
-
-	AActor* FoundActor = nullptr;
-	for (AActor* Actor : TActorRange<AActor>(LandscapeGenerator->GetWorld()))
 	{
-		if (Actor->IsA<AOCGLevelGenerator>())
-		{
-			FoundActor = Actor;
-			break;
-		}
+		return;
 	}
 
-	if (AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(FoundActor))
+	TArray<AOCGLevelGenerator*> Actors =
+		FOCGUtils::GetAllActorsOfClass<AOCGLevelGenerator>(LandscapeGenerator->GetWorld());
+
+	for (AOCGLevelGenerator* LevelGenerator : Actors)
 	{
 		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(LandscapeGenerator->GetWorld(), LevelGenerator->GetLandscape());
 	}

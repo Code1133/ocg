@@ -5,8 +5,6 @@
 #include "Landscape.h"
 #include "PCGComponent.h"
 #include "Components/BoxComponent.h"
-#include "Conditions/MovieSceneScalabilityCondition.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 
 AOCGLandscapeVolume::AOCGLandscapeVolume()
@@ -21,8 +19,12 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
 	PCGComponent->SetIsPartitioned(true);
+
+#if WITH_EDITOR
 	PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
 
+	SetIsSpatiallyLoaded(false);
+#endif
 }
 
 void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
@@ -49,6 +51,7 @@ void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
 	BoxComponent->SetBoxExtent(BoxExtent);
 }
 
+#if WITH_EDITOR
 void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -65,3 +68,10 @@ void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& Property
 		PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
 	}
 }
+
+void AOCGLandscapeVolume::SetEditorAutoGenerate(bool bEnable)
+{
+	bEditorAutoGenerate = bEnable;
+	PCGComponent->bRegenerateInEditor = bEnable;
+}
+#endif

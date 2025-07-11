@@ -9,6 +9,7 @@
 class AOCGLandscapeVolume;
 class AOCGLevelGenerator;
 
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ONEBUTTONLEVELGENERATION_API UOCGTerrainGenerateComponent : public UActorComponent
 {
@@ -31,10 +32,4 @@ private:
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
 	TObjectPtr<AOCGLandscapeVolume> OCGVolumeInstance;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
-	TArray<TObjectPtr<AOCGLandscapeVolume>> OCGVolumeInstances;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (AllowPrivateAccess="true"))
-	TSubclassOf<AOCGLandscapeVolume> TargetVolumeClass;
 };

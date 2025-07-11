@@ -31,14 +31,12 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 	if (TargetLandscape == nullptr)
 	{
 		// find landscape actor in the world
-		for (AActor* Actor : TActorRange<AActor>(InWorld))
+		for (ALandscape* Actor : TActorRange<ALandscape>(InWorld))
 		{
-			if (Actor->IsA<ALandscape>())
-			{
-				TargetLandscape = Cast<ALandscape>(Actor);
-				break;
-			}
+			TargetLandscape = Actor;
+			break;
 		}
+
 	}
 
 	if (TargetLandscape == nullptr)

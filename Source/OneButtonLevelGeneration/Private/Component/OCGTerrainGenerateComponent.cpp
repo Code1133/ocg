@@ -13,7 +13,6 @@
 UOCGTerrainGenerateComponent::UOCGTerrainGenerateComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	TargetVolumeClass = AOCGLandscapeVolume::StaticClass();
 }
 
 void UOCGTerrainGenerateComponent::GenerateTerrainInEditor()
@@ -32,37 +31,27 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 		return;
 	}
 
+	if (!OCGVolumeInstance)
+	{
+		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
+	}
+
+	if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
+	{
+		OCGVolumeInstance->AdjustVolumeToBoundsOfActor(Landscape);
+	}
+
 	const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+	OCGVolumeInstance->MapPreset = MapPreset;
 
-	if (OCGVolumeInstance)
+	if (UPCGGraph* PCGGraph = MapPreset->PCGGraph)
 	{
-		OCGVolumeInstance->Destroy();
-	}
-
-	if (TargetVolumeClass)
-	{
-		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>(TargetVolumeClass);
-		OCGVolumeInstance->SetIsSpatiallyLoaded(false);
-	}
-
-	if (OCGVolumeInstance)
-	{
-		if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
+		if (UPCGComponent* PCGComponent = OCGVolumeInstance->GetPCGComponent())
 		{
-			OCGVolumeInstance->AdjustVolumeToBoundsOfActor(Landscape);
-		}
-
-		OCGVolumeInstance->MapPreset = MapPreset;
-
-		if (UPCGGraph* PCGGraph = MapPreset->PCGGraph)
-		{
-			if (UPCGComponent* PCGComponent = OCGVolumeInstance->GetPCGComponent())
+			PCGComponent->SetGraph(PCGGraph);
+			if (MapPreset->bAutoGenerate)
 			{
-				PCGComponent->SetGraph(PCGGraph);
-				if (PCGComponent->bRegenerateInEditor)
-				{
-					PCGComponent->Generate(true);
-				}
+				PCGComponent->Generate(true);
 			}
 		}
 	}
