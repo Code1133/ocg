@@ -48,6 +48,7 @@ class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 #endif
 
 private:
+	void CalculateOptimalLooseness();
 	void UpdateInternalMeshFilterNames();
 	void UpdateInternalLandscapeFilterNames();
 
@@ -167,7 +168,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0"))
 	int32 SmoothingIteration = 5;
-	
+
 	// Larger Radius gives softer smoothing effect
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25"))

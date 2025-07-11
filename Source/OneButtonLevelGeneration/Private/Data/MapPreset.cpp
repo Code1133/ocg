@@ -85,6 +85,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	// Update HierarchiesData
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HierarchiesData))
 	{
+		CalculateOptimalLooseness();
 		UpdateInternalMeshFilterNames();
 		UpdateInternalLandscapeFilterNames();
 	}
@@ -143,6 +144,26 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	}
 }
 #endif
+
+void UMapPreset::CalculateOptimalLooseness()
+{
+	for (FLandscapeHierarchyData& Data : HierarchiesData)
+	{
+		if (Data.bOverrideLooseness)
+		{
+			continue;
+		}
+
+		const float DesiredSpacing = 0.316 / FMath::Sqrt(Data.PointsPerSquareMeter);
+		const float OptimalLooseness = FMath::Clamp(
+			DesiredSpacing,
+			0.0f,
+			5.0f
+		);
+
+		Data.Looseness = OptimalLooseness;
+	}
+}
 
 void UMapPreset::UpdateInternalMeshFilterNames()
 {

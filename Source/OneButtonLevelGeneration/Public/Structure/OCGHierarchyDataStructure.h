@@ -133,10 +133,13 @@ struct FLandscapeHierarchyData
 
 	/** Influence range (radius) of each point along X, Y, Z axes. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	FVector PointExtent = FVector{100.0f, 100.0f, 100.0f};
+	FVector PointExtents = FVector{100.0f, 100.0f, 100.0f};
+
+	UPROPERTY(EditAnywhere, meta = (InlineEditConditionToggle))
+	bool bOverrideLooseness = false;
 
 	/** Degree of irregularity or 'looseness' in point placement. Higher values spread points more widely. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bOverrideLooseness"))
 	float Looseness = 1.0f;
 
 	/** Controls point steepness. Values between 0 and 1, closer to 1 means steeper slopes. */
