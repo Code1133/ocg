@@ -20,6 +20,8 @@
 #include "Landscape.h"
 #include "LandscapeSettings.h"
 #include "LandscapeSubsystem.h"
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
 #include "Utils/OCGFileUtils.h"
 #include "Utils/OCGMaterialEditTool.h"
 
@@ -226,7 +228,11 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 
     TargetLandscape->bCanHaveLayersContent = true;
-    TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
+	FProperty* MaterialProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "LandscapeMaterial");
+	TargetLandscape->PreEditChange(MaterialProperty);
+	TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
+	FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
+	TargetLandscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
 
 	FIntPoint MapResolution = MapPreset->MapResolution;
 	
@@ -243,8 +249,12 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
 	}
-	
+
+	FProperty* StaticLightingLODProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "StaticLightingLOD");
 	TargetLandscape->StaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((SizeX * SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
+	FPropertyChangedEvent StaticLightingLODPropertyChangedEvent(StaticLightingLODProperty);
+	TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
+	
 	
     // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
     // 키(Key)는 레이어의 고유 ID(GUID)이고, 값(Value)은 해당 레이어의 하이트맵 데이터입니다.
@@ -256,10 +266,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 
     // 레이어 데이터 준비
     const TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer = PrepareLandscapeLayerData(TargetLandscape, LevelGenerator, MapPreset);
-
-    // 트랜잭션 시작 (Undo/Redo를 위함)
-    FScopedTransaction Transaction(NSLOCTEXT("UnrealEd", "LandscapeEditor_CreateLandscape", "Create Landscape"));
-
+	
     //랜드스케이프의 기본 속성 설정
     float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
@@ -317,14 +324,18 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		ULevel* Level = World->PersistentLevel;
 		UPackage* LevelPackage = Level->GetOutermost();
 
+		FProperty* RuntimeVirtualTexturesProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "RuntimeVirtualTextures");
+
 		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
 		TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+		
+		FPropertyChangedEvent RuntimeVirtualTexturesPropertyChangedEvent(RuntimeVirtualTexturesProperty);
+		TargetLandscape->PostEditChangeProperty(RuntimeVirtualTexturesPropertyChangedEvent);
 	}
 	else
 	{
 		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
-
 	}
 
 	//TargetLandscape->MarkComponentsRenderStateDirty();
