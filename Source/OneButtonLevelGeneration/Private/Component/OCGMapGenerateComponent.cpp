@@ -697,44 +697,11 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
 {
     if (!MapPreset->bSmoothHeight)
         return;
-    
-    FIntPoint MapSize = MapPreset->MapResolution;
-    
-    const float SpikeThreshold = (FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle)) *
-        100.f * MapPreset->LandscapeScale) * 128.f / LandscapeZScale;
-    
-    TArray<uint16> OriginalHeightMap;
-    TArray<uint16> BlurredHeightMap;
 
-    int32 SmoothedPixel = 0;
+    TArray<uint16> BlurredHeightMap;
     
-    for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
-    {
-        OriginalHeightMap = InOutHeightMap;
-        ApplyGaussianBlur(MapPreset, InOutHeightMap, BlurredHeightMap);
-        SmoothedPixel = 0;
-        for (int32 y=1; y<MapSize.Y-1; y++)
-        {
-            for (int32 x=1; x<MapSize.X-1; x++)
-            {
-                float ThresholdNoise = FMath::PerlinNoise2D((FVector2D(x, y) + SlopeNoiseOffset) * MapPreset->ThresholdNoiseScale) * 0.5f + 1.0f;
-                float RandomizedThreshold = SpikeThreshold * ThresholdNoise;
-                
-                const int32 Index = y*MapSize.X + x;
-                float CenterHeight = OriginalHeightMap[Index];
-                float BlurredHeight = BlurredHeightMap[Index];
-                float HeightDiff = CenterHeight - BlurredHeight;
-                if (HeightDiff>RandomizedThreshold)
-                {
-                    float NewHeight = CenterHeight - (HeightDiff - RandomizedThreshold) * MapPreset->SmoothingStrength;
-                    InOutHeightMap[Index] = FMath::Clamp(FMath::RoundToInt(NewHeight), 0, 65535);
-                    SmoothedPixel++;
-                }
-            }
-        }
-        if (SmoothedPixel == 0)
-            break;
-    }
+    ApplyGaussianBlur(MapPreset, InOutHeightMap, BlurredHeightMap);
+    InOutHeightMap = BlurredHeightMap;
 }
 
 void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
