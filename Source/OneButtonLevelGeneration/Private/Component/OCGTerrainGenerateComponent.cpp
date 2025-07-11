@@ -51,7 +51,6 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 			PCGComponent->SetGraph(PCGGraph);
 			if (MapPreset->bAutoGenerate)
 			{
-				PCGComponent->Cleanup();
 				PCGComponent->Generate(true);
 			}
 		}

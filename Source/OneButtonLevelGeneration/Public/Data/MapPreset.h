@@ -29,13 +29,6 @@ enum class ELandscapeQuadsPerSection : uint8
 	Q255 = 255  UMETA(DisplayName = "255"),
 };
 
-UENUM(BlueprintType)
-enum class EOCGGenerationTrigger : uint8
-{
-	GenerateOnLoad    UMETA(ToolTip = "Generates only when the component is loaded into the level."),
-	GenerateAtRuntime UMETA(ToolTip = "Generates only when scheduled by the Runtime Generation Scheduler.")
-};
-
 UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
@@ -51,6 +44,9 @@ private:
 	void CalculateOptimalLooseness();
 	void UpdateInternalMeshFilterNames();
 	void UpdateInternalLandscapeFilterNames();
+
+public:
+	virtual UWorld* GetWorld() const override;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
@@ -80,10 +76,6 @@ public:
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;
-
-	/** Whether to generate the PCG graph at runtime. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	EOCGGenerationTrigger GenerationTrigger = EOCGGenerationTrigger::GenerateOnLoad;
 
 	/** Forces the regeneration of the PCG graph in the editor. */
 	UFUNCTION(CallInEditor, Category = "PCG")
@@ -352,6 +344,7 @@ public:
 	// Generates River.
 	UFUNCTION(CallInEditor, Category = "World Settings")
 	void RegenerateRiver();
+
 	// Generates River. If true, the following river settings will be displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings")
 	uint8 bGenerateRiver : 1 = false;
