@@ -14,6 +14,7 @@
 #include "RuntimeVirtualTextureSetBounds.h"
 
 #include "Component/OCGMapGenerateComponent.h"
+#include "Components/BoxComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
 #if WITH_EDITOR
@@ -160,6 +161,9 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		MapPreset = LevelGenerator->GetMapPreset();
 	}
 	
+	if (MapPreset == nullptr)
+		return;
+	
     {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
     	//InitializeLandscapeSetting(World);
     }
@@ -217,8 +221,17 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		{
 			TargetLandscape->Destroy();
 		}
+
+		Modify();
+		if (AActor* Owner = GetOwner())
+		{
+			Owner->Modify();
+			Owner->MarkPackageDirty();
+		}
 		
 		TargetLandscape = World->SpawnActor<ALandscape>();
+		TargetLandscape->Modify();
+		TargetLandscapeAsset = TargetLandscape;
 		if (!TargetLandscape)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Failed to spawn ALandscape actor."));
@@ -1069,9 +1082,17 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     {
         return false;
     }
+	for (auto RVTVolumeAsset : CachedRuntimeVirtualTextureVolumeAssets)
+	{
+		CachedRuntimeVirtualTextureVolumes.Add(RVTVolumeAsset.LoadSynchronous());
+	}
+	
 	for (ARuntimeVirtualTextureVolume* RVTVolume : CachedRuntimeVirtualTextureVolumes)
 	{
-		RVTVolume->Destroy();
+		if (RVTVolume)
+		{
+			RVTVolume->Destroy();
+		}
 	}
 	CachedRuntimeVirtualTextureVolumes.Empty();
 	
@@ -1084,14 +1105,35 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     
     for (URuntimeVirtualTexture* VirtualTexture : VirtualTextureVolumesToCreate)
     {
+    	Modify();
+    	if (AActor* Owner = GetOwner())
+    	{
+    		Owner->Modify();
+    		Owner->MarkPackageDirty();
+    	}
+    	
     	ARuntimeVirtualTextureVolume* NewRVTVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
+    	NewRVTVolume->Modify();
+    	CachedRuntimeVirtualTextureVolumeAssets.Add(NewRVTVolume);
+    	
     	NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
     	NewRVTVolume->VirtualTextureComponent->SetBoundsAlignActor(InLandscapeActor);
+    	NewRVTVolume->SetIsSpatiallyLoaded(false);
   
     	RuntimeVirtualTexture::SetBounds(NewRVTVolume->VirtualTextureComponent);
     	CachedRuntimeVirtualTextureVolumes.Add(NewRVTVolume);
     }
 
+	if (!CachedRuntimeVirtualTextureVolumes.IsEmpty())
+	{
+		if (UBoxComponent* VolumeBox = CachedRuntimeVirtualTextureVolumes[0]->Box)
+		{
+			// 월드 스케일이 반영된 반경(half-extent)을 가져와서
+			VolumeExtent = VolumeBox->GetScaledBoxExtent();
+			VolumeOrigin = VolumeBox->GetComponentLocation();
+		}
+	}
+	
     return true;
 #endif
 }
@@ -1241,10 +1283,21 @@ ALandscapeProxy* UOCGLandscapeGenerateComponent::FindOrAddLandscapeStreamingProx
 	return LandscapeProxy;
 }
 
-bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(UMapPreset* InMapPreset) const
+bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(UMapPreset* InMapPreset)
 {
-	if (TargetLandscape == nullptr)
+	// 명시적 확인
+	if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
 	{
+		TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
+		if (!TargetLandscape)
+		{
+			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
+		}
+	}
+	
+	if (!TargetLandscape)
+	{
+		// 로드 실패 시 안전하게 새 생성
 		return true;
 	}
 	
@@ -1366,4 +1419,16 @@ void UOCGLandscapeGenerateComponent::PostInitProperties()
 			UE_LOG(LogTemp, Warning, TEXT("Failed to load DisplacementRVT from %s"), *DisplacementRVTAsset.ToString());
 		}
 	}
+}
+
+void UOCGLandscapeGenerateComponent::OnRegister()
+{
+	Super::OnRegister();
+#if WITH_EDITOR
+	// 에디터 월드에서, 아직 SoftObjectPtr가 비어있다면 Landscape 스폰
+	if (GetWorld() && GetWorld()->IsEditorWorld() && !TargetLandscapeAsset.IsValid())
+	{
+		
+	}
+#endif
 }

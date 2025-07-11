@@ -6,6 +6,7 @@
 #include "OCGLevelGenerator.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
+#include "Components/BoxComponent.h"
 #include "Data/MapPreset.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGUtils.h"
@@ -32,25 +33,37 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 		return;
 	}
 
-	AOCGLandscapeVolume* OCGVolumeInstance;
-	const TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
-	if (Volumes.Num() == 1)
+	AOCGLandscapeVolume* OCGVolumeInstance = nullptr;
+	if (OCGVolumeAssetSoftObjectPtr.ToSoftObjectPath().IsValid())
 	{
-		OCGVolumeInstance = Volumes[0];
-	}
-	else
-	{
-		for (AOCGLandscapeVolume* Volume : Volumes)
+		OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.Get());
+		if (!OCGVolumeInstance)
 		{
-			Volume->Destroy();
+			OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.LoadSynchronous());
 		}
-		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
 	}
 
-	if (const ALandscape* Landscape = LevelGenerator->GetLandscape())
+	if (OCGVolumeInstance == nullptr)
 	{
-		OCGVolumeInstance->AdjustVolumeToBoundsOfActor(Landscape);
+		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
 	}
+	
+	// const TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+	// if (Volumes.Num() == 1)
+	// {
+	// 	OCGVolumeInstance = Volumes[0];
+	// }
+	// else
+	// {
+	// 	for (AOCGLandscapeVolume* Volume : Volumes)
+	// 	{
+	// 		Volume->Destroy();
+	// 	}
+	// 	OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
+	// }
+
+	OCGVolumeInstance->SetActorLocation(LevelGenerator->GetVolumeOrigin());
+	OCGVolumeInstance->GetBoxComponent()->SetBoxExtent(LevelGenerator->GetVolumeExtent());
 
 	const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
 	OCGVolumeInstance->MapPreset = MapPreset;

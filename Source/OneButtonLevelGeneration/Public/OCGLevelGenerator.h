@@ -11,7 +11,7 @@ struct FOCGBiomeSettings;
 class UOCGLandscapeGenerateComponent;
 class UOCGTerrainGenerateComponent;
 class UOCGMapGenerateComponent;
-class UOCGRiverGeneratorComponent;
+class UOCGRiverGenerateComponent;
 class AStaticMeshActor;
 class UMapPreset;
 
@@ -33,7 +33,7 @@ public:
 	UOCGMapGenerateComponent* GetMapGenerateComponent() { return MapGenerateComponent; }
 	UOCGTerrainGenerateComponent* GetTerrainGenerateComponent() { return TerrainGenerateComponent; }
 	UOCGLandscapeGenerateComponent* GetLandscapeGenerateComponent() { return LandscapeGenerateComponent; }
-	UOCGRiverGeneratorComponent* GetRiverGenerateComponent() { return RiverGenerateComponent; }
+	UOCGRiverGenerateComponent* GetRiverGenerateComponent() { return RiverGenerateComponent; }
 
 	const TArray<uint16>& GetHeightMapData() const;
 	const TArray<uint16>& GetTemperatureMapData() const;
@@ -41,6 +41,8 @@ public:
 	const TMap<FName, TArray<uint8>>& GetWeightLayers() const;
 	const ALandscape* GetLandscape() const;
 	ALandscape* GetLandscape();
+	FVector GetVolumeExtent() const;
+	FVector GetVolumeOrigin() const;
 
 	void SetMapPreset(UMapPreset* InMapPreset);
 
@@ -67,5 +69,5 @@ private:
 	TObjectPtr<UOCGTerrainGenerateComponent> TerrainGenerateComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RiverGenerator", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UOCGRiverGeneratorComponent> RiverGenerateComponent;
+	TObjectPtr<UOCGRiverGenerateComponent> RiverGenerateComponent;
 };

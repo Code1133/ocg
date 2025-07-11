@@ -16,12 +16,13 @@
 #include "Kismet/GameplayStatics.h"
 
 
-UOCGRiverGeneratorComponent::UOCGRiverGeneratorComponent()
+UOCGRiverGenerateComponent::UOCGRiverGenerateComponent()
 {
 }
 
-void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape)
+void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape)
 {
+#if WITH_EDITOR
 	if (InWorld == nullptr)
 	{
 		return;
@@ -43,14 +44,10 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 	{
 		return;		
 	}
-	// Clear previously generated rivers
-	for (AWaterBodyRiver* River : GeneratedRivers)
-	{
-		if (River)
-		{
-			River->Destroy();
-		}
-	}
+	
+	MapPreset = GetLevelGenerator()->GetMapPreset();
+	
+	ClearAllRivers();
 
 	// Clear WaterBrushManager actors
 	UClass* WaterBrushManagerClass = StaticLoadClass(UObject::StaticClass(), nullptr, TEXT("/Script/WaterEditor.WaterBrushManager"));
@@ -80,9 +77,11 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 		return;
 	}
 
-	FVector LandscapeOrigin = InLandscape->GetActorLocation();
-	FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
+	// FVector LandscapeOrigin = InLandscape->GetActorLocation();
+	// FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
 	// Generate River Spline
+	FVector VolumeOrigin = GetLevelGenerator()->GetVolumeOrigin();
+	FVector VolumeExtent = GetLevelGenerator()->GetVolumeExtent();
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
 		FIntPoint MapResolution = MapPreset->MapResolution;
@@ -116,7 +115,7 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 
 			FIntPoint Current = BestNode.Get<0>();
 			
-			if (GetLandscapePointWorldPosition(Current, LandscapeOrigin, LandscapeExtent).Z < SeaHeight)
+			if (GetLandscapePointWorldPosition(Current, VolumeOrigin, VolumeExtent).Z < SeaHeight)
 			{
 				GoalPoint = Current;
 				break;
@@ -153,17 +152,17 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 			FIntPoint Current = GoalPoint;
 			while (Current != StartPoint)
 			{
-				RiverPath.Add(GetLandscapePointWorldPosition(Current, LandscapeOrigin, LandscapeExtent));
+				RiverPath.Add(GetLandscapePointWorldPosition(Current, VolumeOrigin, VolumeExtent));
 				Current = CameFrom[Current];
 			}
-			RiverPath.Add(GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent));
+			RiverPath.Add(GetLandscapePointWorldPosition(StartPoint, VolumeOrigin, VolumeExtent));
 			Algo::Reverse(RiverPath);
 			
 			TArray<FVector> SimplifiedRiverPath;
 			SimplifyPathRDP(RiverPath, SimplifiedRiverPath, MapPreset->RiverSpineSimplifyEpsilon);
 
 			// Generate AWaterBodyRiver Actor
-			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent);
+			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, VolumeOrigin, VolumeExtent);
 			FTransform WaterBodyTransform = FTransform(WaterBodyPos);
 			AWaterBodyRiver* WaterBodyRiver = InWorld->SpawnActor<AWaterBodyRiver>(AWaterBodyRiver::StaticClass(), WaterBodyTransform);
 
@@ -181,12 +180,30 @@ void UOCGRiverGeneratorComponent::GenerateRiver(UWorld* InWorld, ALandscape* InL
 			}
 			SetDefaultRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
 			SetRiverWidth(WaterBodyRiver, SimplifiedRiverPath);
+
+			// 에디터 전용으로만 실행
+			if (GetWorld()->IsEditorWorld())
+			{
+				// 1) 컴포넌트 자신을 트랜잭션에 기록
+				Modify();
+				// 2) 소유 액터도 기록하고 레벨에 더티 플래그 세우기
+				if (AActor* Owner = GetOwner())
+				{
+					Owner->Modify();
+					Owner->MarkPackageDirty();
+				}
+			}
+
+			WaterBodyRiver->Modify();
+			
 			GeneratedRivers.Add(WaterBodyRiver);
+			CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
 		}
 	}
+#endif
 }
 
-void UOCGRiverGeneratorComponent::SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight)
+void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight)
 {
 	HeightMapData = InHeightMap;
 	MapPreset = InMapPreset;
@@ -194,7 +211,7 @@ void UOCGRiverGeneratorComponent::SetMapData(const TArray<uint16>& InHeightMap, 
 		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
 }
 
-void UOCGRiverGeneratorComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
+void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
 	// 필수 컴포넌트들을 가져옵니다.
     if (!InRiverActor || !MapPreset)
@@ -272,7 +289,62 @@ void UOCGRiverGeneratorComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, c
     RiverComp->OnWaterBodyChanged(Params);
 }
 
-FVector UOCGRiverGeneratorComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
+AOCGLevelGenerator* UOCGRiverGenerateComponent::GetLevelGenerator() const
+{
+	return Cast<AOCGLevelGenerator>(GetOwner());
+}
+
+void UOCGRiverGenerateComponent::ClearAllRivers()
+{
+#if WITH_EDITOR
+	if (GetWorld()->IsEditorWorld())
+	{
+		// 컴포넌트와 소유 액터를 수정 표시
+		Modify();
+		if (AActor* Owner = GetOwner())
+		{
+			Owner->Modify();
+			Owner->MarkPackageDirty();
+		}
+	}
+#endif
+
+	// 1) 이미 로드된 GeneratedRivers 파괴
+	for (AWaterBodyRiver* River : GeneratedRivers)
+	{
+		if (!River) continue;
+#if WITH_EDITOR
+		// 에디터에서는 EditorDestroyActor 사용
+		GEditor->GetEditorWorldContext().World()->EditorDestroyActor(River, /*bShouldModifyLevel=*/true);
+#else
+		River->Destroy();
+#endif
+	}
+	GeneratedRivers.Empty();
+
+	// 2) CachedRivers 의 SoftObjectPtr 통해 로드되지 않은 인스턴스까지 파괴
+	for (TSoftObjectPtr<AWaterBodyRiver>& RiverPtr : CachedRivers)
+	{
+		// 2-1) 유효한 경로인지 확인
+		const FSoftObjectPath& Path = RiverPtr.ToSoftObjectPath();
+		if (!Path.IsValid()) continue;
+
+		// 2-2) 이미 로드된 인스턴스가 있으면 Get(), 없으면 LoadSynchronous()
+		AWaterBodyRiver* RiverInst = RiverPtr.IsValid()
+			? RiverPtr.Get()
+			: Cast<AWaterBodyRiver>(RiverPtr.LoadSynchronous());
+		if (!RiverInst) continue;
+
+#if WITH_EDITOR
+		GEditor->GetEditorWorldContext().World()->EditorDestroyActor(RiverInst, /*bShouldModifyLevel=*/true);
+#else
+		RiverInst->Destroy();
+#endif
+	}
+	CachedRivers.Empty();
+}
+
+FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
 {
 	if (!MapPreset)
 	{
@@ -300,7 +372,7 @@ FVector UOCGRiverGeneratorComponent::GetLandscapePointWorldPosition(const FIntPo
 	return WorldLocation;
 }
 
-void UOCGRiverGeneratorComponent::SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
+void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InRiverActor)->GetWaterBodyComponent();
 	check(WaterBodyComponent);
@@ -353,7 +425,7 @@ void UOCGRiverGeneratorComponent::SetDefaultRiverProperties(class AWaterBodyRive
 	InRiverActor->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 
-FIntPoint UOCGRiverGeneratorComponent::GetRandomStartPoint(float StartPointThresholdMultiplier, ALandscape* InLandscape)
+FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint(float StartPointThresholdMultiplier, ALandscape* InLandscape)
 {
 	AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(GetOwner());
 	
@@ -372,7 +444,7 @@ FIntPoint UOCGRiverGeneratorComponent::GetRandomStartPoint(float StartPointThres
 	return StartPoint;
 }
 
-void UOCGRiverGeneratorComponent::SimplifyPathRDP(const TArray<FVector>& InPoints, TArray<FVector>& OutPoints,
+void UOCGRiverGenerateComponent::SimplifyPathRDP(const TArray<FVector>& InPoints, TArray<FVector>& OutPoints,
 	float Epsilon)
 {
 	if (InPoints.Num() < 3)

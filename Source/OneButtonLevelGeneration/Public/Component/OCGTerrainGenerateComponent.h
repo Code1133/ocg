@@ -28,4 +28,7 @@ public:
 
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Cache")
+	TSoftObjectPtr<AOCGLandscapeVolume> OCGVolumeAssetSoftObjectPtr;
 };

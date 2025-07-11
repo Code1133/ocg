@@ -22,7 +22,8 @@ AOCGLevelGenerator::AOCGLevelGenerator()
 	MapGenerateComponent = CreateDefaultSubobject<UOCGMapGenerateComponent>(TEXT("MapGenerateComponent"));
 	LandscapeGenerateComponent = CreateDefaultSubobject<UOCGLandscapeGenerateComponent>(TEXT("LandscapeGenerateComponent"));
 	TerrainGenerateComponent = CreateDefaultSubobject<UOCGTerrainGenerateComponent>(TEXT("TerrainGenerateComponent"));
-	RiverGenerateComponent = CreateDefaultSubobject<UOCGRiverGeneratorComponent>(TEXT("RiverGenerateComponent"));
+	RiverGenerateComponent = CreateDefaultSubobject<UOCGRiverGenerateComponent>(TEXT("RiverGenerateComponent"));
+	SetIsSpatiallyLoaded(false);
 }
 
 void AOCGLevelGenerator::Generate()
@@ -112,6 +113,24 @@ ALandscape* AOCGLevelGenerator::GetLandscape()
 	return LandscapeGenerateComponent->GetLandscape();
 }
 
+FVector AOCGLevelGenerator::GetVolumeExtent() const
+{
+	if (LandscapeGenerateComponent)
+	{
+		return LandscapeGenerateComponent->GetVolumeExtent();
+	}
+	return FVector();
+}
+
+FVector AOCGLevelGenerator::GetVolumeOrigin() const
+{
+	if (LandscapeGenerateComponent)
+	{
+		return LandscapeGenerateComponent->GetVolumeOrigin();
+	}
+	return FVector();
+}
+
 void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;
@@ -145,10 +164,13 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 	ALandscape* Landscape = LandscapeGenerateComponent->GetLandscape();
 	if (Landscape)
 	{
-		FVector Extent = Landscape->GetLoadedBounds().GetExtent();
+		FVector LandscapeOrigin = GetVolumeOrigin();
+		FVector LandscapeExtent = GetVolumeExtent();
+
+		SeaLevelWaterBody->SetActorLocation(FVector(LandscapeOrigin.X, LandscapeOrigin.Y, SeaHeight));
 		
-		const float ScaleX = (Extent.X * 2.0f) / 100.0f;
-		const float ScaleY = (Extent.Y * 2.0f) / 100.0f;
+		const float ScaleX = (LandscapeExtent.X * 2.0f) / 100.0f;
+		const float ScaleY = (LandscapeExtent.Y * 2.0f) / 100.0f;
 		
 		const FVector RequiredScale(ScaleX, ScaleY, 1.0f);
 		

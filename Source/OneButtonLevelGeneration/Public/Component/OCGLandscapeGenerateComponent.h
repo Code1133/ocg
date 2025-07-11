@@ -43,9 +43,14 @@ public:
 	ALandscape* GetLandscape() const { return TargetLandscape; }
 	const TArray<FIntPoint>& GetCachedRiverStartPoints() const { return CachedRiverStartPoints; }
 	void GetLandscapeZValues(float ZScale, float ZOffset) {LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset;}
+	FVector GetVolumeExtent() const { return VolumeExtent; }
+	FVector GetVolumeOrigin() const { return VolumeOrigin; }
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
 	TObjectPtr<ALandscape> TargetLandscape;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
+	TSoftObjectPtr<ALandscape> TargetLandscapeAsset;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
 	int32 WorldPartitionGridSize = 2;
@@ -66,6 +71,14 @@ private:
 	int32 SizeX;
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	int32 SizeY;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	FVector VolumeExtent;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	FVector VolumeOrigin;	
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	TArray<ARuntimeVirtualTextureVolume*> CachedRuntimeVirtualTextureVolumes;
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	TArray<TSoftObjectPtr<ARuntimeVirtualTextureVolume>> CachedRuntimeVirtualTextureVolumeAssets;
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscapeInEditor();
@@ -113,7 +126,7 @@ private:
 
 	static ALandscapeProxy* FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem, ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord);
 
-	bool ShouldCreateNewLandscape(UMapPreset* InMapPreset) const;
+	bool ShouldCreateNewLandscape(UMapPreset* InMapPreset);
 	
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 
@@ -121,6 +134,9 @@ private:
 
 public:
 	virtual void PostInitProperties() override;
+
+protected:
+	virtual void OnRegister() override;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "RVT",  meta = (AllowPrivateAccess="true"))
@@ -145,7 +161,4 @@ private:
 	float LandscapeZOffset;
 
 	TArray<FIntPoint> CachedRiverStartPoints;
-
-	TArray<ARuntimeVirtualTextureVolume*> CachedRuntimeVirtualTextureVolumes;
-
 };

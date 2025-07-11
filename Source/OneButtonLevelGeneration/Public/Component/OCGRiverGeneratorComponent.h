@@ -10,12 +10,12 @@ class UMapPreset;
 class AWaterBodyRiver;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ONEBUTTONLEVELGENERATION_API UOCGRiverGeneratorComponent : public UActorComponent
+class ONEBUTTONLEVELGENERATION_API UOCGRiverGenerateComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	UOCGRiverGeneratorComponent();
+	UOCGRiverGenerateComponent();
 
 	UFUNCTION(CallInEditor, Category = "River Generation")
 	void GenerateRiver(UWorld* InWorld, class ALandscape* InLandscape);
@@ -24,7 +24,11 @@ public:
 
 	void SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
 
+	AOCGLevelGenerator* GetLevelGenerator() const;
+
 private:
+	void ClearAllRivers();
+
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 	
 	void SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
@@ -46,6 +50,9 @@ private:
 	// Generated rivers
 	UPROPERTY(Transient)
 	TArray<AWaterBodyRiver*> GeneratedRivers;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Cache")
+	TArray<TSoftObjectPtr<AWaterBodyRiver>> CachedRivers;
 
 	UPROPERTY(Transient)
 	TObjectPtr<ALandscape> TargetLandscape;
