@@ -47,17 +47,21 @@ AOCGLevelGenerator* UOCGMapGenerateComponent::GetLevelGenerator() const
 
 void UOCGMapGenerateComponent::GenerateMaps()
 {
-    const AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator || !LevelGenerator->GetMapPreset())
         return;
     
-    const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
     if (!MapPreset) return;
 
     Initialize(MapPreset);
 
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
+    TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
+    TArray<uint16>& TemperatureMapData = MapPreset->TemperatureMapData;
+    TArray<uint16>& HumidityMapData = MapPreset->HumidityMapData;
+    
     //Height Map 채우기
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
     //온도 맵 생성
@@ -104,7 +108,7 @@ uint16 UOCGMapGenerateComponent::WorldHeightToHeightMap(float Height)
 void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
 {
     Stream.Initialize(MapPreset->Seed);
-    
+
     InitializeNoiseOffsets(MapPreset);
 
     if (MapPreset->bContainWater)
@@ -154,7 +158,7 @@ void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPrese
 
 void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
 {
-    HeightMapData.SetNumUninitialized(CurMapResolution.X * CurMapResolution.Y);
+    OutHeightMap.SetNumUninitialized(CurMapResolution.X * CurMapResolution.Y);
     
     // 2. 하이트맵 데이터 채우기
     for (int32 y = 0; y < CurMapResolution.Y; ++y)
@@ -164,7 +168,7 @@ void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, co
             const float CalculatedHeight = CalculateHeightForCoordinate(MapPreset, x, y);
             const float NormalizedHeight = CalculatedHeight * 65535.f;
             const uint16 HeightValue = FMath::Clamp(FMath::RoundToInt(NormalizedHeight), 0, 65535);
-            HeightMapData[y * CurMapResolution.X + x] = HeightValue;
+            OutHeightMap[y * CurMapResolution.X + x] = HeightValue;
         }
     }
 }
@@ -676,7 +680,7 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
     }
 }
 
-void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap)
+void UOCGMapGenerateComponent::GetMaxMinHeight(UMapPreset* MapPreset, const TArray<uint16>& InHeightMap)
 {
     TArray<float> HeightMapFloat;
     int32 TotalPixel = MapPreset->MapResolution.X * MapPreset->MapResolution.Y;
@@ -691,8 +695,8 @@ void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, cons
         if (HeightMapFloat[i] < Min)
             Min = HeightMapFloat[i];
     }
-    MaxHeight = Max;
-    MinHeight = Min;
+    MapPreset->CurMaxHeight = Max;
+    MapPreset->CurMinHeight = Min;
 }
 
 void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)

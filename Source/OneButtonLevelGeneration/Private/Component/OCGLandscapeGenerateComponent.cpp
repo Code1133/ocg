@@ -354,7 +354,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	// 또는
 	TargetLandscape->ReregisterAllComponents();
 	CreateRuntimeVirtualTextureVolume(TargetLandscape);
-	CachePointsForRiverGeneration();
 #endif
 }
 
@@ -1356,45 +1355,6 @@ FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIn
 		WorldLocation.Z  = (HeightMapValue - 32768) / 128 * LandscapeZScale; // Adjust height based on the height map value and scale
 	}
     return WorldLocation;
-}
-
-void UOCGLandscapeGenerateComponent::CachePointsForRiverGeneration()
-{
-    if (!TargetLandscape || !GetLevelGenerator() || !GetLevelGenerator()->GetMapPreset())
-    {
-	    UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
-    	return;
-    }
-
-    CachedRiverStartPoints.Empty();
-    
-    const UMapPreset* MapPreset = GetLevelGenerator()->GetMapPreset();
-    
-    // Ensure the multiplier is within a reasonable range
-	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverStartPointThresholdMultiplier, 0.0f, 1.0f);
-    float MaxHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMaxHeight() * MapPreset->LandscapeScale;
-    float MinHeight = GetLevelGenerator()->GetMapGenerateComponent()->GetMinHeight() * MapPreset->LandscapeScale;
-
-	
-    float SeaHeight = MinHeight + 
-        (MaxHeight - MinHeight) * MapPreset->SeaLevel - 5;
-    
-    uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
-    UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
-
-    FVector LandscapeOrigin = TargetLandscape->GetLoadedBounds().GetCenter();
-    FVector LandscapeExtent = TargetLandscape->GetLoadedBounds().GetExtent();
-    for (int32 y = 0; y < MapPreset->MapResolution.Y; ++y)
-    {
-        for (int32 x = 0; x < MapPreset->MapResolution.X; ++x)
-        {
-            FVector WorldLocation = GetLandscapePointWorldPosition(FIntPoint(x, y), LandscapeOrigin, LandscapeExtent);
-            if (WorldLocation.Z >= HighThreshold)
-            {
-                CachedRiverStartPoints.Add(FIntPoint(x, y));
-            }
-        }
-    }
 }
 
 void UOCGLandscapeGenerateComponent::PostInitProperties()

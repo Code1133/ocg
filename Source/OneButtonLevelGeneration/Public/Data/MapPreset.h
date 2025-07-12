@@ -88,6 +88,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MaxHeight = 20000.0f;
 
+	// Landscapes Minimum Height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	float CurMinHeight;
+
+	// Landscapes Maximum Height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	float CurMaxHeight;
+
 	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float SeaLevel = 0.4f;
@@ -269,6 +277,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
 		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0"))
 	float InitialSpeed = 2.0f;
+
+	UPROPERTY()
+	TArray<uint16> HeightMapData;
+	
+	UPROPERTY()
+	TArray<uint16> TemperatureMapData;
+	
+	UPROPERTY()
+	TArray<uint16> HumidityMapData;
 
 public:
 	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.

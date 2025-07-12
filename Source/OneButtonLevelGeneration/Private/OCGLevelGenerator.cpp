@@ -67,14 +67,11 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 	if (RiverGenerateComponent && MapGenerateComponent && LandscapeGenerateComponent && MapPreset)
 	{
-		float SeaHeight = MapPreset->MinHeight +
-			(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
-
 		RiverGenerateComponent->SetMapData(
-			MapGenerateComponent->GetHeightMapData(),
+			MapPreset->HeightMapData,
 			MapPreset, 
-			MapGenerateComponent->GetMinHeight(),
-			MapGenerateComponent->GetMaxHeight()
+			MapPreset->CurMinHeight,
+			MapPreset->CurMaxHeight
 		);
 
 		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
@@ -85,17 +82,17 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 const TArray<uint16>& AOCGLevelGenerator::GetHeightMapData() const
 {
-	return MapGenerateComponent->GetHeightMapData();
+	return MapPreset->HeightMapData;
 }
 
 const TArray<uint16>& AOCGLevelGenerator::GetTemperatureMapData() const
 {
-	return MapGenerateComponent->GetTemperatureMapData();
+	return MapPreset->TemperatureMapData;
 }
 
 const TArray<uint16>& AOCGLevelGenerator::GetHumidityMapData() const
 {
-	return MapGenerateComponent->GetHumidityMapData();
+	return MapPreset->HumidityMapData;
 }
 
 const TMap<FName, TArray<uint8>>& AOCGLevelGenerator::GetWeightLayers() const

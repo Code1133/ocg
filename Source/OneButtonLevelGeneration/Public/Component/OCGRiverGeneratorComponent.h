@@ -33,19 +33,16 @@ private:
 	
 	void SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
 	// helper functions
-	FIntPoint GetRandomStartPoint(float StartPointThresholdMultiplier, ALandscape* InLandscape);
+	FIntPoint GetRandomStartPoint();
 
 	void SimplifyPathRDP(const TArray<FVector>& InPoints, TArray<FVector>& OutPoints, float Epsilon);
 
+	void CacheRiverStartPoints();
+
 	UPROPERTY(Transient)
 	TObjectPtr<UMapPreset> MapPreset;
-
-	TArray<uint16> HeightMapData;
+	
 	float SeaHeight;
-
-	// Minimum and Maximum height of the current landscape
-	float MinHeight;
-	float MaxHeight;
 
 	// Generated rivers
 	UPROPERTY(Transient)
@@ -58,6 +55,7 @@ private:
 	TObjectPtr<ALandscape> TargetLandscape;
 	
 	TSet<FIntPoint> UsedRiverStartPoints;
+	TArray<FIntPoint> CachedRiverStartPoints;
 };
 
 

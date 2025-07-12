@@ -41,7 +41,6 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 public:
 	ALandscape* GetLandscape() const { return TargetLandscape; }
-	const TArray<FIntPoint>& GetCachedRiverStartPoints() const { return CachedRiverStartPoints; }
 	void GetLandscapeZValues(float ZScale, float ZOffset) {LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset;}
 	FVector GetVolumeExtent() const { return VolumeExtent; }
 	FVector GetVolumeOrigin() const { return VolumeOrigin; }
@@ -130,8 +129,6 @@ private:
 	
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 
-	void CachePointsForRiverGeneration();
-
 public:
 	virtual void PostInitProperties() override;
 
@@ -159,6 +156,4 @@ private:
 	float CachedGlobalMaxHumidity;
 	float LandscapeZScale;
 	float LandscapeZOffset;
-
-	TArray<FIntPoint> CachedRiverStartPoints;
 };

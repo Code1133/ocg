@@ -77,13 +77,22 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 		return;
 	}
 
+	const TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
+	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("River generation failed: HeightMapData is not set or has insufficient data."));
+		return;
+	}
+
+	CacheRiverStartPoints();
+
 	FVector LandscapeOrigin = InLandscape->GetActorLocation();
 	FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
 	// Generate River Spline
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
 		FIntPoint MapResolution = MapPreset->MapResolution;
-		FIntPoint StartPoint = GetRandomStartPoint(MapPreset->RiverStartPointThresholdMultiplier, InLandscape);
+		FIntPoint StartPoint = GetRandomStartPoint();
 
 		TSet<FIntPoint> VisitedNodes;
 		TMap<FIntPoint, FIntPoint> CameFrom;
@@ -203,10 +212,8 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 
 void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight)
 {
-	HeightMapData = InHeightMap;
 	MapPreset = InMapPreset;
-	SeaHeight = MapPreset->MinHeight + 
-		(MapPreset->MaxHeight - MapPreset->MinHeight) * MapPreset->SeaLevel - 1;
+
 }
 
 void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
@@ -349,6 +356,14 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 		return FVector::ZeroVector;
 	}
 
+	TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
+
+	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HeightMapData is not set or has insufficient data."));
+		return FVector::ZeroVector;
+	}
+
 	FVector WorldLocation = LandscapeOrigin + FVector(
 		2 * (MapPoint.X / (float)MapPreset->MapResolution.X) * LandscapeExtent.X,
 		2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y,
@@ -423,7 +438,7 @@ void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver
 	InRiverActor->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 
-FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint(float StartPointThresholdMultiplier, ALandscape* InLandscape)
+FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint()
 {
 	AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(GetOwner());
 	
@@ -433,10 +448,9 @@ FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint(float StartPointThresh
 		return FIntPoint(0, 0);
 	}
 
-	const TArray<FIntPoint>& HighPoints = LevelGenerator->GetLandscapeGenerateComponent()->GetCachedRiverStartPoints();
 	// Select a random high point or default to the center of the map
-	FIntPoint StartPoint = HighPoints.Num() > 0 ?
-		HighPoints[FMath::RandRange(0, HighPoints.Num() - 1)] :
+	FIntPoint StartPoint = CachedRiverStartPoints.Num() > 0 ?
+		CachedRiverStartPoints[FMath::RandRange(0, CachedRiverStartPoints.Num() - 1)] :
 		FIntPoint(MapPreset->MapResolution.X / 2, MapPreset->MapResolution.Y - 1);
 
 	return StartPoint;
@@ -483,6 +497,43 @@ void UOCGRiverGenerateComponent::SimplifyPathRDP(const TArray<FVector>& InPoints
 	{
 		OutPoints.Add(InPoints[0]);
 		OutPoints.Add(InPoints[end]);
+	}
+}
+
+void UOCGRiverGenerateComponent::CacheRiverStartPoints()
+{
+	if (!TargetLandscape || !GetLevelGenerator() || !GetLevelGenerator()->GetMapPreset())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
+		return;
+	}
+	
+	CachedRiverStartPoints.Empty();
+    
+	// Ensure the multiplier is within a reasonable range
+	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverStartPointThresholdMultiplier, 0.0f, 1.0f);
+	float MaxHeight = MapPreset->CurMaxHeight * MapPreset->LandscapeScale;
+	float MinHeight = MapPreset->CurMinHeight * MapPreset->LandscapeScale;
+
+	
+	SeaHeight = MinHeight + 
+		(MaxHeight - MinHeight) * MapPreset->SeaLevel - 5;
+    
+	uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
+	UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
+
+	FVector LandscapeOrigin = TargetLandscape->GetLoadedBounds().GetCenter();
+	FVector LandscapeExtent = TargetLandscape->GetLoadedBounds().GetExtent();
+	for (int32 y = 0; y < MapPreset->MapResolution.Y; ++y)
+	{
+		for (int32 x = 0; x < MapPreset->MapResolution.X; ++x)
+		{
+			FVector WorldLocation = GetLandscapePointWorldPosition(FIntPoint(x, y), LandscapeOrigin, LandscapeExtent);
+			if (WorldLocation.Z >= HighThreshold)
+			{
+				CachedRiverStartPoints.Add(FIntPoint(x, y));
+			}
+		}
 	}
 }
 
