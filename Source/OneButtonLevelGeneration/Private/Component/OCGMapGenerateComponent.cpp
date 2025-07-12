@@ -47,6 +47,9 @@ AOCGLevelGenerator* UOCGMapGenerateComponent::GetLevelGenerator() const
 
 void UOCGMapGenerateComponent::GenerateMaps()
 {
+    FScopedSlowTask SlowTask(11.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "GenerateMap", "Generating Maps"));
+    SlowTask.MakeDialog(); // 로딩 창 표시
+    
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     if (!LevelGenerator || !LevelGenerator->GetMapPreset())
         return;
@@ -55,6 +58,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     if (!MapPreset) return;
 
     Initialize(MapPreset);
+    SlowTask.EnterProgressFrame(1.0f);
 
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
@@ -64,24 +68,34 @@ void UOCGMapGenerateComponent::GenerateMaps()
     
     //Height Map 채우기
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     //온도 맵 생성
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     //습도 맵 계산
     GenerateHumidityMap(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     //높이, 온도, 습도 기반 바이옴 결정
     TArray<const FOCGBiomeSettings*> BiomeMap; 
     DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
+    SlowTask.EnterProgressFrame(1.0f);
     //바이옴 별 특징 적용
     ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
+    SlowTask.EnterProgressFrame(1.0f);
     //하이트맵 부드럽게 만들기
     SmoothHeightMap(MapPreset, HeightMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     //MedianSmooth(MapPreset, HeightMapData);
     //수정된 하이트맵에 따라서 물 바이옴 다시 계산
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
+    SlowTask.EnterProgressFrame(1.0f);
     //침식 진행
     ErosionPass(MapPreset, HeightMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     GetMaxMinHeight(MapPreset, HeightMapData);
+    SlowTask.EnterProgressFrame(1.0f);
     ExportMap(MapPreset, HeightMapData, "HeightMap.png");
+    SlowTask.EnterProgressFrame();
 }
 
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
