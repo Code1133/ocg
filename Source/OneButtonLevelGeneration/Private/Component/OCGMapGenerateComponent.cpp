@@ -112,14 +112,14 @@ float UOCGMapGenerateComponent::HeightMapToWorldHeight(uint16 Height)
 {
     //return (Height - 32768.f) * (1 / 128.f);
     
-    return (Height - 32768.f) * LandscapeZScale * (1 / 128.f) + ZOffset;
+    return (Height - 32768.f) * LandscapeZScale / 128.f + ZOffset;
 }
 
 uint16 UOCGMapGenerateComponent::WorldHeightToHeightMap(float Height)
 {
     //return static_cast<uint16>(FMath::RoundToInt(FMath::Clamp<float>(Height * 128.0f + 32768.f, 0.f, 65535)));		
 
-    return static_cast<uint16>((Height - ZOffset) *  (1 / 128.f) / LandscapeZScale + 32768.f);
+    return static_cast<uint16>((Height - ZOffset) * 128.f / LandscapeZScale + 32768.f);
 }
 
 
