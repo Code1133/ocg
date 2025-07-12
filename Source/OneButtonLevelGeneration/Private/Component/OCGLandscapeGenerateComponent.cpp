@@ -38,7 +38,7 @@
 
 #endif
 
-static void GetMissingRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)
+static void GetRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray<URuntimeVirtualTexture*>& OutVirtualTextures)
 {
     UWorld* World = InLandscapeActor != nullptr ? InLandscapeActor->GetWorld() : nullptr;
     if (World == nullptr)
@@ -163,11 +163,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	
 	if (MapPreset == nullptr)
 		return;
-	
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
-    	//InitializeLandscapeSetting(World);
-    }
-	
 
     if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
     {
@@ -195,7 +190,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
     }
 
 	bool IsCreateNewLandscape = false;
-	if (ShouldCreateNewLandscape(MapPreset))
+	if (ShouldCreateNewLandscape(World))
 	{
 		TArray<ALandscapeStreamingProxy*> ProxiesToDelete;
 		for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
@@ -206,7 +201,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 				ProxiesToDelete.Add(Proxy);
 			}
 		}
-		
+
 		// 2. Proxy 삭제
 		for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
 		{
@@ -215,7 +210,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 				Proxy->Destroy();
 			}
 		}
-		
+
 		// 3. Landscape 삭제
 		if (TargetLandscape)
 		{
@@ -228,7 +223,24 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			Owner->Modify();
 			Owner->MarkPackageDirty();
 		}
-		
+
+		// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
+		//
+		// const float RawScaleX = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.X;
+		// const float RawScaleY = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.Y;
+		// const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
+		//
+		// // 올림 후 uint32 변환
+		// const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
+		// const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
+		// const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
+		//
+		// const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
+		// const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * LandscapeSetting.QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * LandscapeSetting.QuadsPerComponent / 2, 0));
+		//
+		// TargetLandscape = World->SpawnActor<ALandscape>(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
+		// TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
+
 		TargetLandscape = World->SpawnActor<ALandscape>();
 		TargetLandscape->Modify();
 		TargetLandscapeAsset = TargetLandscape;
@@ -239,35 +251,67 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		}
 		IsCreateNewLandscape = true;
 	}
+	// else
+	// {
+	// 	const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
+	//
+	// 	const float RawScaleX = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.X;
+	// 	const float RawScaleY = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.Y;
+	// 	const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
+	//
+	// 	// 올림 후 uint32 변환
+	// 	const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
+	// 	const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
+	// 	const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
+	//
+	// 	const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
+	// 	const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * LandscapeSetting.QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * LandscapeSetting.QuadsPerComponent / 2, 0));
+	//
+	// 	TargetLandscape->SetActorLocationAndRotation(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
+	// 	TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
+	// }
 
     TargetLandscape->bCanHaveLayersContent = true;
-	FProperty* MaterialProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "LandscapeMaterial");
-	TargetLandscape->PreEditChange(MaterialProperty);
-	TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
-	FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
-	TargetLandscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
-
+	if (TargetLandscape->LandscapeMaterial != MapPreset->LandscapeMaterial)
+	{
+		FScopedSlowTask SlowTask(2.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ChangingMaterial", "Change Landscape Material"));
+		SlowTask.MakeDialog(); // 로딩 창 표시
+				
+		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+		FProperty* MaterialProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "LandscapeMaterial");
+		TargetLandscape->PreEditChange(MaterialProperty);
+		TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
+		FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
+		TargetLandscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
+		
+		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+	}
+	
 	FIntPoint MapResolution = MapPreset->MapResolution;
 	
-	QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
-	ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-	ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-	QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
-    
-	SizeX = ComponentCountX * QuadsPerComponent + 1;
-	SizeY = ComponentCountY * QuadsPerComponent + 1;
-	const int32 NumPixels = SizeX * SizeY;
-	
-	if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
-	}
+	// QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+	// ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	// ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	// QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
+ //    
+	// SizeX = ComponentCountX * QuadsPerComponent + 1;
+	// SizeY = ComponentCountY * QuadsPerComponent + 1;
+	// const int32 NumPixels = SizeX * SizeY;
+	//
+	// if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
+	// }
 
-	FProperty* StaticLightingLODProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "StaticLightingLOD");
-	TargetLandscape->StaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((SizeX * SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
-	FPropertyChangedEvent StaticLightingLODPropertyChangedEvent(StaticLightingLODProperty);
-	TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
-	
+	int32 PrevStaticLightingLOD = TargetLandscape->StaticLightingLOD;
+	int32 CurStaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((LandscapeSetting.SizeX * LandscapeSetting.SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
+	if (PrevStaticLightingLOD != CurStaticLightingLOD)
+	{
+		FProperty* StaticLightingLODProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "StaticLightingLOD");
+		TargetLandscape->StaticLightingLOD = CurStaticLightingLOD;
+		FPropertyChangedEvent StaticLightingLODPropertyChangedEvent(StaticLightingLODProperty);
+		TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
+	}
 	
     // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
     // 키(Key)는 레이어의 고유 ID(GUID)이고, 값(Value)은 해당 레이어의 하이트맵 데이터입니다.
@@ -288,13 +332,13 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 
 	if (IsCreateNewLandscape)
 	{
-		//Import 함수 호출 (변경된 시그니처에 맞춰서)
+		// //Import 함수 호출 (변경된 시그니처에 맞춰서)
 		TargetLandscape->Import(
 			FGuid::NewGuid(),
 			0, 0,
 			MapResolution.X - 1, MapResolution.Y - 1,
 			MapPreset->Landscape_SectionsPerComponent,
-			QuadsPerSection,
+			LandscapeSetting.QuadsPerSection,
 			HeightmapDataPerLayer,
 			nullptr,
 			MaterialLayerDataPerLayer,
@@ -306,9 +350,9 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			// TargetLandscape->Import(
 			// 	FGuid::NewGuid(),
 			// 	0, 0,
-			// 	SizeX - 1, SizeY - 1,
+			// 	LandscapeSetting.SizeX - 1, LandscapeSetting.SizeY - 1,
 			// 	MapPreset->Landscape_SectionsPerComponent,
-			// 	QuadsPerSection,
+			// 	LandscapeSetting.QuadsPerSection,
 			// 	HeightmapDataPerLayer,
 			// 	nullptr,
 			// 	MaterialLayerDataPerLayer,
@@ -349,9 +393,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	{
 		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
-
-	//TargetLandscape->MarkComponentsRenderStateDirty();
-	// 또는
+	
 	TargetLandscape->ReregisterAllComponents();
 	CreateRuntimeVirtualTextureVolume(TargetLandscape);
 #endif
@@ -474,16 +516,29 @@ void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(const UWorld* Wo
     }
     const bool bNeedsLandscapeRegions =  bIsWorldPartition && bLandscapeLargerThanRegion;
 
-    // 랜드스케이프 생성
-    QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
-    TotalLandscapeComponentSize = FIntPoint(MapPreset->Landscape_ComponentCount.X, MapPreset->Landscape_ComponentCount.Y);
-    ComponentCountX = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, TotalLandscapeComponentSize.X) : TotalLandscapeComponentSize.X;
-    ComponentCountY = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, TotalLandscapeComponentSize.Y) : TotalLandscapeComponentSize.Y;
+	LandscapeSetting.QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+	LandscapeSetting.ComponentCountX = (MapPreset->MapResolution.X - 1) / (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	LandscapeSetting.ComponentCountY = (MapPreset->MapResolution.Y - 1) / (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
+	LandscapeSetting.QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * LandscapeSetting.QuadsPerSection;
+	   
+	LandscapeSetting.SizeX = LandscapeSetting.ComponentCountX * LandscapeSetting.QuadsPerComponent + 1;
+	LandscapeSetting.SizeY = LandscapeSetting.ComponentCountY * LandscapeSetting.QuadsPerComponent + 1;
+	const int32 NumPixels = LandscapeSetting.SizeX * LandscapeSetting.SizeY;
+	
+	if ((MapPreset->MapResolution.X - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapPreset->MapResolution.Y - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
+	}
 
-    QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
-
-    SizeX = ComponentCountX * QuadsPerComponent + 1;
-    SizeY = ComponentCountY * QuadsPerComponent + 1;
+	// LandscapeSetting.QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
+ //    LandscapeSetting.TotalLandscapeComponentSize = FIntPoint(MapPreset->Landscape_ComponentCount.X, MapPreset->Landscape_ComponentCount.Y);
+ //    LandscapeSetting.ComponentCountX = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, LandscapeSetting.TotalLandscapeComponentSize.X) : LandscapeSetting.TotalLandscapeComponentSize.X;
+ //    LandscapeSetting.ComponentCountY = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, LandscapeSetting.TotalLandscapeComponentSize.Y) : LandscapeSetting.TotalLandscapeComponentSize.Y;
+ //
+ //    LandscapeSetting.QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * LandscapeSetting.QuadsPerSection;
+ //
+ //    LandscapeSetting.SizeX = LandscapeSetting.ComponentCountX * LandscapeSetting.QuadsPerComponent + 1;
+ //    LandscapeSetting.SizeY = LandscapeSetting.ComponentCountY * LandscapeSetting.QuadsPerComponent + 1;
 #endif
 }
 
@@ -571,10 +626,10 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
     if (bNeedsLandscapeRegions)
     {
     	TArray<FIntPoint> NewComponents;
-    	NewComponents.Empty(TotalLandscapeComponentSize.X * TotalLandscapeComponentSize.Y);
-    	for (int32 Y = 0; Y < TotalLandscapeComponentSize.Y; Y++)
+    	NewComponents.Empty(LandscapeSetting.TotalLandscapeComponentSize.X * LandscapeSetting.TotalLandscapeComponentSize.Y);
+    	for (int32 Y = 0; Y < LandscapeSetting.TotalLandscapeComponentSize.Y; Y++)
     	{
-    		for (int32 X = 0; X < TotalLandscapeComponentSize.X; X++)
+    		for (int32 X = 0; X < LandscapeSetting.TotalLandscapeComponentSize.X; X++)
     		{
     			NewComponents.Add(FIntPoint(X, Y));
     		}
@@ -587,8 +642,8 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
     		TRACE_CPUPROFILER_EVENT_SCOPE(AddComponentsToRegion);
     		
     		// Create a LocationVolume around the region 
-    		int32 RegionSizeXTexels = QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
-    		int32 RegionSizeYTexels = QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
+    		int32 RegionSizeXTexels = LandscapeSetting.QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
+    		int32 RegionSizeYTexels = LandscapeSetting.QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
 		
     		double RegionSizeX = RegionSizeXTexels * LandscapeProxy->GetActorScale3D().X;
     		double RegionSizeY = RegionSizeYTexels * LandscapeProxy->GetActorScale3D().Y;
@@ -1096,7 +1151,7 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
 	CachedRuntimeVirtualTextureVolumes.Empty();
 	
     TArray<URuntimeVirtualTexture*> VirtualTextureVolumesToCreate;
-    GetMissingRuntimeVirtualTextureVolumes(InLandscapeActor, VirtualTextureVolumesToCreate);
+    GetRuntimeVirtualTextureVolumes(InLandscapeActor, VirtualTextureVolumesToCreate);
     if (VirtualTextureVolumesToCreate.Num() == 0)
     {
         return false;
@@ -1282,8 +1337,16 @@ ALandscapeProxy* UOCGLandscapeGenerateComponent::FindOrAddLandscapeStreamingProx
 	return LandscapeProxy;
 }
 
-bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(UMapPreset* InMapPreset)
+bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(const UWorld* World)
 {
+	FLandscapeSetting PrevSetting = LandscapeSetting; // 이전 세팅 저장값
+	InitializeLandscapeSetting(World);
+
+	if (IsLandscapeSettingChanged(PrevSetting, LandscapeSetting))
+	{
+		return true;
+	}
+	
 	// 명시적 확인
 	if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
 	{
@@ -1300,27 +1363,19 @@ bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(UMapPreset* InMapP
 		return true;
 	}
 	
-	// 1) preset 로부터 기대값 계산
-	int32 ExpectedQuadsPerSection    = int32(InMapPreset->Landscape_QuadsPerSection);
-	int32 ExpectedSectionsPerComponent = InMapPreset->Landscape_SectionsPerComponent;
-	int32 ExpectedQuadsPerComponent  = ExpectedQuadsPerSection * ExpectedSectionsPerComponent;
-	int32 ExpectedComponentCountX    = (InMapPreset->MapResolution.X - 1) / ExpectedQuadsPerComponent;
-	int32 ExpectedComponentCountY    = (InMapPreset->MapResolution.Y - 1) / ExpectedQuadsPerComponent;
-	int32 ExpectedSizeX              = ExpectedComponentCountX * ExpectedQuadsPerComponent + 1;
-	int32 ExpectedSizeY              = ExpectedComponentCountY * ExpectedQuadsPerComponent + 1;
-
-	// 2) 비교
-	if ( QuadsPerSection    != ExpectedQuadsPerSection
-	  || QuadsPerComponent  != ExpectedQuadsPerComponent
-	  || ComponentCountX    != ExpectedComponentCountX
-	  || ComponentCountY    != ExpectedComponentCountY
-	  || SizeX              != ExpectedSizeX
-	  || SizeY              != ExpectedSizeY )
-	{
-		return true;
-	}
-
 	return false;
+}
+
+bool UOCGLandscapeGenerateComponent::IsLandscapeSettingChanged(const FLandscapeSetting& Prev,
+	const FLandscapeSetting& Curr)
+{
+	return Prev.QuadsPerSection != Curr.QuadsPerSection ||
+		  Prev.TotalLandscapeComponentSize != Curr.TotalLandscapeComponentSize ||
+		  Prev.ComponentCountX != Curr.ComponentCountX ||
+		  Prev.ComponentCountY != Curr.ComponentCountY ||
+		  Prev.QuadsPerComponent != Curr.QuadsPerComponent ||
+		  Prev.SizeX != Curr.SizeX ||
+		  Prev.SizeY != Curr.SizeY;
 }
 
 FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
