@@ -77,11 +77,9 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 		return;
 	}
 
-	// FVector LandscapeOrigin = InLandscape->GetActorLocation();
-	// FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
+	FVector LandscapeOrigin = InLandscape->GetActorLocation();
+	FVector LandscapeExtent = InLandscape->GetLoadedBounds().GetExtent();
 	// Generate River Spline
-	FVector VolumeOrigin = GetLevelGenerator()->GetVolumeOrigin();
-	FVector VolumeExtent = GetLevelGenerator()->GetVolumeExtent();
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
 		FIntPoint MapResolution = MapPreset->MapResolution;
@@ -115,7 +113,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 
 			FIntPoint Current = BestNode.Get<0>();
 			
-			if (GetLandscapePointWorldPosition(Current, VolumeOrigin, VolumeExtent).Z < SeaHeight)
+			if (GetLandscapePointWorldPosition(Current, LandscapeOrigin, LandscapeExtent).Z < SeaHeight)
 			{
 				GoalPoint = Current;
 				break;
@@ -152,17 +150,17 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			FIntPoint Current = GoalPoint;
 			while (Current != StartPoint)
 			{
-				RiverPath.Add(GetLandscapePointWorldPosition(Current, VolumeOrigin, VolumeExtent));
+				RiverPath.Add(GetLandscapePointWorldPosition(Current, LandscapeOrigin, LandscapeExtent));
 				Current = CameFrom[Current];
 			}
-			RiverPath.Add(GetLandscapePointWorldPosition(StartPoint, VolumeOrigin, VolumeExtent));
+			RiverPath.Add(GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent));
 			Algo::Reverse(RiverPath);
 			
 			TArray<FVector> SimplifiedRiverPath;
 			SimplifyPathRDP(RiverPath, SimplifiedRiverPath, MapPreset->RiverSpineSimplifyEpsilon);
 
 			// Generate AWaterBodyRiver Actor
-			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, VolumeOrigin, VolumeExtent);
+			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent);
 			FTransform WaterBodyTransform = FTransform(WaterBodyPos);
 			AWaterBodyRiver* WaterBodyRiver = InWorld->SpawnActor<AWaterBodyRiver>(AWaterBodyRiver::StaticClass(), WaterBodyTransform);
 
