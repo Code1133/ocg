@@ -164,7 +164,7 @@ struct FLandscapeHierarchyData
 
 	/** Whether to prune (remove) meshes that overlap with each other. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	bool bPruningOverlappedMeshes = true;
+	bool bPruningOverlappedMeshes = false;
 
 	/** Distance at which world position offset gets disabled. 0 means always enabled. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG|Optimization")
