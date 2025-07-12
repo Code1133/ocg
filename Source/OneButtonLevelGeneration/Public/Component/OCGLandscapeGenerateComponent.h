@@ -22,6 +22,50 @@ class ALocationVolume;
 class ULandscapeSubsystem;
 class ULandscapeInfo;
 
+USTRUCT(BlueprintType)
+struct FLandscapeSetting
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	uint32 QuadsPerSection;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	FIntPoint TotalLandscapeComponentSize;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 ComponentCountX;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 ComponentCountY;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 QuadsPerComponent;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 SizeX;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 SizeY;
+
+	// == 연산자 오버로드
+	bool operator==(FLandscapeSetting const& Other) const
+	{
+		return QuadsPerSection               == Other.QuadsPerSection
+			&& TotalLandscapeComponentSize   == Other.TotalLandscapeComponentSize
+			&& ComponentCountX               == Other.ComponentCountX
+			&& ComponentCountY               == Other.ComponentCountY
+			&& QuadsPerComponent             == Other.QuadsPerComponent
+			&& SizeX                         == Other.SizeX
+			&& SizeY                         == Other.SizeY;
+	}
+
+	bool operator!=(FLandscapeSetting const& Other) const
+	{
+		return !(*this == Other);
+	}
+};
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ONEBUTTONLEVELGENERATION_API UOCGLandscapeGenerateComponent : public UActorComponent
 {
@@ -41,7 +85,7 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 public:
 	ALandscape* GetLandscape() const { return TargetLandscape; }
-	void GetLandscapeZValues(float ZScale, float ZOffset) {LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset;}
+	void SetLandscapeZValues(float ZScale, float ZOffset) { LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset; }
 	FVector GetVolumeExtent() const { return VolumeExtent; }
 	FVector GetVolumeOrigin() const { return VolumeOrigin; }
 private:
@@ -56,20 +100,24 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
 	int32 WorldPartitionRegionSize = 16;
 
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 QuadsPerSection;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	FIntPoint TotalLandscapeComponentSize;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 ComponentCountX;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 ComponentCountY;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 QuadsPerComponent;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 SizeX;
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	int32 SizeY;
+private:
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	FLandscapeSetting LandscapeSetting;
+	
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 QuadsPerSection;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// FIntPoint TotalLandscapeComponentSize;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 ComponentCountX;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 ComponentCountY;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 QuadsPerComponent;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 SizeX;
+	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
+	// int32 SizeY;
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	FVector VolumeExtent;
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
@@ -125,7 +173,9 @@ private:
 
 	static ALandscapeProxy* FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem, ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord);
 
-	bool ShouldCreateNewLandscape(UMapPreset* InMapPreset);
+	bool ShouldCreateNewLandscape(const UWorld* World);
+
+	static bool IsLandscapeSettingChanged(const FLandscapeSetting& Prev, const FLandscapeSetting& Curr);
 	
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 
