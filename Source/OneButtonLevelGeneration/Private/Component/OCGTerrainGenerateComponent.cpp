@@ -37,30 +37,55 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 	if (OCGVolumeAssetSoftObjectPtr.ToSoftObjectPath().IsValid())
 	{
 		OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.Get());
-		if (!OCGVolumeInstance)
+		if (IsValid(OCGVolumeInstance))
 		{
 			OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.LoadSynchronous());
 		}
 	}
 
-	if (OCGVolumeInstance == nullptr)
+	TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+	
+	// 삭제할 볼륨 수집
+	TArray<AOCGLandscapeVolume*> ToDestroy;
+	for (AOCGLandscapeVolume* Volume : Volumes)
 	{
-		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
+		if (Volume != OCGVolumeInstance)
+		{
+			ToDestroy.Add(Volume);
+		}
 	}
 	
-	// const TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
-	// if (Volumes.Num() == 1)
-	// {
-	// 	OCGVolumeInstance = Volumes[0];
-	// }
-	// else
-	// {
-	// 	for (AOCGLandscapeVolume* Volume : Volumes)
-	// 	{
-	// 		Volume->Destroy();
-	// 	}
-	// 	OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
-	// }
+	// 변경(삭제 또는 생성)이 일어나면 더티 표시
+	const bool bNeedsCreation = !IsValid(OCGVolumeInstance);
+	if (ToDestroy.Num() > 0 || bNeedsCreation)
+	{
+		Modify();
+		if (AActor* Owner = GetOwner())
+		{
+			Owner->Modify();
+			Owner->MarkPackageDirty();
+		}
+	}
+	
+	TArray<AOCGLandscapeVolume*> VolumesToDestroy = ToDestroy; // 복사본 생성
+	for (AOCGLandscapeVolume* Vol : VolumesToDestroy)
+	{
+		World->EditorDestroyActor(Vol, true);
+	}
+	
+	// 인스턴스 없으면 새로 스폰
+	if (bNeedsCreation)
+	{
+		OCGVolumeInstance = World->SpawnActor<AOCGLandscapeVolume>();
+		OCGVolumeInstance->SetIsSpatiallyLoaded(false);
+		OCGVolumeInstance->Modify();
+	}
+
+	// SoftPtr 갱신
+	if (IsValid(OCGVolumeInstance))
+	{
+		OCGVolumeAssetSoftObjectPtr = OCGVolumeInstance;
+	}
 
 	OCGVolumeInstance->SetActorLocation(LevelGenerator->GetVolumeOrigin());
 	OCGVolumeInstance->GetBoxComponent()->SetBoxExtent(LevelGenerator->GetVolumeExtent());
