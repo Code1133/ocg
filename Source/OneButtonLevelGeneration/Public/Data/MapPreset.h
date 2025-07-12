@@ -8,7 +8,7 @@
 #include "MapPreset.generated.h"
 
 /**
- * 
+ *
  */
 
 class AOCGLevelGenerator;
@@ -49,54 +49,21 @@ public:
 	virtual UWorld* GetWorld() const override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	int32 Seed = 1337;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	bool bContainWater = true;
-
-	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "OCG")
-	bool bExportMaps = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	TArray<FOCGBiomeSettings> Biomes;
-
-	FOCGBiomeSettings WaterBiome{TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f};
-
-public:
-	/** The PCG graph to be used for generation. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	TObjectPtr<UPCGGraph> PCGGraph;
-
-	/** Whether to show debug points for PCG generation. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	bool bShowDebugPoints = false;
-
-	/** Whether to automatically generate the PCG graph. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	bool bAutoGenerate = true;
-
-	/** Forces the regeneration of the PCG graph in the editor. */
-	UFUNCTION(CallInEditor, Category = "PCG")
-	void ForceGenerate() const;
-
-public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	FRotator Landscape_Rotation;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	FVector Landscape_Location;
-	
+
 	UPROPERTY(EditAnywhere, Category = "World Settings | Basics | Landscape Settings")
 	uint32 Landscape_RegionKilometer = 1;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16))
 	int32 WorldPartitionGridSize = 2;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64))
 	int32 WorldPartitionRegionSize = 16;
-	
+
 	// Decides Landscape Size(Changes Landscape Actor Scale)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 0.1f))
 	float LandscapeScale = 1;
@@ -104,7 +71,7 @@ public:
 	// If true changing LandscapeScale changes the terrain formation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	bool ApplyScaleToNoise = true;
-	
+
 	// Decides the Blend radius(pixel) between different biomes
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0", ClampMax = "50"))
 	int32 BiomeBlendRadius = 10;
@@ -112,7 +79,7 @@ public:
 	// Decides the Blend radius(pixel) between water and other biomes
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0", ClampMax = "50"))
 	int32 WaterBlendRadius = 10;
-	
+
 	// Landscapes Minimum Height
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MinHeight = -15000.0f;
@@ -160,7 +127,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25"))
 	int32 GaussianBlurRadius = 5;
-	
+
 	//Island Properties
 	// Decides whether the landscape will be island or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
@@ -180,7 +147,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.0001))
 	float IslandShapeNoiseStrength = 0.5f;
-	
+
 	// Modify Terrain Properties
 	// Decides whether the Mountain Ratio of biomes will be applied or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
@@ -189,7 +156,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = 0.0f, ClampMax = 1.0f))
 	float PlainSmoothFactor = 1.f;
-	
+
 	// Decides the frequency of details in Biome
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0001", ClampMax = "0.05"))
@@ -204,7 +171,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 			meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0", ClampMax = "50"))
 	int32 BiomeHeightBlendRadius = 5;
-	
+
 public:
 	// --- Noise Settings ---
 	// Decides the difference between different noises (larger value gives more randomness)
@@ -214,7 +181,7 @@ public:
 	// Decides how much the noise is spread out
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0"))
 	float RedistributionFactor = 2.5f;
-	
+
 	// Decides the frequency of Mountains
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.005"))
 	float ContinentNoiseScale = 0.003f;
@@ -340,7 +307,7 @@ public:
 	// Intensity of Simplifing River Path. Higher value means more simplification, lower value means less simplification.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
 	float RiverSpineSimplifyEpsilon = 200.f;
-	
+
 	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverWidthBaseValue = 2048.0f;
@@ -352,7 +319,7 @@ public:
 	// Base of the river velocity. RiverVelocityCurve value will be normalized and multiplied by this value to get the final velocity of the river.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverVelocityBaseValue = 100.0f;
-	
+
 	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverWidthCurve;
@@ -363,7 +330,39 @@ public:
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hierarchy Data Settings")
+	/** The PCG graph to be used for generation. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	TObjectPtr<UPCGGraph> PCGGraph;
+
+	/** Whether to show debug points for PCG generation. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	bool bShowDebugPoints = false;
+
+	/** Whether to automatically generate the PCG graph. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
+	bool bAutoGenerate = true;
+
+	/** Forces the regeneration of the PCG graph in the editor. */
+	UFUNCTION(CallInEditor, Category = "PCG")
+	void ForceGenerate() const;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
+	int32 Seed = 1337;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
+	bool bContainWater = true;
+
+	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "OCG")
+	bool bExportMaps = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
+	TArray<FOCGBiomeSettings> Biomes;
+
+	FOCGBiomeSettings WaterBiome{TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f};
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
 
 #if WITH_EDITOR
