@@ -96,12 +96,16 @@ FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint 
 
 float UOCGMapGenerateComponent::HeightMapToWorldHeight(uint16 Height)
 {
-    return (Height - 32768.f) * LandscapeZScale / 128.f + ZOffset;
+    //return (Height - 32768.f) * (1 / 128.f);
+    
+    return (Height - 32768.f) * LandscapeZScale * (1 / 128.f) + ZOffset;
 }
 
 uint16 UOCGMapGenerateComponent::WorldHeightToHeightMap(float Height)
 {
-    return static_cast<uint16>((Height - ZOffset) * 128.f / LandscapeZScale + 32768.f);
+    //return static_cast<uint16>(FMath::RoundToInt(FMath::Clamp<float>(Height * 128.0f + 32768.f, 0.f, 65535)));		
+
+    return static_cast<uint16>((Height - ZOffset) *  (1 / 128.f) / LandscapeZScale + 32768.f);
 }
 
 
@@ -408,6 +412,9 @@ void UOCGMapGenerateComponent::InitializeErosionBrush()
         return;
     }
 
+    ErosionBrushIndices.Empty();
+    ErosionBrushWeights.Empty();
+    
     ErosionBrushIndices.SetNum(MapPreset->MapResolution.X * MapPreset->MapResolution.Y);
     ErosionBrushWeights.SetNum(MapPreset->MapResolution.X * MapPreset->MapResolution.Y);
 
@@ -528,7 +535,7 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
             
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) *
                 MapPreset->BiomeNoiseScale) * MapPreset->BiomeNoiseAmplitude + MapPreset->BiomeNoiseAmplitude;
-            float HeightToAdd = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f/LandscapeZScale;
+            float HeightToAdd = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f / LandscapeZScale;
             float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0, 65535);
 
             uint16 NewHeight = FMath::Lerp(TargetPlainHeight, MountainHeight, MtoPRatio);
