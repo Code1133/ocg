@@ -178,15 +178,15 @@ void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
 void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 {
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InWaterBody)->GetWaterBodyComponent();
-	check(WaterBodyComponent);
+	check(MapPreset && WaterBodyComponent);
+
+	WaterBodyComponent->SetWaterMaterial(MapPreset->OceanWaterMaterial.LoadSynchronous());
+	WaterBodyComponent->SetWaterStaticMeshMaterial(MapPreset->OceanWaterStaticMeshMaterial.LoadSynchronous());
+	WaterBodyComponent->SetHLODMaterial(MapPreset->WaterHLODMaterial.LoadSynchronous());
+	WaterBodyComponent->SetUnderwaterPostProcessMaterial(MapPreset->UnderwaterPostProcessMaterial.LoadSynchronous());
 	
 	if (const FWaterBodyDefaults* WaterBodyDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults)
 	{
-		WaterBodyComponent->SetWaterMaterial(WaterBodyDefaults->GetWaterMaterial());
-		WaterBodyComponent->SetWaterStaticMeshMaterial(WaterBodyDefaults->GetWaterStaticMeshMaterial());
-		WaterBodyComponent->SetHLODMaterial(WaterBodyDefaults->GetWaterHLODMaterial());
-		WaterBodyComponent->SetUnderwaterPostProcessMaterial(WaterBodyDefaults->GetUnderwaterPostProcessMaterial());
-
 		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
 		WaterSpline->WaterSplineDefaults = WaterBodyDefaults->SplineDefaults;
 	}

@@ -33,7 +33,8 @@ UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
 	GENERATED_BODY()
-
+public:
+	UMapPreset();
 	virtual void PostLoad() override;
 
 #if WITH_EDITOR
@@ -341,6 +342,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverWidthCurve;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
+	
 public:
 	// The Material used for Landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
@@ -369,6 +382,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	bool bContainWater = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (EditCondition = "bContainWater", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (EditCondition = "bContainWater", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (EditCondition = "bContainWater", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG", meta = (EditCondition = "bContainWater", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial; 
 
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "OCG")

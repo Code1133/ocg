@@ -388,7 +388,7 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InRiverActor)->GetWaterBodyComponent();
-	check(WaterBodyComponent);
+	check(MapPreset && WaterBodyComponent);
 
 	if (const FWaterBrushActorDefaults* WaterBrushActorDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.BrushDefaults)
 	{
@@ -397,13 +397,13 @@ void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver
 		WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults->LayerWeightmapSettings;
 	}
 
+	WaterBodyComponent->SetWaterMaterial(MapPreset->RiverWaterMaterial.LoadSynchronous());
+	WaterBodyComponent->SetWaterStaticMeshMaterial(MapPreset->RiverWaterStaticMeshMaterial.LoadSynchronous());
+	WaterBodyComponent->SetHLODMaterial(MapPreset->WaterHLODMaterial.LoadSynchronous());
+	WaterBodyComponent->SetUnderwaterPostProcessMaterial(MapPreset->UnderwaterPostProcessMaterial.LoadSynchronous());
+	
 	if (const FWaterBodyDefaults* WaterBodyDefaults = &GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults)
 	{
-		WaterBodyComponent->SetWaterMaterial(WaterBodyDefaults->GetWaterMaterial());
-		WaterBodyComponent->SetWaterStaticMeshMaterial(WaterBodyDefaults->GetWaterStaticMeshMaterial());
-		WaterBodyComponent->SetHLODMaterial(WaterBodyDefaults->GetWaterHLODMaterial());
-		WaterBodyComponent->SetUnderwaterPostProcessMaterial(WaterBodyDefaults->GetUnderwaterPostProcessMaterial());
-
 		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
 		WaterSpline->WaterSplineDefaults = WaterBodyDefaults->SplineDefaults;
 	}
@@ -418,8 +418,8 @@ void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver
 	}
 	
 	UWaterBodyRiverComponent* WaterBodyRiverComponent = CastChecked<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
-	WaterBodyRiverComponent->SetLakeTransitionMaterial(GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.GetRiverToLakeTransitionMaterial());
-	WaterBodyRiverComponent->SetOceanTransitionMaterial(GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.GetRiverToOceanTransitionMaterial());
+	WaterBodyRiverComponent->SetLakeTransitionMaterial(MapPreset->RiverToLakeTransitionMaterial.LoadSynchronous());
+	WaterBodyRiverComponent->SetOceanTransitionMaterial(MapPreset->RiverToOceanTransitionMaterial.LoadSynchronous());
 
 	InRiverActor->PostEditChange();
 	InRiverActor->PostEditMove(true);
