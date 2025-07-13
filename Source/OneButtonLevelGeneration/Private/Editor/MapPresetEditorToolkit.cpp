@@ -370,7 +370,7 @@ UWorld* FMapPresetEditorToolkit::CreateEditorWorld()
 {
 	UWorldFactory* Factory = NewObject<UWorldFactory>();
 	Factory->WorldType = EWorldType::Editor;
-	Factory->bCreateWorldPartition = true;
+	Factory->bCreateWorldPartition = false;
 	Factory->bInformEngineOfWorld = true;
 	Factory->FeatureLevel = GEditor->DefaultWorldFeatureLevel;
 	UPackage* Pkg = GetTransientPackage();
