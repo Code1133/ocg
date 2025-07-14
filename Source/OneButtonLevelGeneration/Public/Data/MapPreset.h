@@ -50,12 +50,6 @@ public:
 	virtual UWorld* GetWorld() const override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	FRotator Landscape_Rotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	FVector Landscape_Location;
-
 	UPROPERTY(EditAnywhere, Category = "World Settings | Basics | Landscape Settings")
 	uint32 Landscape_RegionKilometer = 1;
 
@@ -91,11 +85,11 @@ public:
 
 	// Landscapes Minimum Height
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMinHeight;
+	float CurMinHeight = 0.0f;
 
 	// Landscapes Maximum Height
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMaxHeight;
+	float CurMaxHeight = 0.0f;
 
 	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height", meta = (ClampMin = "0.0", ClampMax = "1.0"))

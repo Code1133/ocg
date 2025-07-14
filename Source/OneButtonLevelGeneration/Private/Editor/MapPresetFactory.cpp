@@ -3,6 +3,7 @@
 #include "Editor/MapPresetFactory.h"
 
 #include "OCGDeveloperSettings.h"
+#include "PCGGraph.h"
 #include "Data/MapPreset.h"
 
 

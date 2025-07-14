@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGMapGenerateComponent.generated.h"
 
+class UMapPreset;
 class AOCGLevelGenerator;
 struct FOCGBiomeSettings;
 struct FLandscapeImportLayerInfo;

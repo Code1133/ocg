@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "OCGRiverGeneratorComponent.generated.h"
 
+class AOCGLevelGenerator;
 class UMapPreset;
 class AWaterBodyRiver;
 

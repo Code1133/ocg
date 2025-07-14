@@ -11,7 +11,7 @@ class FMapPresetEditorToolkit;
 class FMapPresetApplicationMode : public FApplicationMode
 {
 public:
-	FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit);
+	FMapPresetApplicationMode(const TSharedPtr<FMapPresetEditorToolkit>& InEditorToolkit);
 
 	virtual void RegisterTabFactories(TSharedPtr<FTabManager> InTabManager) override;
 protected:

@@ -27,12 +27,6 @@
 
 class ADirectionalLight;
 
-const FName GMapPresetEditor_ViewportTabId(TEXT("MapPresetEditor_Viewport"));
-const FName GMapPresetEditor_DetailsTabId(TEXT("MapPresetEditor_Details"));
-const FName GMapPresetEditor_MaterialDetailsTabId(TEXT("MapPresetEditor_MaterialDetails"));
-const FName GMapPresetEditor_EnvLightMixerTabId(TEXT("MapPresetEditor_EnvLightMixer"));
-const FName GMapPresetEditor_LandscapeDetailsTabId(TEXT("MapPresetEditor_LandscapeDetails"));
-
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
                                          const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
 {
@@ -42,11 +36,11 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	// create ToolbarExtender
 	TSharedPtr<FExtender> ToolbarExtender = MakeShared<FExtender>();
 	ToolbarExtender->AddToolBarExtension(
-			"Asset",
-			EExtensionHook::After,
-			nullptr,
-			FToolBarExtensionDelegate::CreateSP(this, &FMapPresetEditorToolkit::FillToolbar)
-		);
+		"Asset",
+		EExtensionHook::After,
+		nullptr,
+		FToolBarExtensionDelegate::CreateSP(this, &FMapPresetEditorToolkit::FillToolbar)
+	);
 
 	EditingPreset = MapPreset;
 	EditingPreset->EditorToolkit = SharedThis(this);
@@ -161,20 +155,32 @@ void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabMan
 	);
 
 	// Add Tabs
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_ViewportTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Viewport))
-		.SetDisplayName(FText::FromString(TEXT("Viewport"))).SetGroup(MenuRoot);
+	InTabManager->RegisterTabSpawner(
+		FMapPresetEditorConstants::ViewportTabId,
+		FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Viewport)
+	)
+	.SetDisplayName(FText::FromString(TEXT("Viewport"))).SetGroup(MenuRoot);
 
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_DetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Details))
-		.SetDisplayName(FText::FromString(TEXT("Details"))).SetGroup(MenuRoot);
+	InTabManager->RegisterTabSpawner(
+		FMapPresetEditorConstants::DetailsTabId,
+		FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_Details)
+	)
+	.SetDisplayName(FText::FromString(TEXT("Details"))).SetGroup(MenuRoot);
 
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_EnvLightMixerTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab))
-		.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer"))).SetGroup(MenuRoot);
+	InTabManager->RegisterTabSpawner(
+		FMapPresetEditorConstants::EnvLightMixerTabId,
+		FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab)
+	)
+	.SetDisplayName(FText::FromString(TEXT("Environment Light Mixer"))).SetGroup(MenuRoot);
 
-	InTabManager->RegisterTabSpawner(GMapPresetEditor_LandscapeDetailsTabId, FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_LandscapeTab))
-		.SetDisplayName(FText::FromString(TEXT("Landscape Details"))).SetGroup(MenuRoot);
+	InTabManager->RegisterTabSpawner(
+		FMapPresetEditorConstants::LandscapeDetailsTabId,
+		FOnSpawnTab::CreateSP(this, &FMapPresetEditorToolkit::SpawnTab_LandscapeTab)
+	)
+	.SetDisplayName(FText::FromString(TEXT("Landscape Details"))).SetGroup(MenuRoot);
 }
 
-void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
+void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
 	FWorkflowCentricApplication::UnregisterTabSpawners(InTabManager);
 
@@ -183,7 +189,7 @@ void FMapPresetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabM
 
 TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Viewport(const FSpawnTabArgs& Args)
 {
-	check(Args.GetTabId() == GMapPresetEditor_ViewportTabId);
+	check(Args.GetTabId() == FMapPresetEditorConstants::ViewportTabId);
 
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Viewport")))
@@ -194,7 +200,7 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Viewport(const FSpawnTabA
 
 TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_Details(const FSpawnTabArgs& Args)
 {
-	check(Args.GetTabId() == GMapPresetEditor_DetailsTabId);
+	check(Args.GetTabId() == FMapPresetEditorConstants::DetailsTabId);
 
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Details")))
@@ -272,7 +278,6 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_LandscapeTab(const FSpawn
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 {
 	FButtonStyle* GenerateButtonStyle = new FButtonStyle(FAppStyle::Get().GetWidgetStyle<FButtonStyle>("Button"));
-
 	TSharedRef<SHorizontalBox> CustomToolbarBox = SNew(SHorizontalBox);
 
 	// Add Spacer 

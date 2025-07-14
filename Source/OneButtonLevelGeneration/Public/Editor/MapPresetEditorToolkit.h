@@ -14,6 +14,15 @@ class UMapPreset;
 DECLARE_MULTICAST_DELEGATE(FOnGenerateButtonClicked);
 DECLARE_MULTICAST_DELEGATE(FOnExportToLevelButtonClicked);
 
+struct FMapPresetEditorConstants
+{
+	inline static const FName ViewportTabId = TEXT("MapPresetEditor_Viewport");
+	inline static const FName DetailsTabId = TEXT("MapPresetEditor_Details");
+	inline static const FName MaterialDetailsTabId = TEXT("MapPresetEditor_MaterialDetails");
+	inline static const FName EnvLightMixerTabId = TEXT("MapPresetEditor_EnvLightMixer");
+	inline static const FName LandscapeDetailsTabId = TEXT("MapPresetEditor_LandscapeDetails");
+};
+
 class FMapPresetEditorToolkit : public FWorkflowCentricApplication, public FNotifyHook
 {
 	friend class FMapPresetApplicationMode; 

@@ -6,6 +6,9 @@
 #include "Engine/DeveloperSettings.h"
 #include "OCGDeveloperSettings.generated.h"
 
+class UPCGGraph;
+
+
 /**
  * 
  */
