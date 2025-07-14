@@ -37,7 +37,7 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 	if (OCGVolumeAssetSoftObjectPtr.ToSoftObjectPath().IsValid())
 	{
 		OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.Get());
-		if (IsValid(OCGVolumeInstance))
+		if (!IsValid(OCGVolumeInstance))
 		{
 			OCGVolumeInstance = Cast<AOCGLandscapeVolume>(OCGVolumeAssetSoftObjectPtr.LoadSynchronous());
 		}

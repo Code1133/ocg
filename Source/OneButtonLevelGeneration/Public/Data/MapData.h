@@ -20,7 +20,7 @@ struct FMapData
 	TArray<float> HumidityMap;
 };
 
-namespace MapDataUtils
+namespace OCGMapDataUtils
 {
 	bool TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray);
 	

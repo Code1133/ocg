@@ -1356,7 +1356,7 @@ void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArr
 {
     if (!MapPreset->bExportMaps)
         return;
-    MapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
 }
 
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap,
@@ -1364,5 +1364,5 @@ void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArr
 {
     if (!MapPreset->bExportMaps)
         return;
-    MapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
 }

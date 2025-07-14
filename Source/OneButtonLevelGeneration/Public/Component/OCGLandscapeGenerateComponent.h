@@ -83,8 +83,10 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+
 public:
-	ALandscape* GetLandscape() const { return TargetLandscape; }
+	ALandscape* GetLandscape();
+
 	void SetLandscapeZValues(float ZScale, float ZOffset) { LandscapeZScale = ZScale; LandscapeZOffset =  ZOffset; }
 	FVector GetVolumeExtent() const { return VolumeExtent; }
 	FVector GetVolumeOrigin() const { return VolumeOrigin; }

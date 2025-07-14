@@ -148,6 +148,23 @@ void UOCGLandscapeGenerateComponent::TickComponent(float DeltaTime, ELevelTick T
 	// ...
 }
 
+ALandscape* UOCGLandscapeGenerateComponent::GetLandscape()
+{
+	if (TargetLandscape == nullptr)
+	{
+		if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
+		{
+			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
+			if (!IsValid(TargetLandscape))
+			{
+				TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
+			}
+		}
+	}
+
+	return TargetLandscape;
+}
+
 void UOCGLandscapeGenerateComponent::GenerateLandscapeInEditor()
 {
     GenerateLandscape(GetWorld());
@@ -460,7 +477,7 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 				for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
 				{
 					ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
-					FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+					FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All); });
 					FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
 					AlphamapAccessor.SetData(LandscapeLoadedExtent.Min.X, LandscapeLoadedExtent.Min.Y, LandscapeLoadedExtent.Max.X - 1, LandscapeLoadedExtent.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
 				}
@@ -488,7 +505,7 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeWeight", "Importing Landscape Weight"));
 				
 				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
-				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All); });
+				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All); });
 				FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
 				AlphamapAccessor.SetData(ImportRegion.Min.X, ImportRegion.Min.Y, ImportRegion.Max.X - 1, ImportRegion.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
 			}
@@ -1351,7 +1368,22 @@ bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(const UWorld* Worl
 		
 	if (!TargetLandscape)
 	{
-		// 로드 실패 시 안전하게 새 생성
+		if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
+		{
+			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
+			if (!IsValid(TargetLandscape))
+			{
+				TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
+				if (IsValid(TargetLandscape))
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
 		return true;
 	}
 	

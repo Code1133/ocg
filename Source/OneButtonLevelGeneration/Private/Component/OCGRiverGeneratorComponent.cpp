@@ -11,6 +11,7 @@
 #include "WaterEditorSettings.h"
 #include "WaterSplineComponent.h"
 #include "Components/SplineComponent.h"
+#include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Utils/OCGLandscapeUtil.h"
@@ -306,6 +307,11 @@ AOCGLevelGenerator* UOCGRiverGenerateComponent::GetLevelGenerator() const
 
 void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 {
+	if (TargetLandscape == nullptr)
+	{
+		TargetLandscape = GetLevelGenerator()->GetLandscape();
+	}
+	
 	if (TargetLandscape)
 	{
 		ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
@@ -341,65 +347,22 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 			}
 		}
 
-		// 1) 그레이스케일 FColor 배열로 변환 (상위 8비트 사용)
-		TArray<FColor> ImageData;
-		ImageData.SetNumUninitialized(SizeX * SizeY);
-		for (int32 i = 0; i < SizeX * SizeY; ++i)
-		{
-			uint8 Gray = static_cast<uint8>(CachedRiverHeightMap[i] >> 8);
-			ImageData[i] = FColor(Gray, Gray, Gray, 255);
-		}
-		
-		// 2) PNG 인코더 초기화
-		IImageWrapperModule& IWModule =
-			FModuleManager::LoadModuleChecked<IImageWrapperModule>(TEXT("ImageWrapper"));
-		TSharedPtr<IImageWrapper> Wrapper =
-			IWModule.CreateImageWrapper(EImageFormat::PNG);
-		if (!Wrapper.IsValid())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ImageWrapper 생성 실패"));
-			return;
-		}
-
-		Wrapper->SetRaw(
-			ImageData.GetData(),
-			ImageData.Num() * sizeof(FColor),
-			SizeX, SizeY,
-			ERGBFormat::RGBA,
-			8
-		);
-
-		// 3) 압축 데이터(64비트 배열) → 32비트 배열로 복사
-		TArray64<uint8> Compressed64 = Wrapper->GetCompressed(100);
-		TArray<uint8> Compressed;
-		Compressed.SetNumUninitialized(Compressed64.Num());
-		FMemory::Memcpy(Compressed.GetData(), Compressed64.GetData(), Compressed64.Num());
-
-		
-		const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
-
-		// 2) 파일명 포맷
-		FString FileName = FString::Printf(TEXT("WaterHeightMap.png"));
-
-		// 3) 전체 경로 조합
-		const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
-
-		// 5) 파일 쓰기
-		if (FFileHelper::SaveArrayToFile(Compressed, *FullPath))
-		{
-			UE_LOG(LogTemp, Log, TEXT("Heightmap PNG 저장 성공: %s"), *FullPath);
-			return;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Heightmap PNG 저장 실패: %s"), *FullPath);
-			return;
-		}
+		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
+		OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap.png"));
 	}
 }
 
 void UOCGRiverGenerateComponent::ApplyWaterWeight()
 {
+	if (TargetLandscape == nullptr)
+	{
+		TargetLandscape = GetLevelGenerator()->GetLandscape();
+	}
+	
+	if (TargetLandscape)
+	{
+		OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, CachedRiverHeightMap);
+	}
 }
 
 void UOCGRiverGenerateComponent::ClearAllRivers()

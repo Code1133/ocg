@@ -10,7 +10,7 @@
 #include "IImageWrapperModule.h"
 #endif
 
-bool MapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray)
+bool OCGMapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray)
 {
 	if (!Texture || !Texture->GetPlatformData() || Texture->GetPixelFormat() != PF_G16)
 	{
@@ -33,7 +33,7 @@ bool MapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& Out
 	return true;
 }
 
-bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FileName)
+bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FileName)
 {
 #if WITH_EDITOR
     const FString ContentDir = FPaths::ProjectContentDir();
@@ -99,7 +99,7 @@ bool MapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolutio
 #endif
 }
 
-UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
+UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 {
 #if WITH_EDITOR
 	const FString ContentDir = FPaths::ProjectContentDir();
@@ -197,7 +197,7 @@ UTexture2D* MapDataUtils::ImportTextureFromPNG(const FString& FileName)
 #endif
 }
 
-bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
+bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
 	// Create directory and full path for the map file
@@ -264,7 +264,7 @@ bool MapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resol
 #endif
 }
 
-bool MapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName)
+bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
 	// Create directory and full path for the map file
