@@ -614,7 +614,7 @@ void UOCGRiverGenerateComponent::CacheRiverStartPoints()
 	CachedRiverStartPoints.Empty();
     
 	// Ensure the multiplier is within a reasonable range
-	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverStartPointThresholdMultiplier, 0.0f, 1.0f);
+	float StartPointThresholdMultiplier = FMath::Clamp(MapPreset->RiverSourceElevationRatio, 0.0f, 1.0f);
 	float MaxHeight = MapPreset->CurMaxHeight * MapPreset->LandscapeScale;
 	float MinHeight = MapPreset->CurMinHeight * MapPreset->LandscapeScale;
 
