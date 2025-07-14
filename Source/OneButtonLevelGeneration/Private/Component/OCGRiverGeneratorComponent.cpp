@@ -193,7 +193,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 				}
 			}
 			SetDefaultRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
-			SetRiverWidth(WaterBodyRiver, SimplifiedRiverPath);
+			AddRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
 
 			// 에디터 전용으로만 실행
 			if (GetWorld()->IsEditorWorld())
@@ -222,9 +222,9 @@ void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, U
 	MapPreset = InMapPreset;
 }
 
-void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
+void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
-	// 필수 컴포넌트들을 가져옵니다.
+    // 필수 컴포넌트 및 프리셋 유효성 검사
     if (!InRiverActor || !MapPreset)
     {
         return;
@@ -234,10 +234,13 @@ void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, co
     UWaterBodyRiverComponent* RiverComp = Cast<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
     UWaterSplineMetadata* SplineMetadata = RiverComp ? RiverComp->GetWaterSplineMetadata() : nullptr;
 
-    // [핵심 변경] 너비 커브만 사용합니다.
+    // [변경점 1] 커브 에셋을 가져옵니다. 없으면 nullptr이 됩니다.
     UCurveFloat* RiverWidthCurve = MapPreset->RiverWidthCurve;
+    UCurveFloat* RiverDepthCurve = MapPreset->RiverDepthCurve;
+    UCurveFloat* RiverVelocityCurve = MapPreset->RiverVelocityCurve;
 
-    if (!SplineComp || !RiverComp || !SplineMetadata || !RiverWidthCurve)
+    // 커브를 제외한 필수 데이터가 유효한지 확인합니다.
+    if (!SplineComp || !RiverComp || !SplineMetadata)
     {
         return;
     }
@@ -248,55 +251,97 @@ void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, co
         return;
     }
 
-    // 너비 커브의 최소/최대 값을 가져와 정규화를 준비합니다.
-    float MinWidth, MaxWidth;
-    RiverWidthCurve->GetValueRange(MinWidth, MaxWidth);
+    // 각 커브가 유효할 경우에만 최소/최대 값을 계산합니다.
+    float MinWidth = 0.f, MaxWidth = 1.f;
+    if (RiverWidthCurve)
+    {
+        RiverWidthCurve->GetValueRange(MinWidth, MaxWidth);
+    }
+
+    float MinDepth = 0.f, MaxDepth = 1.f;
+    if (RiverDepthCurve)
+    {
+        RiverDepthCurve->GetValueRange(MinDepth, MaxDepth);
+    }
+
+    float MinVelocity = 0.f, MaxVelocity = 1.f;
+    if (RiverVelocityCurve)
+    {
+        RiverVelocityCurve->GetValueRange(MinVelocity, MaxVelocity);
+    }
+    
+    // 0으로 나누는 것을 방지하기 위해 Range를 계산합니다.
     const float WidthRange = MaxWidth - MinWidth;
+    const float DepthRange = MaxDepth - MinDepth;
+    const float VelocityRange = MaxVelocity - MinVelocity;
 
     for (int32 i = 0; i < NumPoints; ++i)
     {
+        // 스플라인의 시작부터 끝까지 0.0 ~ 1.0 범위의 정규화된 거리를 계산합니다.
         const float NormalizedDistance = (NumPoints > 1) ? static_cast<float>(i) / (NumPoints - 1) : 0.0f;
 
-        // --- 너비(Width) 기준 값 계산 ---
-        const float RawWidth = RiverWidthCurve->GetFloatValue(NormalizedDistance);
-        // 너비 커브 값을 0.0 ~ 1.0 범위의 배율로 정규화합니다.
-        const float NormalizedWidthMultiplier = !FMath::IsNearlyZero(WidthRange) ? (RawWidth - MinWidth) / WidthRange : 1.0f;
+        // --- 1. 너비(Width) 배율 계산 ---
+        float WidthMultiplier;
+        if (RiverWidthCurve) // [변경점 2] 너비 커브가 유효한 경우
+        {
+            const float RawWidth = RiverWidthCurve->GetFloatValue(NormalizedDistance);
+            WidthMultiplier = !FMath::IsNearlyZero(WidthRange) ? (RawWidth - MinWidth) / WidthRange : 1.0f;
+        }
+        else // [변경점 3] 너비 커브가 없는 경우 (선형 증가)
+        {
+            WidthMultiplier = NormalizedDistance;
+        }
 
-        // --- 1. 최종 너비(Width) 계산 및 적용 ---
-        const float DesiredWidth = MapPreset->RiverWidthBaseValue * NormalizedWidthMultiplier;
+        // --- 2. 깊이(Depth) 배율 계산 ---
+        float DepthMultiplier;
+        if (RiverDepthCurve) // [변경점 2] 깊이 커브가 유효한 경우
+        {
+            const float RawDepth = RiverDepthCurve->GetFloatValue(NormalizedDistance);
+            DepthMultiplier = !FMath::IsNearlyZero(DepthRange) ? (RawDepth - MinDepth) / DepthRange : 1.0f;
+        }
+        else // [변경점 3] 깊이 커브가 없는 경우 (선형 증가)
+        {
+            DepthMultiplier = NormalizedDistance;
+        }
 
-        // --- 2. 최종 깊이(Depth) 계산 및 적용 (너비에 비례) ---
-        // 너비 배율을 그대로 사용하여 기본 깊이 값에 곱합니다.
-        const float DesiredDepth = MapPreset->RiverDepthBaseValue * NormalizedWidthMultiplier;
+        // --- 3. 유속(Velocity) 배율 계산 ---
+        float VelocityMultiplier;
+        if (RiverVelocityCurve) // [변경점 2] 유속 커브가 유효한 경우
+        {
+            const float RawVelocity = RiverVelocityCurve->GetFloatValue(NormalizedDistance);
+            VelocityMultiplier = !FMath::IsNearlyZero(VelocityRange) ? (RawVelocity - MinVelocity) / VelocityRange : 1.0f;
+        }
+        else // [변경점 3] 유속 커브가 없는 경우 (선형 증가)
+        {
+            VelocityMultiplier = NormalizedDistance;
+        }
 
-        // --- 3. 최종 유속(Velocity) 계산 및 적용 (너비에 반비례) ---
-        // 너비 배율을 반전시켜 (1.0 - 배율) 유속을 계산합니다.
-        // 강이 가장 넓을 때(배율=1.0) 유속은 최소가 되고, 가장 좁을 때(배율=0.0) 유속은 최대가 됩니다.
-        const float InverseNormalizedWidthMultiplier = 1.0f - NormalizedWidthMultiplier;
-        const float DesiredVelocity = MapPreset->RiverVelocityBaseValue * InverseNormalizedWidthMultiplier;
+        // 최종 값 계산: (기본값 * 배율) + 최소값
+        const float DesiredWidth = (MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin;
+        const float DesiredDepth = (MapPreset->RiverDepthBaseValue * DepthMultiplier) + MapPreset->RiverDepthMin;
+        const float DesiredVelocity = (MapPreset->RiverVelocityBaseValue * VelocityMultiplier) + MapPreset->RiverVelocityMin;
 
-        // 계산된 값들을 Metadata와 SplineComponent에 적용합니다.
+        // 계산된 값들을 Metadata에 적용
         if (SplineMetadata->RiverWidth.Points.IsValidIndex(i))
         {
             SplineMetadata->RiverWidth.Points[i].OutVal = DesiredWidth;
             SplineMetadata->Depth.Points[i].OutVal = DesiredDepth;
             SplineMetadata->WaterVelocityScalar.Points[i].OutVal = DesiredVelocity;
         }
+        
+        // 스플라인 스케일 업데이트
         if (SplineComp->SplineCurves.Scale.Points.IsValidIndex(i))
         {
-            SplineComp->SplineCurves.Scale.Points[i].OutVal.X = DesiredWidth;
-            SplineComp->SplineCurves.Scale.Points[i].OutVal.Y = DesiredDepth;
+            SplineComp->SetScaleAtSplinePoint(i, FVector(DesiredWidth, DesiredWidth, 1.0f), ESplineCoordinateSpace::Local);
         }
     }
 
-    // 스플라인 커브 데이터가 변경되었음을 알리고 내부 데이터를 업데이트합니다.
+    // 스플라인 및 Water Body 컴포넌트 업데이트
     SplineComp->UpdateSpline();
-
-    // Water Body Component에 변경 사항을 알려 메시를 다시 생성하도록 합니다.
+    
     FOnWaterBodyChangedParams Params;
     Params.bShapeOrPositionChanged = true;
     Params.bUserTriggered = true;
-    
     RiverComp->OnWaterBodyChanged(Params);
 }
 
@@ -495,11 +540,11 @@ void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver
 	WaterSpline->SetSplinePoints(InRiverPath, ESplineCoordinateSpace::World, true);
 
 	FOnWaterBodyChangedParams Params;
-	Params.bShapeOrPositionChanged = true; // Spline 등 Shape이 바뀌었음을 명시
-	Params.bUserTriggered = true;          // (선택) 사용자 직접 트리거
+	Params.bShapeOrPositionChanged = true; 
+	Params.bUserTriggered = true;       
 
 	InRiverActor->GetWaterBodyComponent()->GetWaterSpline()->GetSplinePointsMetadata();
-	InRiverActor->GetWaterBodyComponent()->UpdateAll(Params); // 또는 UpdateAll()
+	InRiverActor->GetWaterBodyComponent()->UpdateAll(Params); 
 
 	InRiverActor->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }

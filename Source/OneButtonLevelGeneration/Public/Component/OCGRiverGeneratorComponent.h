@@ -22,7 +22,7 @@ public:
 
 	void SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight);
 
-	void SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
+	void AddRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
 
 	AOCGLevelGenerator* GetLevelGenerator() const;
 

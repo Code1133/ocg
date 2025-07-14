@@ -338,12 +338,32 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverVelocityBaseValue = 100.0f;
 
+	// Minimum width of the river. This value is added to the calculated width.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverWidthMin = 50.0f;
+
+	// Minimum depth of the river. This value is added to the calculated depth.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverDepthMin = 20.0f;
+
+	// Minimum velocity of the river. This value is added to the calculated velocity.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverVelocityMin = 5.0f;
+
 	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverWidthCurve;
 
+	// Curve that defines the river's depth based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the depth.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverDepthCurve;
+
+	// Curve that defines the river's velocity based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the velocity.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverVelocityCurve;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;;
+	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial;
