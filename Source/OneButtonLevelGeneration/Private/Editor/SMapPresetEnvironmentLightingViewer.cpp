@@ -21,7 +21,6 @@
 #include "Widgets/Input/SCheckBox.h"
 #include "Widgets/Input/SComboButton.h"
 #include "Widgets/Layout/SBorder.h"
-#include "Widgets/Layout/SScrollBorder.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Layout/SWrapBox.h"
@@ -46,7 +45,7 @@ void SMapPresetEnvironmentLightingViewer::Construct(const FArguments& InArgs)
 	{
 		DetailsViews[i] = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 		DetailsViews[i]->SetIsPropertyVisibleDelegate(FIsPropertyVisible::CreateSP(this, &SMapPresetEnvironmentLightingViewer::GetIsPropertyVisible));
-		DetailsViews[i]->SetDisableCustomDetailLayouts(true);	
+		DetailsViews[i]->SetDisableCustomDetailLayouts(true);
 	}
 	DefaultForegroundColor = DetailsViews[0]->GetColorAndOpacity();
 
@@ -402,8 +401,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateSkyAtmosphere()
 		return FReply::Handled();
 	}
 
-	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
-	ASkyAtmosphere* SkyLight = Cast<ASkyAtmosphere>(GEditor->AddActor(World->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), Transform));
+	GEditor->AddActor(World->GetCurrentLevel(), ASkyAtmosphere::StaticClass(), FTransform::Identity);
 
 	return FReply::Handled();
 }
@@ -415,8 +413,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateVolumetricCloud()
 		return FReply::Handled();
 	}
 
-	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
-	AVolumetricCloud* SkyLight = Cast<AVolumetricCloud>(GEditor->AddActor(World->GetCurrentLevel(), AVolumetricCloud::StaticClass(), Transform));
+	GEditor->AddActor(World->GetCurrentLevel(), AVolumetricCloud::StaticClass(), FTransform::Identity);
 
 	return FReply::Handled();
 }
@@ -428,8 +425,7 @@ FReply SMapPresetEnvironmentLightingViewer::OnButtonCreateHeightFog()
 		return FReply::Handled();
 	}
 
-	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
-	AExponentialHeightFog* HeightFog = Cast<AExponentialHeightFog>(GEditor->AddActor(World->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), Transform));
+	GEditor->AddActor(World->GetCurrentLevel(), AExponentialHeightFog::StaticClass(), FTransform::Identity);
 
 	return FReply::Handled();
 }
@@ -445,7 +441,7 @@ TSharedRef<SWidget> SMapPresetEnvironmentLightingViewer::ComboBoxDetailFilterWid
 }
 
 void SMapPresetEnvironmentLightingViewer::ComboBoxDetailFilterWidgetSelectionChanged(TSharedPtr<FString> NewSelection,
-	ESelectInfo::Type SelectInfo)
+	[[maybe_unused]] ESelectInfo::Type SelectInfo)
 {
 	for (int32 i = 0; i < ComboBoxDetailFilterOptions.Num(); ++i)
 	{

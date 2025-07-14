@@ -17,8 +17,6 @@
 #include "Utils/OCGLandscapeUtil.h"
 
 #if WITH_EDITOR
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
 #include "Landscape.h"
 #endif
 
@@ -204,7 +202,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 				if (AActor* Owner = GetOwner())
 				{
 					Owner->Modify();
-					Owner->MarkPackageDirty();
+					(void)Owner->MarkPackageDirty();
 				}
 			}
 
@@ -420,7 +418,7 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 		if (AActor* Owner = GetOwner())
 		{
 			Owner->Modify();
-			Owner->MarkPackageDirty();
+			(void)Owner->MarkPackageDirty();
 		}
 	}
 #endif
@@ -476,8 +474,8 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 	}
 
 	FVector WorldLocation = LandscapeOrigin + FVector(
-		2 * (MapPoint.X / (float)MapPreset->MapResolution.X) * LandscapeExtent.X,
-		2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y,
+		2 * (MapPoint.X / static_cast<float>(MapPreset->MapResolution.X)) * LandscapeExtent.X,
+		2 * (MapPoint.Y / static_cast<float>(MapPreset->MapResolution.Y)) * LandscapeExtent.Y,
 		0.0f 
 	);
 
@@ -496,7 +494,7 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 	return WorldLocation;
 }
 
-void UOCGRiverGenerateComponent::SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
+void UOCGRiverGenerateComponent::SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InRiverActor)->GetWaterBodyComponent();
 	check(MapPreset && WaterBodyComponent);

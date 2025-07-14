@@ -53,8 +53,8 @@ public:
 	FORCEINLINE const TArray<FColor>& GetBiomeColorMap() { return BiomeColorMap; }
 	// FORCEINLINE const float GetMaxHeight() const { return MapPreset->; }
 	// FORCEINLINE const float GetMinHeight() const { return MinHeight; }
-	FORCEINLINE const float GetZScale() const { return LandscapeZScale; }
-	FORCEINLINE const float GetZOffset() const { return ZOffset; }
+	FORCEINLINE float GetZScale() const { return LandscapeZScale; }
+	FORCEINLINE float GetZOffset() const { return ZOffset; }
 
 private:
 	UPROPERTY()

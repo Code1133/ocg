@@ -6,7 +6,7 @@ struct FOCGUtils
 {
 public:
 	template <typename T>
-	static TArray<T*> GetAllActorsOfClass(UWorld* World)
+	static TArray<T*> GetAllActorsOfClass(const UWorld* World)
 	{
 		TArray<T*> FoundActors;
 		for (T* Actor : TActorRange<T>(World))

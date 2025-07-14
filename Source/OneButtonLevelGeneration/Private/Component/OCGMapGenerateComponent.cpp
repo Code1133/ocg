@@ -2,13 +2,10 @@
 
 #include "Component/OCGMapGenerateComponent.h"
 
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
 #include "OCGLevelGenerator.h"
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values for this component's properties

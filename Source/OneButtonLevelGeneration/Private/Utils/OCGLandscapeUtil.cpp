@@ -6,7 +6,6 @@
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeEdit.h"
-#include "LandscapeEditorModule.h"
 #include "LandscapeInfo.h"
 #endif
 
@@ -35,7 +34,6 @@ void OCGLandscapeUtil::ExtractHeightMap(ALandscape* InLandscape, const FGuid InG
 		FIntRect ExportRegion;
 		if (Info->GetLandscapeExtent(ExportRegion))
 		{
-			ILandscapeEditorModule& LandscapeEditorModule = FModuleManager::GetModuleChecked<ILandscapeEditorModule>("LandscapeEditor");
 			FLandscapeEditDataInterface LandscapeEdit(Info);
 			
 			OutWidth = ExportRegion.Width() + 1;
@@ -84,7 +82,11 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 			Region.Max.X += 1;
 			Region.Max.Y += 1;
 			
-			FScopedSetLandscapeEditingLayer Scope(InLandscape, CurrentLayerGuid, [&] { check(InLandscape); InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All); });
+			FScopedSetLandscapeEditingLayer Scope(InLandscape, CurrentLayerGuid, [InLandscape]
+			{
+				check(InLandscape);
+				InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All);
+			});
 
 			FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, LayerInfo);
 			int32 Width = Region.Width() + 1;

@@ -9,6 +9,7 @@ class FAdvancedPreviewScene;
 class FMapPresetEditorToolkit;
 class FMapPresetViewportClient;
 
+
 class SMapPresetViewport : public SEditorViewport
 {
 public:
@@ -20,7 +21,8 @@ public:
 	void Construct(const FArguments& InArgs);
 	virtual ~SMapPresetViewport() override;
 
-	UWorld* GetWorld() const override;
+	virtual UWorld* GetWorld() const override;
+
 protected:
 	virtual TSharedRef<FEditorViewportClient> MakeEditorViewportClient() override;
 

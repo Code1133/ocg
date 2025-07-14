@@ -27,30 +27,6 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 #endif
 }
 
-void AOCGLandscapeVolume::AdjustVolumeToBoundsOfActor(const AActor* TargetActor)
-{
-	check(TargetActor);
-
-	if (!TargetActor->IsA<ALandscape>())
-	{
-		return;
-	}
-
-	// GetActorBounds calculates the bounding box (FBox) that includes the actor and all its components.
-	FVector Origin = TargetActor->GetActorLocation();
-
-	const ALandscape* LandscapeActor = Cast<ALandscape>(TargetActor);
-	FVector BoxExtent = LandscapeActor->GetLoadedBounds().GetExtent();
-
-	// add offset
-	Origin += FVector(BoxExtent.X , BoxExtent.Y,0);
-	// Set the location of this actor (volume) to the center of the target actor's bounds
-	SetActorLocation(Origin);
-
-	// Set the BoxComponent's extent to match the target actor's bounding box extent
-	BoxComponent->SetBoxExtent(BoxExtent);
-}
-
 #if WITH_EDITOR
 void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {

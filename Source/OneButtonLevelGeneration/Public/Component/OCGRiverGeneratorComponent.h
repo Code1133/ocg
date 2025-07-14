@@ -37,7 +37,7 @@ private:
 
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
 	
-	void SetDefaultRiverProperties(class AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
+	void SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
 	// helper functions
 	FIntPoint GetRandomStartPoint();
 
@@ -48,7 +48,7 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UMapPreset> MapPreset;
 	
-	float SeaHeight;
+	float SeaHeight = 0.0f;
 
 	// Generated rivers
 	UPROPERTY(Transient)

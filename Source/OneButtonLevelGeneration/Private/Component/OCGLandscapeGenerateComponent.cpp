@@ -2,8 +2,6 @@
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
-#include "ImageUtils.h"
-#include "LandscapeEditorModule.h"
 
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
@@ -15,7 +13,6 @@
 #include "Components/RuntimeVirtualTextureComponent.h"
 #include "RuntimeVirtualTextureSetBounds.h"
 
-#include "Component/OCGMapGenerateComponent.h"
 #include "Components/BoxComponent.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -23,8 +20,6 @@
 #include "Landscape.h"
 #include "LandscapeSettings.h"
 #include "LandscapeSubsystem.h"
-#include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
 #include "Utils/OCGFileUtils.h"
 #include "Utils/OCGMaterialEditTool.h"
 
@@ -240,7 +235,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		if (AActor* Owner = GetOwner())
 		{
 			Owner->Modify();
-			Owner->MarkPackageDirty();
+			(void)Owner->MarkPackageDirty();
 		}
 
 		// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
@@ -587,7 +582,7 @@ void UOCGLandscapeGenerateComponent::AddTargetLayers(ALandscape* Landscape,
             if (LayerInfoObj)
             {
                 LayerInfoObj->LayerUsageDebugColor = LayerInfoObj->GenerateLayerUsageDebugColor();
-                LayerInfoObj->MarkPackageDirty();
+                (void)LayerInfoObj->MarkPackageDirty();
             }
         }
 		
@@ -1137,7 +1132,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     
     FAssetRegistryModule::AssetCreated(NewLayerInfo);
     NewLayerInfo->LayerUsageDebugColor = NewLayerInfo->GenerateLayerUsageDebugColor();
-    NewLayerInfo->MarkPackageDirty();
+    (void)NewLayerInfo->MarkPackageDirty();
 
     return NewLayerInfo;
 #endif
@@ -1182,7 +1177,7 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
     	if (AActor* Owner = GetOwner())
     	{
     		Owner->Modify();
-    		Owner->MarkPackageDirty();
+    		(void)Owner->MarkPackageDirty();
     	}
     	
     	ARuntimeVirtualTextureVolume* NewRVTVolume = InLandscapeActor->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();

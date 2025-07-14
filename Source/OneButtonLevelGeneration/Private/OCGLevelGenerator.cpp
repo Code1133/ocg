@@ -126,7 +126,7 @@ FVector AOCGLevelGenerator::GetVolumeOrigin() const
 	return FVector();
 }
 
-void AOCGLevelGenerator::SetMapPreset(class UMapPreset* InMapPreset)
+void AOCGLevelGenerator::SetMapPreset(UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;
 	MapPreset->LandscapeGenerator = this;

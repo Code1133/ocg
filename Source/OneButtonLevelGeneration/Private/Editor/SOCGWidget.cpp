@@ -1,7 +1,6 @@
 #include "Editor/SOCGWidget.h"
 
 #include "AssetToolsModule.h"
-#include "EngineUtils.h"
 #include "OCGLevelGenerator.h"
 #include "PropertyCustomizationHelpers.h"
 #include "Selection.h"
@@ -10,10 +9,11 @@
 #include "IDetailsView.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
+#include "Utils/OCGUtils.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 
-void SOCGWidget::Construct(const FArguments& InArgs)
+void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
 {
     RegisterDelegates();
     CheckForExistingLevelGenerator();
@@ -119,7 +119,7 @@ FReply SOCGWidget::OnGenerateLevelClicked()
 
 FReply SOCGWidget::OnCreateNewMapPresetClicked()
 {
-    FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
+    const FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
     UObject* NewAsset = AssetToolsModule.Get().CreateAssetWithDialog(UMapPreset::StaticClass(), NewObject<UMapPresetFactory>());
 
     if (NewAsset && LevelGeneratorActor.IsValid())
@@ -274,16 +274,15 @@ void SOCGWidget::UnregisterDelegates()
 void SOCGWidget::FindExistingLevelGenerator()
 {
     // Find existing LevelGenerator actor in the current world
-    UWorld* World = GEditor->GetEditorWorldContext().World();
-    if (World)
+    if (const UWorld* World = GEditor->GetEditorWorldContext().World())
     {
-        for (TActorIterator<AOCGLevelGenerator> It(World); It; ++It)
+        TArray<AOCGLevelGenerator*> Generators = FOCGUtils::GetAllActorsOfClass<AOCGLevelGenerator>(World);
+        if (!Generators.IsEmpty())
         {
-            GEditor->SelectActor(*It, true, true);
-            SetSelectedActor(*It); // Manually set the actor for the UI
+            AOCGLevelGenerator* Generator = Generators[0];
 
-            AOCGLevelGenerator* LevelGenerator = *It;
-            break; // Only take the first found actor
+            GEditor->SelectActor(Generator, true, true);
+            SetSelectedActor(Generator); // Manually set the actor for the UI
         }
     }
 }
@@ -291,13 +290,12 @@ void SOCGWidget::FindExistingLevelGenerator()
 void SOCGWidget::CheckForExistingLevelGenerator()
 {
     bLevelGeneratorExistsInLevel = false;
-    UWorld* World = GEditor->GetEditorWorldContext().World();
-    if (World)
+    if (UWorld* World = GEditor->GetEditorWorldContext().World())
     {
-        for (TActorIterator<AOCGLevelGenerator> It(World); It; ++It)
+        TArray<AOCGLevelGenerator*> Generators = FOCGUtils::GetAllActorsOfClass<AOCGLevelGenerator>(World);
+        if (!Generators.IsEmpty())
         {
             bLevelGeneratorExistsInLevel = true;
-            return; 
         }
     }
 }

@@ -152,7 +152,7 @@ void OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMa
 	}
 
 	TargetMaterial->PostEditChange();
-	TargetMaterial->MarkPackageDirty();
+	(void)TargetMaterial->MarkPackageDirty();
 	SaveMaterialAsset(TargetMaterial);
 #endif
 }

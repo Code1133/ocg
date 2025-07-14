@@ -29,7 +29,7 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(const TSharedPtr<FMapPreset
 void FMapPresetApplicationMode::RegisterTabFactories(TSharedPtr<FTabManager> InTabManager)
 {
 	// Validate the toolkit pointer before proceeding
-	if (TSharedPtr<FMapPresetEditorToolkit> Toolkit = MyToolkit.Pin())
+	if (const TSharedPtr<FMapPresetEditorToolkit> Toolkit = MyToolkit.Pin())
 	{
 		// Register the tab spawners with the toolkit
 		Toolkit->RegisterTabSpawners(InTabManager.ToSharedRef());

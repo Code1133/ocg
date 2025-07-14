@@ -2,7 +2,6 @@
 
 #include "Component/OCGTerrainGenerateComponent.h"
 
-#include "Landscape.h"
 #include "OCGLevelGenerator.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
@@ -63,7 +62,7 @@ void UOCGTerrainGenerateComponent::GenerateTerrain(UWorld* World)
 		if (AActor* Owner = GetOwner())
 		{
 			Owner->Modify();
-			Owner->MarkPackageDirty();
+			(void)Owner->MarkPackageDirty();
 		}
 	}
 	

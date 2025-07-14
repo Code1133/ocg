@@ -28,13 +28,13 @@
 class ADirectionalLight;
 
 void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
-                                         const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
+                                         const TSharedPtr<IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset)
 {
 	// Bind command lists and actions
 	FMapPresetEditorCommands::Register();
 
 	// create ToolbarExtender
-	TSharedPtr<FExtender> ToolbarExtender = MakeShared<FExtender>();
+	const TSharedPtr<FExtender> ToolbarExtender = MakeShared<FExtender>();
 	ToolbarExtender->AddToolBarExtension(
 		"Asset",
 		EExtensionHook::After,
@@ -76,8 +76,8 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		MakeShared<FMapPresetApplicationMode>(SharedThis(this))
 	);
 
-	const bool bCreateDefaultStandaloneMenu = true;
-	const bool bCreateDefaultToolbar = true;
+	constexpr bool bCreateDefaultStandaloneMenu = true;
+	constexpr bool bCreateDefaultToolbar = true;
 	InitAssetEditor(
 		Mode,
 		InitToolkitHost,
@@ -145,11 +145,11 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 	FMapPresetAssetTypeActions::OpenedEditorInstance = nullptr;
 }
 
-void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
+void FMapPresetEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
 	// Create Menu Group
 	const IWorkspaceMenuStructure& MenuStructure = WorkspaceMenu::GetMenuStructure();
-	TSharedRef<FWorkspaceItem> MenuRoot = MenuStructure.GetLevelEditorCategory()->AddGroup(
+	const TSharedRef<FWorkspaceItem> MenuRoot = MenuStructure.GetLevelEditorCategory()->AddGroup(
 		FName(TEXT("MapPresetEditor")),
 		FText::FromString(TEXT("Map Preset Editor"))
 	);
@@ -218,7 +218,7 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateMapPresetTabBody()
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.bHideSelectionTip = true;
 
-	TSharedRef<IDetailsView> DetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+	const TSharedRef<IDetailsView> DetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 
 	DetailsView->SetObject(GetMapPreset());
 
@@ -257,7 +257,7 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateLandscapeTabBody()
 		];
 }
 
-TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FSpawnTabArgs& Args)
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab([[maybe_unused]] const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
 	.Label(FText::FromString(TEXT("Env.Light Mixer")))
@@ -266,7 +266,7 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_EnvLightMixerTab(const FS
 	];
 }
 
-TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_LandscapeTab(const FSpawnTabArgs& Args)
+TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_LandscapeTab([[maybe_unused]] const FSpawnTabArgs& Args)
 {
 	return SNew(SDockTab)
 		.Label(FText::FromString(TEXT("Landscape Details")))
@@ -277,8 +277,8 @@ TSharedRef<SDockTab> FMapPresetEditorToolkit::SpawnTab_LandscapeTab(const FSpawn
 
 void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 {
-	FButtonStyle* GenerateButtonStyle = new FButtonStyle(FAppStyle::Get().GetWidgetStyle<FButtonStyle>("Button"));
-	TSharedRef<SHorizontalBox> CustomToolbarBox = SNew(SHorizontalBox);
+	const FButtonStyle* GenerateButtonStyle = new FButtonStyle(FAppStyle::Get().GetWidgetStyle<FButtonStyle>("Button"));
+	const TSharedRef<SHorizontalBox> CustomToolbarBox = SNew(SHorizontalBox);
 
 	// Add Spacer 
 	CustomToolbarBox->AddSlot()
@@ -369,9 +369,9 @@ UWorld* FMapPresetEditorToolkit::CreateEditorWorld()
 	Factory->bInformEngineOfWorld = true;
 	Factory->FeatureLevel = GEditor->DefaultWorldFeatureLevel;
 	UPackage* Pkg = GetTransientPackage();
-	EObjectFlags Flags = RF_Public | RF_Standalone;
+	constexpr EObjectFlags Flags = RF_Public | RF_Standalone;
 
-	UWorld* NewWorld = CastChecked<UWorld>(Factory->FactoryCreateNew(UWorld::StaticClass(), Pkg, TEXT("MapPresetTransientWorld"), Flags, NULL, GWarn));
+	UWorld* NewWorld = CastChecked<UWorld>(Factory->FactoryCreateNew(UWorld::StaticClass(), Pkg, TEXT("MapPresetTransientWorld"), Flags, nullptr, GWarn));
 	NewWorld->AddToRoot();
 	NewWorld->UpdateWorldComponents(true, true);
 
@@ -381,7 +381,9 @@ UWorld* FMapPresetEditorToolkit::CreateEditorWorld()
 void FMapPresetEditorToolkit::SetupDefaultActors()
 {
 	if (!MapPresetEditorWorld)
+	{
 		return;
+	}
 
 	const FTransform Transform(FVector(0.0f, 0.0f, 0.0f));
 	ASkyLight* SkyLight = Cast<ASkyLight>(GEditor->AddActor(MapPresetEditorWorld->GetCurrentLevel(), ASkyLight::StaticClass(), Transform));

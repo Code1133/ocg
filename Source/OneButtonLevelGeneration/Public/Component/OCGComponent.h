@@ -23,5 +23,5 @@ public:
 	TArray<FOCGBiomeSettings> Biomes; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	UMaterialInstance* LandscapeMaterialInstance;
+	UMaterialInstance* LandscapeMaterialInstance = nullptr;
 };

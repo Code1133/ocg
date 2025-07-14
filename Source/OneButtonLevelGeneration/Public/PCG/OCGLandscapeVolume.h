@@ -23,9 +23,6 @@ public:
 	UBoxComponent* GetBoxComponent() const { return BoxComponent; }
 	UPCGComponent* GetPCGComponent() const { return PCGComponent; }
 
-	UFUNCTION(BlueprintCallable, Category = "OneClickGeneration|Utilities")
-	void AdjustVolumeToBoundsOfActor(const AActor* TargetActor);
-
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif

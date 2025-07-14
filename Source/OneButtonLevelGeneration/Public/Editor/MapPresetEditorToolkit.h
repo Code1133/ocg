@@ -29,7 +29,7 @@ class FMapPresetEditorToolkit : public FWorkflowCentricApplication, public FNoti
 
 public:
 	/** Initialize the Map Preset Editor Toolkit */
-	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset);
+	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, UMapPreset* MapPreset);
 
 	/** IToolkit Interface */ 
 	virtual FName GetToolkitFName() const override;
@@ -40,13 +40,13 @@ public:
 	/** Getter for the MapPreset */
 	UMapPreset* GetMapPreset() const { return EditingPreset.Get(); }
 
-	virtual ~FMapPresetEditorToolkit();
+	virtual ~FMapPresetEditorToolkit() override;
 
 protected:
 	/** Register TabSpawners */
-	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
+	virtual void RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
 	/** Unregister TabSpawners */
-	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
+	virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager) override;
 
 	/** Tab Spawner Functions */
 	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args);

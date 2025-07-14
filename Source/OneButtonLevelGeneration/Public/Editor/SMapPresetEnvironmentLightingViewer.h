@@ -47,26 +47,26 @@ class SMapPresetEnvironmentLightingViewer : public SCompoundWidget
 	/** Gets the widget contents of the app */
 	virtual TSharedRef<SWidget> GetContent();
 
-	virtual ~SMapPresetEnvironmentLightingViewer();
+	virtual ~SMapPresetEnvironmentLightingViewer() override;
 
 	/** SWidget interface */
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
 private:
-	TSharedPtr<class IDetailsView> DetailsViews[ENVLIGHT_MAX_DETAILSVIEWS];
-	FLinearColor DefaultForegroundColor;
+	TSharedPtr<IDetailsView> DetailsViews[ENVLIGHT_MAX_DETAILSVIEWS];
+	FLinearColor DefaultForegroundColor = FLinearColor::White;
 
-	TSharedPtr<class SCheckBox> CheckBoxAtmosphericLightsOnly;
+	TSharedPtr<SCheckBox> CheckBoxAtmosphericLightsOnly;
 
 	TSharedPtr<SComboBox<TSharedPtr<FString>>> ComboBoxDetailFilter;
 	TArray<TSharedPtr<FString>> ComboBoxDetailFilterOptions;
-	int32 SelectedComboBoxDetailFilterOptions;
+	int32 SelectedComboBoxDetailFilterOptions = -1;
 
-	TSharedPtr<class SButton> ButtonCreateSkyLight;
-	TSharedPtr<class SButton> ButtonCreateAtmosphericLight0;
-	TSharedPtr<class SButton> ButtonCreateSkyAtmosphere;
-	TSharedPtr<class SButton> ButtonCreateVolumetricCloud;
-	TSharedPtr<class SButton> ButtonCreateHeightFog;
+	TSharedPtr<SButton> ButtonCreateSkyLight;
+	TSharedPtr<SButton> ButtonCreateAtmosphericLight0;
+	TSharedPtr<SButton> ButtonCreateSkyAtmosphere;
+	TSharedPtr<SButton> ButtonCreateVolumetricCloud;
+	TSharedPtr<SButton> ButtonCreateHeightFog;
 
 	FReply OnButtonCreateSkyLight();
 	FReply OnButtonCreateDirectionalLight(uint32 Index);

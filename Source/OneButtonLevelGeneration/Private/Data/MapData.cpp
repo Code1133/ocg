@@ -173,7 +173,7 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 
 	// Register asset and mark it dirty
 	FAssetRegistryModule::AssetCreated(Texture);
-	Package->MarkPackageDirty();
+	(void)Package->MarkPackageDirty();
 
 	const FString FilePath = FPackageName::LongPackageNameToFilename(PackageName, FPackageName::GetAssetPackageExtension());
 	FSavePackageArgs SaveArgs;

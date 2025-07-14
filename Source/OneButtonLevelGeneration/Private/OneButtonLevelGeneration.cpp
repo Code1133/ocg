@@ -15,7 +15,7 @@ void FOneButtonLevelGenerationModule::StartupModule()
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
 	// Register the custom asset type actions for Map Preset
-	TSharedRef<IAssetTypeActions> Action = MakeShared<FMapPresetAssetTypeActions>();
+	const TSharedRef<IAssetTypeActions> Action = MakeShared<FMapPresetAssetTypeActions>();
 	AssetTools.RegisterAssetTypeActions(Action);
 
 	// Cache the registered asset type actions
@@ -66,7 +66,7 @@ void FOneButtonLevelGenerationModule::RegisterMenus()
 	);
 }
 
-TSharedRef<SDockTab> FOneButtonLevelGenerationModule::OnSpawnPluginTab(const FSpawnTabArgs& SpawnTabArgs)
+TSharedRef<SDockTab> FOneButtonLevelGenerationModule::OnSpawnPluginTab([[maybe_unused]] const FSpawnTabArgs& SpawnTabArgs)
 {
 	return SNew(SDockTab)
 	.TabRole(ETabRole::NomadTab)

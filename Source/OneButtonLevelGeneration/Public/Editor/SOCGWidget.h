@@ -14,7 +14,7 @@ public:
 	SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
-	virtual ~SOCGWidget();
+	virtual ~SOCGWidget() override;
 
 private:
 	// Button click event handler
@@ -49,7 +49,7 @@ private:
 	FReply OnGeneratorButtonClicked();
 	bool IsGeneratorButtonEnabled() const;
 	
-	TWeakObjectPtr<class AOCGLevelGenerator> LevelGeneratorActor;
+	TWeakObjectPtr<AOCGLevelGenerator> LevelGeneratorActor;
 	TSharedPtr<IDetailsView> MapPresetDetailsView;
 	TSharedPtr<SBox> DetailsContainer;
 	FDelegateHandle OnLevelActorDeletedDelegateHandle;
