@@ -28,6 +28,8 @@ namespace OCGMapDataUtils
 
 	UTexture2D* ImportTextureFromPNG(const FString& FileName);
 
+	bool ExportMap(const TArray<uint8>& InMap, const FIntPoint& Resolution, const FString& FileName);
+
 	bool ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName);
 
 	bool ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName);

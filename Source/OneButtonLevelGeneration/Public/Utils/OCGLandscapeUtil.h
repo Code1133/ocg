@@ -16,5 +16,7 @@ public:
 
 	static void ExtractHeightMap(ALandscape* InLandscape, const FGuid InGuid, int32& OutWidth, int32& OutHeight, TArray<uint16>& OutHeightMap);
 
-	static void ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint16>& NewWeightMap);
+	static void ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint16>& InHeightDiffMap);
+
+	static void MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight);
 };

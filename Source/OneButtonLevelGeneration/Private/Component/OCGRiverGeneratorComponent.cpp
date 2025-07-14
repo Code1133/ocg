@@ -381,7 +381,9 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 
 		CachedRiverHeightMap.Empty();
 		CachedRiverHeightMap.AddZeroed(SizeX * SizeY);
-		
+
+		TArray<uint16> FilledHeightData;
+		FilledHeightData.AddZeroed(SizeX * SizeY);
 		if (BlendedHeightData.Num() == BaseLayerHeightData.Num() && BlendedHeightData.Num() == SizeY * SizeY)
 		{
 			for (int i = 0; i < BlendedHeightData.Num(); ++i)
@@ -389,9 +391,12 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 				CachedRiverHeightMap[i] = BlendedHeightData[i] - BaseLayerHeightData[i];
 			}
 		}
-
+		
+		// 2. PNG로 익스포트
 		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
-		OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap.png"));
+
+		OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap16.png"));
+		OCGMapDataUtils::ExportMap(FilledHeightData, Resolution, TEXT("FilledWaterHeightMap16.png"));
 	}
 }
 

@@ -3,6 +3,8 @@
 
 #include "Utils/OCGLandscapeUtil.h"
 
+#include "Data/MapData.h"
+
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeEdit.h"
@@ -47,11 +49,13 @@ void OCGLandscapeUtil::ExtractHeightMap(ALandscape* InLandscape, const FGuid InG
 
 }
 
-void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint16>& NewWeightMap)
+void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint16>& InHeightDiffMap)
 {
 #if WITH_EDITOR
 	if (InLandscape)
 	{
+		TArray<uint8> WeightMap;
+		MakeWeightMapFromHeightDiff(InHeightDiffMap, WeightMap);
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
@@ -105,9 +109,9 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 			{
 				float Origin = OriginWeightData[i] / 255.f;
 				float New = 0;
-				if (i < NewWeightMap.Num())
+				if (i < WeightMap.Num())
 				{
-					New =  FMath::Clamp(NewWeightMap[i] / 65535.f, 0.f, 1.f);
+					New =  FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
 				}
 
 				float Final = FMath::Clamp(Origin + New, 0.f, 1.f);    // 더하기 방식 블렌드
@@ -119,7 +123,19 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 			LandscapeInfo->ForceLayersFullUpdate();
 
 			InLandscape->ReregisterAllComponents();
+			
+			OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Width - 1, Height - 1), TEXT("AddWeightMap.png"));
+			OCGMapDataUtils::ExportMap(TargetWeightData, FIntPoint(Width, Height), TEXT("FinalWeightMap.png"));
 		}
 	}
 #endif
+}
+
+void OCGLandscapeUtil::MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight)
+{
+	OutWeight.AddZeroed(HeightDiff.Num());
+	for (int32 i = 0; i < HeightDiff.Num(); ++i)
+	{
+		OutWeight[i] = (HeightDiff[i] > 0) ? 255 : 0;
+	}
 }

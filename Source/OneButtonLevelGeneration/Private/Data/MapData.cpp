@@ -197,6 +197,73 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 #endif
 }
 
+bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Resolution, const FString& FileName)
+{
+#if WITH_EDITOR
+	// Create directory and full path for the map file
+	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
+	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
+
+	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+
+	// Get the platform file interface to check and create directories
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
+	{
+		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
+		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+			return false;
+		}
+	}
+
+	// Create Image Wrapper for PNG format
+	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
+
+	if (!ImageWrapper.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to create Image Wrapper."));
+		return false;
+	}
+
+	// Set raw data to the Image Wrapper
+	const int32 Width = Resolution.X;
+	const int32 Height = Resolution.Y;
+
+	const int32 ExpectedSize = Width * Height;
+	if (InMap.Num() != ExpectedSize)
+	{
+		UE_LOG(LogTemp, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
+		return false;
+	}
+	
+	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.Num(), Width, Height, ERGBFormat::Gray, 8))
+	{
+		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
+
+		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Map exported successfully to: %s"), *FullPath);
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to save map file: %s"), *FullPath);
+			return false;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to set raw data to Image Wrapper."));
+		return false;
+	}
+#endif
+}
+
 bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
 #if WITH_EDITOR
@@ -241,7 +308,8 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 		return false;
 	}
 
-	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.GetAllocatedSize(), Width, Height, ERGBFormat::Gray, 16))
+	int32 RawBytes = InMap.Num() * sizeof(uint16);
+	if (ImageWrapper->SetRaw(reinterpret_cast<const uint8*>(InMap.GetData()), RawBytes, Width, Height, ERGBFormat::Gray, 16))
 	{
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
 
