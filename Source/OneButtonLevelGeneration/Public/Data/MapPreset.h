@@ -325,72 +325,74 @@ public:
 	FIntPoint MapResolution = FIntPoint(1009, 1009);
 
 public:
-	// Generates River.
-	UFUNCTION(CallInEditor, Category = "World Settings")
-	void RegenerateRiver();
-
 	// Generates River. If true, the following river settings will be displayed.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings")
 	uint8 bGenerateRiver : 1 = false;
 
+	// Generates River.
+	UFUNCTION(CallInEditor, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	void RegenerateRiver();
+	
 	// Count of rivers to generate.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0", ClampMax = "10", UIMin = "0", UIMax = "10"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0", ClampMax = "10", UIMin = "0", UIMax = "10"))
 	int32 RiverCount = 1;
 
 	// Determines river's start point. 1.0 means the river will start at the highest point of the landscape, 0.5 means it will start at the middle height.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
 	float RiverSourceElevationRatio = 0.8f;
 
 	// Intensity of Simplifing River Path. Higher value means more simplification, lower value means less simplification.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
-	float RiverSpineSimplifyEpsilon = 200.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
+	float RiverSplineSimplifyEpsilon = 200.f;
 
 	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverWidthBaseValue = 2048.0f;
 
 	// Base of the river depth. RiverDepthCurve value will be normalized and multiplied by this value to get the final depth of the river.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverDepthBaseValue = 1024.0f;
 
+	// --- Advanced River Settings ---
+
 	// Base of the river velocity. RiverVelocityCurve value will be normalized and multiplied by this value to get the final velocity of the river.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	float RiverVelocityBaseValue = 100.0f;
 
 	// Minimum width of the river. This value is added to the calculated width.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
 	float RiverWidthMin = 50.0f;
 
 	// Minimum depth of the river. This value is added to the calculated depth.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
 	float RiverDepthMin = 20.0f;
 
 	// Minimum velocity of the river. This value is added to the calculated velocity.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
 	float RiverVelocityMin = 5.0f;
 
 	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverWidthCurve;
 
 	// Curve that defines the river's depth based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the depth.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverDepthCurve;
 
 	// Curve that defines the river's velocity based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the velocity.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TObjectPtr<UCurveFloat> RiverVelocityCurve;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | River Settings | Advanced", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
 	
 public:
@@ -436,7 +438,7 @@ public:
 
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "OCG")
-	bool bExportMaps = false;
+	bool bExportMapTextures = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;

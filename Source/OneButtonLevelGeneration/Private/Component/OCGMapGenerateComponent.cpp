@@ -1480,7 +1480,7 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
 
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const
 {
-    if (!MapPreset->bExportMaps)
+    if (!MapPreset->bExportMapTextures)
         return;
     OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
 }
@@ -1488,7 +1488,7 @@ void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArr
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap,
     const FString& FileName) const
 {
-    if (!MapPreset->bExportMaps)
+    if (!MapPreset->bExportMapTextures)
         return;
     OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
 }
