@@ -46,7 +46,7 @@ void SMapPresetEnvironmentLightingViewer::Construct(const FArguments& InArgs)
 	{
 		DetailsViews[i] = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 		DetailsViews[i]->SetIsPropertyVisibleDelegate(FIsPropertyVisible::CreateSP(this, &SMapPresetEnvironmentLightingViewer::GetIsPropertyVisible));
-		DetailsViews[i]->SetDisableCustomDetailLayouts(true);	// This is to not have transforms and other special viewer
+		DetailsViews[i]->SetDisableCustomDetailLayouts(true);	
 	}
 	DefaultForegroundColor = DetailsViews[0]->GetColorAndOpacity();
 

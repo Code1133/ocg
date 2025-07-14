@@ -42,13 +42,13 @@ void SOCGWidget::Construct(const FArguments& InArgs)
             .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
         ]
         
-        // 1. MapPreset Asset Selection and Creation UI
+        // MapPreset Asset Selection and Creation UI
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
         [
             SNew(SHorizontalBox)
 
-            // 1-1. Existing Asset Selection Dropdown (Asset Picker)
+            // Existing Asset Selection Dropdown (Asset Picker)
             + SHorizontalBox::Slot()
             .FillWidth(1.0f)
             [
@@ -59,7 +59,7 @@ void SOCGWidget::Construct(const FArguments& InArgs)
                 .IsEnabled_Lambda([this] { return LevelGeneratorActor.IsValid(); })
             ]
 
-            // 1-2. New Asset Creation '+' Button
+            // New Asset Creation '+' Button
             + SHorizontalBox::Slot()
             .AutoWidth().Padding(2, 0, 0, 0).VAlign(VAlign_Center)
             [
@@ -294,11 +294,10 @@ void SOCGWidget::CheckForExistingLevelGenerator()
     UWorld* World = GEditor->GetEditorWorldContext().World();
     if (World)
     {
-        // TActorIterator를 사용해 월드에 해당 타입의 액터가 하나라도 있는지 확인합니다.
         for (TActorIterator<AOCGLevelGenerator> It(World); It; ++It)
         {
             bLevelGeneratorExistsInLevel = true;
-            return; // 하나라도 찾으면 즉시 종료
+            return; 
         }
     }
 }
@@ -319,12 +318,10 @@ FReply SOCGWidget::OnGeneratorButtonClicked()
 {
     if (bLevelGeneratorExistsInLevel)
     {
-        // 액터가 존재하면, 기존의 선택 함수를 호출합니다.
         FindExistingLevelGenerator();
     }
     else
     {
-        // 액터가 없으면, 생성 함수를 호출합니다.
         OnCreateLevelGeneratorClicked();
     }
     return FReply::Handled();
@@ -332,6 +329,5 @@ FReply SOCGWidget::OnGeneratorButtonClicked()
 
 bool SOCGWidget::IsGeneratorButtonEnabled() const
 {
-    // 위젯에 LevelGenerator가 아직 할당되지 않았을 때만 버튼을 활성화합니다.
     return !LevelGeneratorActor.IsValid();
 }

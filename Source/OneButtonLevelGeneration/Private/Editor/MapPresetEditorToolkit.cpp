@@ -24,7 +24,6 @@
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Factories/WorldFactory.h"
-#include "Grid/PCGPartitionActor.h"
 
 class ADirectionalLight;
 
@@ -45,29 +44,21 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	ToolbarExtender->AddToolBarExtension(
 			"Asset",
 			EExtensionHook::After,
-			ToolkitCommands,
+			nullptr,
 			FToolBarExtensionDelegate::CreateSP(this, &FMapPresetEditorToolkit::FillToolbar)
 		);
 
 	EditingPreset = MapPreset;
 	EditingPreset->EditorToolkit = SharedThis(this);
-
-	// MapPresetEditorWorld = UWorld::CreateWorld(
-	// 	EWorldType::Editor,
-	// 	true,
-	// 	TEXT("MapPresetEditorWorld"),
-	// 	GetTransientPackage(),
-	// 	true
-	// 	);
+	
 	MapPresetEditorWorld = CreateEditorWorld();
 
 	if (MapPresetEditorWorld)
 	{
 		FWorldContext& Context = GEngine->CreateNewWorldContext(EWorldType::Editor);
 		Context.SetCurrentWorld(MapPresetEditorWorld.Get());
-		// Deactive WorldBoundsChecks
+		
 		MapPresetEditorWorld->GetWorldSettings()->bEnableWorldBoundsChecks = false;
-		//EditingPreset->OwnerWorld = MapPresetEditorWorld.Get();
 
 		// Add LevelGenerator
 		LevelGenerator = MapPresetEditorWorld->SpawnActor<AOCGLevelGenerator>();
@@ -103,9 +94,8 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 		EditingPreset.Get()
 		);
 
-	// Add Toolbar Extender
 	AddToolbarExtender(ToolbarExtender);
-	// Apply the commands to the toolkit
+	
 	RegenerateMenusAndToolbars();
 	SetCurrentMode(TEXT("DefaultMode"));
 }
@@ -245,7 +235,7 @@ TSharedRef<SWidget> FMapPresetEditorToolkit::CreateLandscapeTabBody()
 	DetailsViewArgs.bHideSelectionTip = true;
 
 	LandscapeDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	// Landscape 생성 전후에 안전하게 처리하기
+	
 	ALandscape* SpawnedLandscape = LevelGenerator.IsValid()
 		? LevelGenerator->GetLandscape()
 		: nullptr;
@@ -427,16 +417,10 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 	ULevel* SourceLevel = SourceWorld->PersistentLevel;
 	ULevel* DuplicatedLevel = DuplicatedWorld->PersistentLevel;
 	
-	// Remove OCGLevelGenerator actors from the duplicated level
 	TArray<AActor*> ActorsToDestroy;
 	
 	for (AActor* Actor : DuplicatedLevel->Actors)
 	{
-		if (Actor && (Actor->IsA<APCGPartitionActor>()))
-		{
-			ActorsToDestroy.Add(Actor);
-		}
-	
 		if (Actor && Actor->IsA<AWaterBody>())
 		{
 			AWaterBody* WaterBodyActor = Cast<AWaterBody>(Actor);

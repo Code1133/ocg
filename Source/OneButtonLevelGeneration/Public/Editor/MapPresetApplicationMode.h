@@ -15,6 +15,5 @@ public:
 
 	virtual void RegisterTabFactories(TSharedPtr<FTabManager> InTabManager) override;
 protected:
-	// 이 모드를 소유하는 툴킷
 	TWeakPtr<FMapPresetEditorToolkit> MyToolkit; 
 };

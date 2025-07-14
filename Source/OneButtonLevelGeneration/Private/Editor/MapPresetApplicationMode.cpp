@@ -5,7 +5,6 @@
 
 extern const FName GMapPresetEditor_ViewportTabId;
 extern const FName GMapPresetEditor_DetailsTabId;
-extern const FName GMapPresetEditor_MaterialDetailsTabId;
 extern const FName GMapPresetEditor_EnvLightMixerTabId;
 
 FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditorToolkit> InEditorToolkit)
@@ -27,7 +26,6 @@ FMapPresetApplicationMode::FMapPresetApplicationMode(TSharedPtr<FMapPresetEditor
 				FTabManager::NewStack()
 				->SetSizeCoefficient(0.3f)
 				->AddTab(GMapPresetEditor_DetailsTabId, ETabState::OpenedTab)
-				->AddTab(GMapPresetEditor_MaterialDetailsTabId, ETabState::OpenedTab)
 			)
 		);
 }

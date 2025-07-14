@@ -5,7 +5,6 @@
 #include "Landscape.h"
 #include "WaterBodyActor.h"
 #include "WaterBodyComponent.h"
-#include "WaterBodyCustomActor.h"
 #include "WaterBodyOceanActor.h"
 #include "WaterBodyOceanComponent.h"
 #include "WaterEditorSettings.h"
@@ -15,7 +14,6 @@
 #include "Component/OCGRiverGeneratorComponent.h"
 #include "Component/OCGTerrainGenerateComponent.h"
 #include "Data/MapPreset.h"
-#include "Engine/StaticMeshActor.h"
 
 AOCGLevelGenerator::AOCGLevelGenerator()
 {
@@ -200,7 +198,6 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 		}
 
 		FVector Extent = GetLandscape()->GetLoadedBounds().GetExtent();
-		// 2. WaterZone의 ZoneExtent 프로퍼티를 랜드스케이프의 X, Y 크기로 설정합니다.
 		WaterZone->SetZoneExtent(FVector2D(Extent.X * 2, Extent.Y * 2));
 	}
 
@@ -229,10 +226,10 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 	InWaterBody->PostEditMove(true);
 
 	FOnWaterBodyChangedParams Params;
-	Params.bShapeOrPositionChanged = true; // Spline 등 Shape이 바뀌었음을 명시
-	Params.bUserTriggered = true;          // (선택) 사용자 직접 트리거
+	Params.bShapeOrPositionChanged = true; 
+	Params.bUserTriggered = true;          
 	
-	InWaterBody->GetWaterBodyComponent()->UpdateAll(Params); // 또는 UpdateAll()
+	InWaterBody->GetWaterBodyComponent()->UpdateAll(Params); 
 	InWaterBody->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 

@@ -57,7 +57,7 @@ void FOneButtonLevelGenerationModule::RegisterMenus()
 	// Add new section to the menu
 	FToolMenuSection& Section = Menu->AddSection("OCG", FText::FromString(TEXT("OCG Tools")));
 
-	// add a menu entry to the section
+	// Add a menu entry to the section
 	Section.AddMenuEntry("OCGWindowButton",
 		FText::FromString(TEXT("OCG Window")),
 		FText::FromString(TEXT("Open the OCG Level Generator window")),

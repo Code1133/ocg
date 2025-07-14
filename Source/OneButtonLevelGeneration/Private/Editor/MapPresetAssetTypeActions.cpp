@@ -60,10 +60,8 @@ uint32 FMapPresetAssetTypeActions::GetCategories()
 void FMapPresetAssetTypeActions::OpenAssetEditor(const TArray<UObject*>& InObjects,
     TSharedPtr<IToolkitHost> EditWithinLevelEditor)
 {
-    // 이미 열린 에디터가 있는지 확인
     if (OpenedEditorInstance.IsValid())
     {
-        // 다이얼로그로 경고 메시지 표시
         FText Title = FText::FromString(TEXT("Editor Open Failed"));
         FText Message = FText::FromString(TEXT("MapPreset Editor is already open. Please close the existing editor before opening a new one."));
         FMessageDialog::Open(EAppMsgType::Ok, Message, Title); // [3]
