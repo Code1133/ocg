@@ -135,7 +135,7 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	FVector PointExtents = FVector{100.0f, 100.0f, 100.0f};
 
-	UPROPERTY(EditAnywhere, meta = (InlineEditConditionToggle))
+	UPROPERTY(EditAnywhere, Category = "OCG", meta = (InlineEditConditionToggle))
 	bool bOverrideLooseness = false;
 
 	/** Degree of irregularity or 'looseness' in point placement. Higher values spread points more widely. */
