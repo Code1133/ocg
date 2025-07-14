@@ -134,6 +134,15 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			}
 		}
 	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bSmoothHeight))
+	{
+		if (!bSmoothHeight)
+		{
+			bSmoothBySlope = false;
+			bSmoothByMediumHeight = false;
+		}
+	}
 }
 #endif
 

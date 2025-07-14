@@ -720,15 +720,14 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
 {
     if (!MapPreset->bSmoothHeight)
         return;
-
+    
     ApplySpikeSmooth(MapPreset, InOutHeightMap);
     
     TArray<uint16> BlurredHeightMap;
     
     ApplyGaussianBlur(MapPreset, InOutHeightMap, BlurredHeightMap);
-    InOutHeightMap = BlurredHeightMap;
 
-    //MedianSmooth(MapPreset, InOutHeightMap);
+    MedianSmooth(MapPreset, InOutHeightMap);
 }
 
 void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
@@ -781,131 +780,87 @@ void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TA
             OutBlurredMap[y * MapSize.X + x] = FMath::Clamp(FMath::RoundToInt(Sum / WeightSum), 0, 65535);
         }
     }
+
+    InOutHeightMap = OutBlurredMap;
 }
 
 void UOCGMapGenerateComponent::ApplySpikeSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
+    if (!MapPreset->bSmoothBySlope)
+        return;
+    
     FIntPoint MapSize = MapPreset->MapResolution;
 
     const int32 KernelRadius = MapPreset->SmoothingRadius;
     const int32 KernelSize = (2 * KernelRadius + 1);
-    const int32 NumPoints = KernelSize * KernelSize;
-    const float SmoothingStrength = MapPreset->SmoothingStrength;
     
     const float MaxAllowedSlope = FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle));
 
-    TArray<uint16> OriginalHeightMap;
-    int32 SmoothedRegion;
-
     for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
     {
-        OriginalHeightMap = InOutHeightMap;
-        SmoothedRegion = 0;
-        for (int32 y=KernelRadius; y<MapSize.Y-KernelRadius; y += KernelRadius)
+        int32 SmoothedRegion = 0;
+        TArray<uint16> OriginalHeightMap = InOutHeightMap; 
+        for (int32 y=KernelRadius; y<MapSize.Y-KernelRadius; y += KernelRadius / 2.f)
         {
-            for (int32 x=KernelRadius; x<MapSize.X-KernelRadius; x += KernelRadius)
+            for (int32 x=KernelRadius; x<MapSize.X-KernelRadius; x += KernelRadius / 2.f)
             {
-                ProcessPlane(MapPreset, x, y, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
+                ProcessPlane(MapPreset, x, y, MapSize, KernelRadius, KernelSize, MaxAllowedSlope,
                 SmoothedRegion, OriginalHeightMap, InOutHeightMap);
             }
         }
         if (SmoothedRegion == 0)
             break;
     }
-    
-    //마지막 경계 처리
-    const int32 MaxX = MapSize.X - 1 - KernelRadius;
-    const int32 MaxY = MapSize.Y - 1 - KernelRadius;
-
-    OriginalHeightMap = InOutHeightMap;
-
-    for (int32 y=KernelRadius; y<MaxY; y += KernelRadius)
-        ProcessPlane(MapPreset, MaxX, y, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
-        SmoothedRegion, OriginalHeightMap, InOutHeightMap);
-
-    OriginalHeightMap = InOutHeightMap;
-
-    for (int32 x=KernelRadius; x<MaxX; x += KernelRadius)
-        ProcessPlane(MapPreset, x, MaxY, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
-        SmoothedRegion, OriginalHeightMap, InOutHeightMap);
-
-    OriginalHeightMap = InOutHeightMap;
-    ProcessPlane(MapPreset, MaxX, MaxY, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
-    SmoothedRegion, OriginalHeightMap, InOutHeightMap);
 }
 
 void UOCGMapGenerateComponent::ProcessPlane(const UMapPreset* MapPreset, int32 x, int32 y, const FIntPoint MapSize,
-    const int32 KernelRadius, const int32 KernelSize, const int32 NumPoints,
-    const float MaxAllowedSlope, const float SmoothingStrength, int32& SmoothedRegion, 
-    TArray<uint16>& OriginalHeightMap, TArray<uint16>& OutHeightMap)
+    const int32 KernelRadius, const int32 KernelSize, const float MaxAllowedSlope,
+    int32& SmoothedRegion, TArray<uint16>& InOriginalHeightMap, TArray<uint16>& OutHeightMap)
 {
-    float LandscapeScale = MapPreset->LandscapeScale * 100.f; 
+    float LandscapeScale = MapPreset->LandscapeScale * 100.f;
+
+    const float Length = KernelSize * LandscapeScale;
     
-    float SumXZ = 0;
-    float SumYZ = 0;
-    float SumZ = 0;
-    
-    for (int32 ky = -KernelRadius; ky<=KernelRadius; ky++)
-    {
-        for (int32 kx = -KernelRadius; kx<=KernelRadius; kx++)
-        {
-            const int32 px = x + kx;
-            const int32 py = y + ky;
-            const float pz = HeightMapToWorldHeight(OriginalHeightMap[py * MapSize.X + px]);
+    float TLHeight = HeightMapToWorldHeight(InOriginalHeightMap[(y-KernelRadius)*MapSize.X + (x-KernelRadius)]);
+    float TRHeight = HeightMapToWorldHeight(InOriginalHeightMap[(y-KernelRadius)*MapSize.X + (x+KernelRadius)]);
+    float BLHeight = HeightMapToWorldHeight(InOriginalHeightMap[(y+KernelRadius)*MapSize.X + (x-KernelRadius)]);
+    float BRHeight = HeightMapToWorldHeight(InOriginalHeightMap[(y+KernelRadius)*MapSize.X + (x+KernelRadius)]);
 
-            SumZ += pz;
-            SumXZ += kx * pz;
-            SumYZ += ky * pz;
-        }
-    }
+    float TopSlope = (TRHeight - TLHeight)/Length;
+    float BottomSlope = (BRHeight - BLHeight)/Length;
+    float RightSlope = (BRHeight - TRHeight)/Length;
+    float LeftSlope = (BLHeight - TLHeight)/Length;
 
-    if (SumXZ != 0 || SumYZ != 0)
-        int i=0;
-    
-    SumXZ *= LandscapeScale;
-    SumYZ *= LandscapeScale;
-
-    float SumXX = 0;
-    float LandscapeScaleSquared = LandscapeScale * LandscapeScale;
-    for (int i=-KernelRadius; i<=KernelRadius; i++)
-        SumXX += i*i;
-    SumXX *= KernelSize;
-    SumXX *= LandscapeScaleSquared;
-
-    const float Slope_X = SumXZ / SumXX;
-    const float Slope_Y = SumYZ / SumXX;
+    float Slope_X = (BottomSlope + TopSlope)/2.f;
+    float Slope_Y = (RightSlope + LeftSlope)/2.f;
 
     const float CurrentSlope = FMath::Sqrt(Slope_X * Slope_X + Slope_Y * Slope_Y);
-
+    
     if (CurrentSlope > MaxAllowedSlope)
     {
         SmoothedRegion++;
 
-        const float CorrectionFactor = MaxAllowedSlope / CurrentSlope;
-        const float CorrectedSlope_X = CorrectionFactor * Slope_X;
-        const float CorrectedSlope_Y = CorrectionFactor * Slope_Y;
+        float AverageHeight = (TLHeight + TRHeight + BRHeight + BLHeight)/4.f;
+        FVector Plane = {Slope_X, Slope_Y, AverageHeight};
 
-        const float AverageZ = SumZ / NumPoints;
+        float CorrectionFactor = MaxAllowedSlope / CurrentSlope;
+        float CorrectedSlope_X = Slope_X * CorrectionFactor;
+        float CorrectedSlope_Y = Slope_Y * CorrectionFactor;
 
         for (int32 ky = -KernelRadius; ky<=KernelRadius; ky++)
         {
             for (int32 kx = -KernelRadius; kx<=KernelRadius; kx++)
             {
-                const int32 px = x + kx;
-                const int32 py = y + ky;
-                const int32 Index = py * MapSize.X + px;
+                int32 Index = (y+ky)*MapSize.X + (x+kx);
+                float OriginalWorldHeight = HeightMapToWorldHeight(InOriginalHeightMap[Index]);
+                float CurrentHeight = Plane.X * kx * LandscapeScale + Plane.Y * ky * LandscapeScale + Plane.Z;
+                float CorrectedHeight = CorrectedSlope_X * kx * LandscapeScale + CorrectedSlope_Y * ky * LandscapeScale + Plane.Z;
+                float NewWorldHeight = OriginalWorldHeight + (CorrectedHeight - CurrentHeight);
+                NewWorldHeight = FMath::Clamp(NewWorldHeight, MapPreset->MinHeight + ZOffset, MapPreset->MaxHeight + ZOffset);
+                uint16 NewHeight = WorldHeightToHeightMap(NewWorldHeight);
+                uint16 OriginalHeight = WorldHeightToHeightMap(OriginalWorldHeight);
 
-                const float OriginalHeight = OriginalHeightMap[Index];
-
-                const float OriginalPlaneHeight = Slope_X * kx * LandscapeScale + Slope_Y * ky * LandscapeScale + AverageZ;
-                const float CorrectedPlaneHeight = CorrectedSlope_X * kx * LandscapeScale + CorrectedSlope_Y * ky * LandscapeScale + AverageZ;
-
-                float NewHeight = HeightMapToWorldHeight(OriginalHeight) + (CorrectedPlaneHeight - OriginalPlaneHeight);
-                uint16 NewMapHeight = WorldHeightToHeightMap(NewHeight);
-
-                NewMapHeight = FMath::Lerp(OriginalHeight, NewMapHeight, SmoothingStrength);
-                
-                OutHeightMap[Index] = FMath::Clamp(NewMapHeight, 0, 65535);
+                OutHeightMap[Index] = FMath::Lerp(OriginalHeight, NewHeight, MapPreset->SmoothingStrength);
             }
         }
     }
