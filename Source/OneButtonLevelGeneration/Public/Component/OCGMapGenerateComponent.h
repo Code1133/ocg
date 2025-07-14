@@ -102,6 +102,8 @@ private:
 	void GetMaxMinHeight(UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
 	void SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	void ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, TArray<uint16>& OutBlurredMap);
+	void ApplySpikeSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void ProcessPlane(const UMapPreset* MapPreset, int32 x, int32 y, const FIntPoint MapSize, const int32 KernelRadius, const int32 KernelSize, const int32 NumPoints, const float MaxAllowedSlope, const float SmoothingStrength, int32& SmoothedRegion, TArray<uint16>& OriginalHeightMap, TArray<uint16>& OutHeightMap);
 	void FinalizeBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
 	void MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	

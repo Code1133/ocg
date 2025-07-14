@@ -115,14 +115,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float TemperatureInfluenceOnHumidity = 0.7f;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	//bool bSmoothByMediumHeight = false;
-	//
-	//// Threshold Angle of the slope of the landscape
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-	//	meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5"))
-	//int32 MedianSmoothRadius = 3;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
 	bool bSmoothHeight = false;
 
@@ -131,6 +123,39 @@ public:
 			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25"))
 	int32 GaussianBlurRadius = 5;
 
+	// Larger Iteration takes more time but gives stronger smoothing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+				meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25"))
+	int32 SmoothingIteration = 5;
+
+	// The radius of smoothing brush
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+				meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "50"))
+	int32 SmoothingRadius = 5;
+
+	// Slope larger than this angle will be smoothed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9"))
+	float MaxSlopeAngle = 60.f;
+
+	// Decides the strength of smoothing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
+	float SmoothingStrength = 0.5f;
+
+	// Larger scale reduces pyramiding effect of smoothing
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+			meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0"))
+	float ThresholdNoiseScale = 0.01f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	bool bSmoothByMediumHeight = false;
+	
+	// Threshold Angle of the slope of the landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5"))
+	int32 MedianSmoothRadius = 3;
+	
 	//Island Properties
 	// Decides whether the landscape will be island or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")

@@ -85,7 +85,6 @@ void UOCGMapGenerateComponent::GenerateMaps()
     //하이트맵 부드럽게 만들기
     SmoothHeightMap(MapPreset, HeightMapData);
     SlowTask.EnterProgressFrame(1.0f);
-    //MedianSmooth(MapPreset, HeightMapData);
     //수정된 하이트맵에 따라서 물 바이옴 다시 계산
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     SlowTask.EnterProgressFrame(1.0f);
@@ -725,10 +724,14 @@ void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArr
     if (!MapPreset->bSmoothHeight)
         return;
 
+    ApplySpikeSmooth(MapPreset, InOutHeightMap);
+    
     TArray<uint16> BlurredHeightMap;
     
     ApplyGaussianBlur(MapPreset, InOutHeightMap, BlurredHeightMap);
     InOutHeightMap = BlurredHeightMap;
+
+    //MedianSmooth(MapPreset, InOutHeightMap);
 }
 
 void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap,
@@ -779,6 +782,134 @@ void UOCGMapGenerateComponent::ApplyGaussianBlur(const UMapPreset* MapPreset, TA
                 WeightSum += Weight;
             }
             OutBlurredMap[y * MapSize.X + x] = FMath::Clamp(FMath::RoundToInt(Sum / WeightSum), 0, 65535);
+        }
+    }
+}
+
+void UOCGMapGenerateComponent::ApplySpikeSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
+{
+    FIntPoint MapSize = MapPreset->MapResolution;
+
+    const int32 KernelRadius = MapPreset->SmoothingRadius;
+    const int32 KernelSize = (2 * KernelRadius + 1);
+    const int32 NumPoints = KernelSize * KernelSize;
+    const float SmoothingStrength = MapPreset->SmoothingStrength;
+    
+    const float MaxAllowedSlope = FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle));
+
+    TArray<uint16> OriginalHeightMap;
+    int32 SmoothedRegion;
+
+    for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
+    {
+        OriginalHeightMap = InOutHeightMap;
+        SmoothedRegion = 0;
+        for (int32 y=KernelRadius; y<MapSize.Y-KernelRadius; y += KernelRadius)
+        {
+            for (int32 x=KernelRadius; x<MapSize.X-KernelRadius; x += KernelRadius)
+            {
+                ProcessPlane(MapPreset, x, y, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
+                SmoothedRegion, OriginalHeightMap, InOutHeightMap);
+            }
+        }
+        if (SmoothedRegion == 0)
+            break;
+    }
+    
+    //마지막 경계 처리
+    const int32 MaxX = MapSize.X - 1 - KernelRadius;
+    const int32 MaxY = MapSize.Y - 1 - KernelRadius;
+
+    OriginalHeightMap = InOutHeightMap;
+
+    for (int32 y=KernelRadius; y<MaxY; y += KernelRadius)
+        ProcessPlane(MapPreset, MaxX, y, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
+        SmoothedRegion, OriginalHeightMap, InOutHeightMap);
+
+    OriginalHeightMap = InOutHeightMap;
+
+    for (int32 x=KernelRadius; x<MaxX; x += KernelRadius)
+        ProcessPlane(MapPreset, x, MaxY, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
+        SmoothedRegion, OriginalHeightMap, InOutHeightMap);
+
+    OriginalHeightMap = InOutHeightMap;
+    ProcessPlane(MapPreset, MaxX, MaxY, MapSize, KernelRadius, KernelSize, NumPoints, MaxAllowedSlope, SmoothingStrength,
+    SmoothedRegion, OriginalHeightMap, InOutHeightMap);
+}
+
+void UOCGMapGenerateComponent::ProcessPlane(const UMapPreset* MapPreset, int32 x, int32 y, const FIntPoint MapSize,
+    const int32 KernelRadius, const int32 KernelSize, const int32 NumPoints,
+    const float MaxAllowedSlope, const float SmoothingStrength, int32& SmoothedRegion, 
+    TArray<uint16>& OriginalHeightMap, TArray<uint16>& OutHeightMap)
+{
+    float LandscapeScale = MapPreset->LandscapeScale * 100.f; 
+    
+    float SumXZ = 0;
+    float SumYZ = 0;
+    float SumZ = 0;
+    
+    for (int32 ky = -KernelRadius; ky<=KernelRadius; ky++)
+    {
+        for (int32 kx = -KernelRadius; kx<=KernelRadius; kx++)
+        {
+            const int32 px = x + kx;
+            const int32 py = y + ky;
+            const float pz = HeightMapToWorldHeight(OriginalHeightMap[py * MapSize.X + px]);
+
+            SumZ += pz;
+            SumXZ += kx * pz;
+            SumYZ += ky * pz;
+        }
+    }
+
+    if (SumXZ != 0 || SumYZ != 0)
+        int i=0;
+    
+    SumXZ *= LandscapeScale;
+    SumYZ *= LandscapeScale;
+
+    float SumXX = 0;
+    float LandscapeScaleSquared = LandscapeScale * LandscapeScale;
+    for (int i=-KernelRadius; i<=KernelRadius; i++)
+        SumXX += i*i;
+    SumXX *= KernelSize;
+    SumXX *= LandscapeScaleSquared;
+
+    const float Slope_X = SumXZ / SumXX;
+    const float Slope_Y = SumYZ / SumXX;
+
+    const float CurrentSlope = FMath::Sqrt(Slope_X * Slope_X + Slope_Y * Slope_Y);
+
+    if (CurrentSlope > MaxAllowedSlope)
+    {
+        SmoothedRegion++;
+
+        const float CorrectionFactor = MaxAllowedSlope / CurrentSlope;
+        const float CorrectedSlope_X = CorrectionFactor * Slope_X;
+        const float CorrectedSlope_Y = CorrectionFactor * Slope_Y;
+
+        const float AverageZ = SumZ / NumPoints;
+
+        for (int32 ky = -KernelRadius; ky<=KernelRadius; ky++)
+        {
+            for (int32 kx = -KernelRadius; kx<=KernelRadius; kx++)
+            {
+                const int32 px = x + kx;
+                const int32 py = y + ky;
+                const int32 Index = py * MapSize.X + px;
+
+                const float OriginalHeight = OriginalHeightMap[Index];
+
+                const float OriginalPlaneHeight = Slope_X * kx * LandscapeScale + Slope_Y * ky * LandscapeScale + AverageZ;
+                const float CorrectedPlaneHeight = CorrectedSlope_X * kx * LandscapeScale + CorrectedSlope_Y * ky * LandscapeScale + AverageZ;
+
+                float NewHeight = HeightMapToWorldHeight(OriginalHeight) + (CorrectedPlaneHeight - OriginalPlaneHeight);
+                uint16 NewMapHeight = WorldHeightToHeightMap(NewHeight);
+
+                NewMapHeight = FMath::Lerp(OriginalHeight, NewMapHeight, SmoothingStrength);
+                
+                OutHeightMap[Index] = FMath::Clamp(NewMapHeight, 0, 65535);
+            }
         }
     }
 }
@@ -1189,7 +1320,6 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
 
 void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
 {
-    /*
     if (!MapPreset->bSmoothByMediumHeight)
         return;
     const int32 Radius = MapPreset->MedianSmoothRadius;
@@ -1221,7 +1351,6 @@ void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<
             InOutHeightMap[y * MapSize.X + x] = Window[Window.Num() / 2];
         }
     }
-    */
 }
 
 void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
