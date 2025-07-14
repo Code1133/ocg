@@ -26,6 +26,11 @@ public:
 
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void ExportWaterEditLayerHeightMap();
+	
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void ApplyWaterWeight();
 private:
 	void ClearAllRivers();
 
@@ -56,6 +61,8 @@ private:
 	
 	TSet<FIntPoint> UsedRiverStartPoints;
 	TArray<FIntPoint> CachedRiverStartPoints;
+
+	TArray<uint16> CachedRiverHeightMap;
 };
 
 

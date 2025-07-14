@@ -2,6 +2,8 @@
 
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
+#include "ImageUtils.h"
+#include "LandscapeEditorModule.h"
 
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
@@ -1346,17 +1348,7 @@ bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(const UWorld* Worl
 	{
 		return true;
 	}
-	
-	// 명시적 확인
-	if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
-	{
-		TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
-		if (!TargetLandscape)
-		{
-			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
-		}
-	}
-	
+		
 	if (!TargetLandscape)
 	{
 		// 로드 실패 시 안전하게 새 생성
@@ -1440,10 +1432,17 @@ void UOCGLandscapeGenerateComponent::OnRegister()
 {
 	Super::OnRegister();
 #if WITH_EDITOR
-	// 에디터 월드에서, 아직 SoftObjectPtr가 비어있다면 Landscape 스폰
 	if (GetWorld() && GetWorld()->IsEditorWorld() && !TargetLandscapeAsset.IsValid())
 	{
-		
+		// 명시적 확인
+		if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
+		{
+			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
+			if (!TargetLandscape)
+			{
+				TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
+			}
+		}
 	}
 #endif
 }

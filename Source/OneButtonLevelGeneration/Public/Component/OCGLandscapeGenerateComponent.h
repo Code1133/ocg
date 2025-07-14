@@ -131,7 +131,6 @@ public:
 	void GenerateLandscapeInEditor();
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscape(UWorld* World);
-	
 private:
 	void ImportMapDatas(UWorld* World, TArray<FLandscapeImportLayerInfo> ImportLayers);
 

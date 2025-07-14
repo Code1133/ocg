@@ -4,16 +4,22 @@
 #include "Component/OCGRiverGeneratorComponent.h"
 
 #include "EngineUtils.h"
-#include "Landscape.h"
+
 #include "OCGLevelGenerator.h"
 #include "WaterBodyRiverActor.h"
 #include "WaterBodyRiverComponent.h"
 #include "WaterEditorSettings.h"
 #include "WaterSplineComponent.h"
-#include "Component/OCGLandscapeGenerateComponent.h"
 #include "Components/SplineComponent.h"
 #include "Data/MapPreset.h"
 #include "Kismet/GameplayStatics.h"
+#include "Utils/OCGLandscapeUtil.h"
+
+#if WITH_EDITOR
+#include "IImageWrapper.h"
+#include "IImageWrapperModule.h"
+#include "Landscape.h"
+#endif
 
 
 UOCGRiverGenerateComponent::UOCGRiverGenerateComponent()
@@ -213,7 +219,6 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight)
 {
 	MapPreset = InMapPreset;
-
 }
 
 void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
@@ -297,6 +302,104 @@ void UOCGRiverGenerateComponent::SetRiverWidth(AWaterBodyRiver* InRiverActor, co
 AOCGLevelGenerator* UOCGRiverGenerateComponent::GetLevelGenerator() const
 {
 	return Cast<AOCGLevelGenerator>(GetOwner());
+}
+
+void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
+{
+	if (TargetLandscape)
+	{
+		ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
+		if (!Info) return;
+		
+		// EditLayer 이름이 "Water"인 레이어 찾기
+		FName BaseEditLayerName = FName(TEXT("Layer"));
+		const FLandscapeLayer* BaseLayer = nullptr;
+		for (const FLandscapeLayer& Layer : TargetLandscape->GetLayers())
+		{
+			if (Layer.Name == BaseEditLayerName)
+			{
+				BaseLayer = &Layer;
+				break;
+			}
+		}
+		
+		TArray<uint16> BlendedHeightData;
+		int32 SizeX, SizeY;
+		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
+
+		TArray<uint16> BaseLayerHeightData;
+		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->Guid, SizeX, SizeY, BaseLayerHeightData);
+
+		CachedRiverHeightMap.Empty();
+		CachedRiverHeightMap.AddZeroed(SizeX * SizeY);
+		
+		if (BlendedHeightData.Num() == BaseLayerHeightData.Num() && BlendedHeightData.Num() == SizeY * SizeY)
+		{
+			for (int i = 0; i < BlendedHeightData.Num(); ++i)
+			{
+				CachedRiverHeightMap[i] = BlendedHeightData[i] - BaseLayerHeightData[i];
+			}
+		}
+
+		// 1) 그레이스케일 FColor 배열로 변환 (상위 8비트 사용)
+		TArray<FColor> ImageData;
+		ImageData.SetNumUninitialized(SizeX * SizeY);
+		for (int32 i = 0; i < SizeX * SizeY; ++i)
+		{
+			uint8 Gray = static_cast<uint8>(CachedRiverHeightMap[i] >> 8);
+			ImageData[i] = FColor(Gray, Gray, Gray, 255);
+		}
+		
+		// 2) PNG 인코더 초기화
+		IImageWrapperModule& IWModule =
+			FModuleManager::LoadModuleChecked<IImageWrapperModule>(TEXT("ImageWrapper"));
+		TSharedPtr<IImageWrapper> Wrapper =
+			IWModule.CreateImageWrapper(EImageFormat::PNG);
+		if (!Wrapper.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ImageWrapper 생성 실패"));
+			return;
+		}
+
+		Wrapper->SetRaw(
+			ImageData.GetData(),
+			ImageData.Num() * sizeof(FColor),
+			SizeX, SizeY,
+			ERGBFormat::RGBA,
+			8
+		);
+
+		// 3) 압축 데이터(64비트 배열) → 32비트 배열로 복사
+		TArray64<uint8> Compressed64 = Wrapper->GetCompressed(100);
+		TArray<uint8> Compressed;
+		Compressed.SetNumUninitialized(Compressed64.Num());
+		FMemory::Memcpy(Compressed.GetData(), Compressed64.GetData(), Compressed64.Num());
+
+		
+		const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
+
+		// 2) 파일명 포맷
+		FString FileName = FString::Printf(TEXT("WaterHeightMap.png"));
+
+		// 3) 전체 경로 조합
+		const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
+
+		// 5) 파일 쓰기
+		if (FFileHelper::SaveArrayToFile(Compressed, *FullPath))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Heightmap PNG 저장 성공: %s"), *FullPath);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Heightmap PNG 저장 실패: %s"), *FullPath);
+			return;
+		}
+	}
+}
+
+void UOCGRiverGenerateComponent::ApplyWaterWeight()
+{
 }
 
 void UOCGRiverGenerateComponent::ClearAllRivers()
