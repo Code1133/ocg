@@ -18,6 +18,7 @@
 
 #if WITH_EDITOR
 #include "Landscape.h"
+// !TODO : #include "LandscapeEditLayer.h"추가
 #endif
 
 
@@ -214,6 +215,8 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			GeneratedRivers.Add(WaterBodyRiver);
 			CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
 
+			// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
+			// FGuid WaterLayerGuid = InLandscape->GetEditLayerConst(1)->GetGuid();
 			FGuid WaterLayerGuid = InLandscape->GetLayerConst(1)->Guid;
 
 			FScopedSetLandscapeEditingLayer Scope(InLandscape, WaterLayerGuid, [&]
@@ -377,8 +380,21 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 	{
 		ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
 		if (!Info) return;
+
+		// !TODO : UE5.6에서는 변경 아래와 같이 하거나 이름으로 찾아야 할 듯
+		// FName BaseEditLayerName = FName(TEXT("Layer"));
+		// const ULandscapeEditLayerBase* BaseLayer = nullptr;
+		// {
+		// 	for (const ULandscapeEditLayerBase* Layer : TargetLandscape->GetEditLayersConst())
+		// 	{
+		// 		if (Layer->GetName() == BaseEditLayerName)
+		// 		{
+		// 			BaseLayer = Layer;
+		// 			break;
+		// 		}
+		// 	}
+		// }
 		
-		// EditLayer 이름이 "Water"인 레이어 찾기
 		FName BaseEditLayerName = FName(TEXT("Layer"));
 		const FLandscapeLayer* BaseLayer = nullptr;
 		for (const FLandscapeLayer& Layer : TargetLandscape->GetLayers())
@@ -395,6 +411,8 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
 
 		TArray<uint16> BaseLayerHeightData;
+		// !TODO : UE5.6에서는 변경 아래와 같이 하거나 이름으로 찾아야 할 듯
+		// OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->GetGuid(), SizeX, SizeY, BaseLayerHeightData);
 		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->Guid, SizeX, SizeY, BaseLayerHeightData);
 
 		CachedRiverHeightMap.Empty();

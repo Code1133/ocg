@@ -60,7 +60,9 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 
 		TArray<uint8> BlurredWeightMap;
 		BlurWeightMap(WeightMap, BlurredWeightMap, Width, Height);
-		
+
+		// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
+		//FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
@@ -133,6 +135,8 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 	
 	if (InLandscape)
 	{
+		// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
+		//FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();

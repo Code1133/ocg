@@ -19,6 +19,7 @@
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeSettings.h"
+//!TODO : #include "LandscapeEditLayer.h"추가
 #include "LandscapeSubsystem.h"
 #include "Utils/OCGFileUtils.h"
 #include "Utils/OCGMaterialEditTool.h"
@@ -432,6 +433,8 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 
 		FIntRect ImportRegion = LandscapeExtent;
 
+		// !TODO : UE5.6에서는 바꿔야함 아래와 같이 하거나 이름으로 찾아야 할 듯
+		//FGuid CurrentLayerGuid = TargetLandscape->GetEditLayerConst(0)->GetGuid();
 		FGuid CurrentLayerGuid = TargetLandscape->GetLayerConst(0)->Guid;
 
 		const ELandscapeLayerPaintingRestriction PaintRestriction = ELandscapeLayerPaintingRestriction::None;
@@ -778,11 +781,17 @@ void UOCGLandscapeGenerateComponent::AddLandscapeComponent(ULandscapeInfo* InLan
 			TArray<ULandscapeComponent*> ComponentsUsingHeightmap;
 			ComponentsUsingHeightmap.Add(NewComponent);
 
-			for (const FLandscapeLayer& Layer : Landscape->GetLayers())
+			// !TODO : UE5.6에서는 아래와 같이 변경
+			// for (const ULandscapeEditLayerBase* EditLayer : Landscape->GetEditLayersConst())
+			// {
+			// 	TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
+			// 	NewComponent->AddDefaultLayerData(EditLayer->GetGuid(), ComponentsUsingHeightmap, CreatedHeightmapTextures);
+			// }
+			
+			for (const FLandscapeLayer& EditLayer : Landscape->GetLayers())
 			{
-				// Since we do not share heightmap when adding new component, we will provided the required array, but they will only be used for 1 component
 				TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
-				NewComponent->AddDefaultLayerData(Layer.Guid, ComponentsUsingHeightmap, CreatedHeightmapTextures);
+				NewComponent->AddDefaultLayerData(EditLayer.Guid, ComponentsUsingHeightmap, CreatedHeightmapTextures);
 			}
 		}
 

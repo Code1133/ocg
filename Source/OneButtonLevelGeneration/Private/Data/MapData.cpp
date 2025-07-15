@@ -378,16 +378,16 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 	// Set the raw color data to the Image Wrapper
 	if (ImageWrapper->SetRaw(InMap.GetData(), InMap.Num() * sizeof(FColor), Width, Height, ERGBFormat::BGRA, 8))
 	{
+		// PNG 압축 바이너리 얻기 (필수)
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
-
 		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Color map exported successfully to: %s"), *FullPath);
+			UE_LOG(LogTemp, Log, TEXT("Saved to %s"), *FullPath);
 			return true;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to save color map file."));
+			UE_LOG(LogTemp, Error, TEXT("Failed to save color map file : %s"), *FullPath);
 			return false;
 		}
 	}

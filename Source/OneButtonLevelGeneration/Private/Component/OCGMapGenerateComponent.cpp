@@ -1265,7 +1265,7 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
             }
         }
     }
-    ExportMap(MapPreset, BiomeColorMap, "BiomeMap.png");
+    ExportMap(MapPreset, BiomeColorMap, "BiomeMap1.png");
     BlendBiome(MapPreset);
 }
 
