@@ -28,11 +28,10 @@ public:
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
 	UFUNCTION(CallInEditor, Category = "Actions")
-	void ExportWaterEditLayerHeightMap();
-	
-	UFUNCTION(CallInEditor, Category = "Actions")
 	void ApplyWaterWeight();
 private:
+	void ExportWaterEditLayerHeightMap();
+	
 	void ClearAllRivers();
 
 	FVector GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const;
@@ -64,6 +63,11 @@ private:
 	TArray<FIntPoint> CachedRiverStartPoints;
 
 	TArray<uint16> CachedRiverHeightMap;
+
+	TArray<uint8> PrevWaterWeightMap;
+
+	uint16 RiverHeightMapWidth;
+	uint16 RiverHeightMapHeight;
 };
 
 

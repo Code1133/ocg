@@ -49,32 +49,22 @@ void OCGLandscapeUtil::ExtractHeightMap(ALandscape* InLandscape, const FGuid InG
 
 }
 
-void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint16>& InHeightDiffMap)
+void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex, int32 Width, int32 Height,
+	const TArray<uint16>& InHeightDiffMap, TArray<uint8>& OutOriginWeightMap)
 {
 #if WITH_EDITOR
 	if (InLandscape)
 	{
 		TArray<uint8> WeightMap;
 		MakeWeightMapFromHeightDiff(InHeightDiffMap, WeightMap);
+
+		TArray<uint8> BlurredWeightMap;
+		BlurWeightMap(WeightMap, BlurredWeightMap, Width, Height);
+		
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 		if (!LandscapeInfo) return;
-
-		// TMap<FName, FLandscapeTargetLayerSettings> TargetLayers = InLandscape->GetTargetLayers();
-		// TArray<FName> LayerNames;
-		// for (auto Layer : LandscapeInfo->Layers)
-		// {
-		// 	LayerNames.Add(Layer.GetLayerName());
-		// }
-		//
-		// FLandscapeTargetLayerSettings TargetLayer;
-		// if (InLayerIndex < LayerNames.Num())
-		// {
-		// 	TargetLayer = TargetLayers.FindChecked(LayerNames[InLayerIndex]);
-		// }
-		//
-		// ULandscapeLayerInfoObject* LayerInfo = TargetLayer.LayerInfoObj;
 
 		ULandscapeLayerInfoObject* LayerInfo = LandscapeInfo->Layers[InLayerIndex].LayerInfoObj;
 		
@@ -93,25 +83,28 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 			});
 
 			FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, LayerInfo);
-			int32 Width = Region.Width() + 1;
-			int32 Height = Region.Height() + 1;
-			int32 NumPixels = Width * Height;
+			int32 RegionWidth = Region.Width() + 1;
+			int32 RegionHeight = Region.Height() + 1;
+			int32 NumPixels = RegionWidth * RegionHeight;
 			
-			TArray<uint8> OriginWeightData;
-			OriginWeightData.AddZeroed(Width * Height);
+			OutOriginWeightMap.AddZeroed(RegionWidth * RegionHeight);
 			
-			AlphamapAccessor.GetDataFast(Region.Min.X, Region.Min.Y, Region.Max.X - 1, Region.Max.Y - 1, OriginWeightData.GetData());
+			AlphamapAccessor.GetDataFast(Region.Min.X, Region.Min.Y, Region.Max.X - 1, Region.Max.Y - 1, OutOriginWeightMap.GetData());
 
 			TArray<uint8> TargetWeightData;
-			TargetWeightData.AddZeroed(Width * Height);
+			TargetWeightData.AddZeroed(RegionWidth * RegionHeight);
 
 			for (int32 i = 0; i < NumPixels; ++i)
 			{
-				float Origin = OriginWeightData[i] / 255.f;
+				float Origin = OutOriginWeightMap[i] / 255.f;
 				float New = 0;
-				if (i < WeightMap.Num())
+				// if (i < WeightMap.Num())
+				// {
+				// 	New =  FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
+				// }
+				if (i < BlurredWeightMap.Num())
 				{
-					New =  FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
+					New = FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
 				}
 
 				float Final = FMath::Clamp(Origin + New, 0.f, 1.f);    // 더하기 방식 블렌드
@@ -124,8 +117,49 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 
 			InLandscape->ReregisterAllComponents();
 			
-			OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Width - 1, Height - 1), TEXT("AddWeightMap.png"));
-			OCGMapDataUtils::ExportMap(TargetWeightData, FIntPoint(Width, Height), TEXT("FinalWeightMap.png"));
+			//OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Width, Height), TEXT("AddWeightMap.png"));
+			//OCGMapDataUtils::ExportMap(BlurredWeightMap, FIntPoint(Width, Height), TEXT("BlurredWeightMap.png"));
+			//OCGMapDataUtils::ExportMap(TargetWeightData, FIntPoint(RegionWidth, RegionHeight), TEXT("FinalWeightMap.png"));
+		}
+	}
+#endif
+}
+
+void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint8>& WeightMap)
+{
+#if WITH_EDITOR
+	if (WeightMap.IsEmpty())
+		return;
+	
+	if (InLandscape)
+	{
+		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+		
+		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
+		if (!LandscapeInfo) return;
+
+		ULandscapeLayerInfoObject* LayerInfo = LandscapeInfo->Layers[InLayerIndex].LayerInfoObj;
+
+		FIntRect Region;
+		if (LandscapeInfo->GetLandscapeExtent(Region))
+		{
+			Region.Max.X += 1;
+			Region.Max.Y += 1;
+			
+			FScopedSetLandscapeEditingLayer Scope(InLandscape, CurrentLayerGuid, [InLandscape]
+			{
+				check(InLandscape);
+				InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All);
+			});
+
+			FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, LayerInfo);
+			AlphamapAccessor.SetData(Region.Min.X, Region.Min.Y, Region.Max.X - 1, Region.Max.Y - 1, WeightMap.GetData(), ELandscapeLayerPaintingRestriction::None);
+			
+			LandscapeInfo->ForceLayersFullUpdate();
+
+			InLandscape->ReregisterAllComponents();
+
+			//OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Region.Max.X - 1, Region.Max.Y - 1), TEXT("OriginWeightMap.png"));
 		}
 	}
 #endif
@@ -137,5 +171,36 @@ void OCGLandscapeUtil::MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightD
 	for (int32 i = 0; i < HeightDiff.Num(); ++i)
 	{
 		OutWeight[i] = (HeightDiff[i] > 0) ? 255 : 0;
+	}
+}
+
+void OCGLandscapeUtil::BlurWeightMap(const TArray<uint8>& InWeight, TArray<uint8>& OutWeight, const int32 Width, const int32 Height)
+{
+	TArray<float> TempAccum;
+	TempAccum.SetNumZeroed(InWeight.Num());
+	for (int32 y = 0; y < Height; ++y)
+	{
+		for (int32 x = 0; x < Width; ++x)
+		{
+			for (int32 dx = -1; dx <= 1; ++dx)
+			{
+				for (int32 dy = -1; dy <= 1; ++dy)
+				{
+					int32 nx = x + dx;
+					int32 ny = y + dy;
+
+					if (nx >= 0 && nx < Width && ny >= 0 && ny < Height)
+					{
+						TempAccum[ny * Width + nx] += InWeight[y * Width + x] / 9.0f;
+					}
+				}
+			}
+		}
+	}
+	
+	OutWeight.SetNumUninitialized(InWeight.Num());
+	for (int32 i = 0; i < InWeight.Num(); ++i)
+	{
+		OutWeight[i] = FMath::Clamp(FMath::RoundToInt(TempAccum[i]), 0, 255);
 	}
 }

@@ -210,8 +210,23 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			
 			GeneratedRivers.Add(WaterBodyRiver);
 			CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
+
+			FGuid WaterLayerGuid = InLandscape->GetLayerConst(1)->Guid;
+
+			FScopedSetLandscapeEditingLayer Scope(InLandscape, WaterLayerGuid, [&]
+			{
+				check(InLandscape);
+				InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All);
+			});
+
+			if (ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo())
+			{
+				LandscapeInfo->ForceLayersFullUpdate();
+			}
 		}
 	}
+
+	ApplyWaterWeight();
 #endif
 }
 
@@ -382,8 +397,9 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		CachedRiverHeightMap.Empty();
 		CachedRiverHeightMap.AddZeroed(SizeX * SizeY);
 
-		TArray<uint16> FilledHeightData;
-		FilledHeightData.AddZeroed(SizeX * SizeY);
+		RiverHeightMapWidth = SizeX;
+		RiverHeightMapHeight = SizeY;
+		
 		if (BlendedHeightData.Num() == BaseLayerHeightData.Num() && BlendedHeightData.Num() == SizeY * SizeY)
 		{
 			for (int i = 0; i < BlendedHeightData.Num(); ++i)
@@ -395,13 +411,18 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		// 2. PNG로 익스포트
 		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
 
-		OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap16.png"));
-		OCGMapDataUtils::ExportMap(FilledHeightData, Resolution, TEXT("FilledWaterHeightMap16.png"));
+		UMapPreset* MapPreset = GetLevelGenerator()->GetMapPreset();
+		if (MapPreset->bExportMapTextures)
+		{
+			OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap16.png"));
+		}
 	}
 }
 
 void UOCGRiverGenerateComponent::ApplyWaterWeight()
 {
+	ExportWaterEditLayerHeightMap();
+	
 	if (TargetLandscape == nullptr)
 	{
 		TargetLandscape = GetLevelGenerator()->GetLandscape();
@@ -409,7 +430,8 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 	
 	if (TargetLandscape)
 	{
-		OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, CachedRiverHeightMap);
+		OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
+		OCGLandscapeUtil::AddWeightMap(TargetLandscape, 0, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap, PrevWaterWeightMap);
 	}
 }
 

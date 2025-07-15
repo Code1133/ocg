@@ -1430,20 +1430,34 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
                 WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
             }
         }
+
+        for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
+        {
+            FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+            FName LayerName(LayerNameStr);
+            FString FileName = LayerNameStr + ".png";
+        
+            if (MapPreset->bExportMapTextures)
+            {
+                OCGMapDataUtils::ExportMap(WeightLayers[LayerName], CurResolution, FileName);
+            }
+        }
     }
 }
 
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const
 {
-    if (!MapPreset->bExportMapTextures)
-        return;
-    OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    if (MapPreset->bExportMapTextures)
+    {
+        OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    }
 }
 
 void UOCGMapGenerateComponent::ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap,
     const FString& FileName) const
 {
-    if (!MapPreset->bExportMapTextures)
-        return;
-    OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    if (MapPreset->bExportMapTextures)
+    {
+        OCGMapDataUtils::ExportMap(InMap, MapPreset->MapResolution, FileName);
+    }
 }
