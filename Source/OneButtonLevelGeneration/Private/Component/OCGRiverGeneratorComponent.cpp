@@ -333,7 +333,7 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         }
 
         // 최종 값 계산: (기본값 * 배율) + 최소값
-        const float DesiredWidth = (MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin;
+        const float DesiredWidth = (MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin * MapPreset->LandscapeScale;
         const float DesiredDepth = (MapPreset->RiverDepthBaseValue * DepthMultiplier) + MapPreset->RiverDepthMin;
         const float DesiredVelocity = (MapPreset->RiverVelocityBaseValue * VelocityMultiplier) + MapPreset->RiverVelocityMin;
 
@@ -487,6 +487,7 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 #endif
 	}
 	CachedRivers.Empty();
+	PrevWaterWeightMap.Empty();
 }
 
 FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
@@ -504,9 +505,15 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 		return FVector::ZeroVector;
 	}
 
+	if (MapPreset->MapResolution.X < 1 || MapPreset->MapResolution.Y < 1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MapResolution is invalid."));
+		return FVector::ZeroVector;
+	}
+
 	FVector WorldLocation = LandscapeOrigin + FVector(
-		2 * (MapPoint.X / static_cast<float>(MapPreset->MapResolution.X)) * LandscapeExtent.X,
-		2 * (MapPoint.Y / static_cast<float>(MapPreset->MapResolution.Y)) * LandscapeExtent.Y,
+		2 * (MapPoint.X / static_cast<float>(MapPreset->MapResolution.X - 1)) * LandscapeExtent.X,
+		2 * (MapPoint.Y / static_cast<float>(MapPreset->MapResolution.Y - 1)) * LandscapeExtent.Y,
 		0.0f 
 	);
 
@@ -517,10 +524,11 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 	if (Height.IsSet())
 	{
 		WorldLocation.Z = Height.GetValue();
+
 	}
 	else
 	{
-		WorldLocation.Z = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; // Default to 0 if height is not set
+		WorldLocation.Z = (HeightMapValue - 32768) / 128 * 100 * MapPreset->LandscapeScale; 
 	}
 	return WorldLocation;
 }
