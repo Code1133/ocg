@@ -19,7 +19,7 @@ public:
 	UOCGRiverGenerateComponent();
 
 	UFUNCTION(CallInEditor, Category = "River Generation")
-	void GenerateRiver(UWorld* InWorld, class ALandscape* InLandscape);
+	void GenerateRiver(UWorld* InWorld, class ALandscape* InLandscape, bool bForceCleanUpPrevWaterWeightMap = true);
 
 	void SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight);
 

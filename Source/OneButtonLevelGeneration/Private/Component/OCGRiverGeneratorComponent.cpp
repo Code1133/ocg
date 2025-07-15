@@ -25,7 +25,7 @@ UOCGRiverGenerateComponent::UOCGRiverGenerateComponent()
 {
 }
 
-void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape)
+void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape, bool bForceCleanUpPrevWaterWeightMap)
 {
 #if WITH_EDITOR
 	if (InWorld == nullptr)
@@ -42,7 +42,6 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			TargetLandscape = Actor;
 			break;
 		}
-
 	}
 
 	if (TargetLandscape == nullptr)
@@ -53,7 +52,11 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	MapPreset = GetLevelGenerator()->GetMapPreset();
 	
 	ClearAllRivers();
-
+	if (bForceCleanUpPrevWaterWeightMap)
+	{
+		PrevWaterWeightMap.Empty();
+	}
+		
 	// Clear WaterBrushManager actors
 	UClass* WaterBrushManagerClass = StaticLoadClass(UObject::StaticClass(), nullptr, TEXT("/Script/WaterEditor.WaterBrushManager"));
 	

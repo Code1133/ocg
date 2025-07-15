@@ -275,7 +275,7 @@ void UMapPreset::RegenerateRiver()
 
 		for (AOCGLevelGenerator* LevelGenerator : Actors)
 		{
-			LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape());
+			LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
 		}
 	}
 }
