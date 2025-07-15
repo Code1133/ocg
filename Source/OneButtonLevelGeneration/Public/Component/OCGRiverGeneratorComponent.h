@@ -64,8 +64,9 @@ private:
 
 	TArray<uint16> CachedRiverHeightMap;
 
+	UPROPERTY()
 	TArray<uint8> PrevWaterWeightMap;
-
+	
 	uint16 RiverHeightMapWidth;
 	uint16 RiverHeightMapHeight;
 };

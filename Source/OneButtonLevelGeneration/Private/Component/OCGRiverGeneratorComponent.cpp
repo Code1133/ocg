@@ -512,7 +512,6 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 #endif
 	}
 	CachedRivers.Empty();
-	PrevWaterWeightMap.Empty();
 }
 
 FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const
