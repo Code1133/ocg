@@ -123,6 +123,10 @@ struct FLandscapeHierarchyData
 	UPROPERTY(BlueprintReadOnly, Category = "OCG")
 	FName MeshFilterName_Internal;
 
+	/** Random seed for point generation. Same seed produces same results. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	int32 Seed;
+
 	/** Weight of the blended layer. Values between 0 and 1, higher values increase this layer's influence. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
 	float BlendingRatio = 0.5f;
@@ -131,16 +135,16 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	float PointsPerSquareMeter = 0.1f;
 
-	/** Influence range (radius) of each point along X, Y, Z axes. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	FVector PointExtents = FVector{100.0f, 100.0f, 100.0f};
-
 	UPROPERTY(EditAnywhere, Category = "OCG", meta = (InlineEditConditionToggle))
 	bool bOverrideLooseness = false;
 
 	/** Degree of irregularity or 'looseness' in point placement. Higher values spread points more widely. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bOverrideLooseness"))
 	float Looseness = 1.0f;
+
+	/** Influence range (radius) of each point along X, Y, Z axes. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	FVector PointExtents = FVector{100.0f, 100.0f, 100.0f};
 
 	/** Controls point steepness. Values between 0 and 1, closer to 1 means steeper slopes. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
@@ -163,7 +167,7 @@ struct FLandscapeHierarchyData
 	FTransformPointInfo TransformPoint;
 
 	/** Whether to prune (remove) meshes that overlap with each other. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "Pruning Overlapped Points", Category = "OCG")
 	bool bPruningOverlappedMeshes = false;
 
 	/** Distance at which world position offset gets disabled. 0 means always enabled. */
@@ -188,10 +192,6 @@ struct FLandscapeHierarchyData
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	bool bExecuteOnGPU = false;
-
-	/** Random seed for point generation. Same seed produces same results. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	int32 Seed;
 
 	/** Array of meshes and weights to be placed in this layer. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
