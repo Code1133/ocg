@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2025 Code1133. All rights reserved.
 
 using UnrealBuildTool;
 
