@@ -11,7 +11,6 @@ FPCGElementPtr UOCGPointAngleFilterSettings::CreateElement() const
 	return MakeShared<FOCGPointAngleFilterElement>();
 }
 
-
 bool FOCGPointAngleFilterElement::ExecuteInternal(FPCGContext* Context) const
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(FOCGPointAngleFilterElement::Execute);
