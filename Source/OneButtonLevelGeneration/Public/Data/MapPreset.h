@@ -598,10 +598,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
 
-	/** Whether to show debug points for PCG generation. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
-	bool bShowDebugPoints = false;
-
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;

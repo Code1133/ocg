@@ -197,8 +197,15 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FOCGMeshInfo> Meshes;
 
+	/** Whether to show debug points for PCG generation. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG", meta = (InlineEditConditionToggle))
+	bool bShowDebugPoint = false;
+
 	/** Color used to visualize this layer during debugging. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "Point Debug Color", Category = "OCG|Debug", AdvancedDisplay)
+	UPROPERTY(
+		EditAnywhere, BlueprintReadOnly, DisplayName = "Point Debug Color", Category = "OCG|Debug", AdvancedDisplay,
+		meta = (EditCondition = "bShowDebugPoint")
+	)
 	FLinearColor DebugColorLinear = FLinearColor::White;
 
 	FLandscapeHierarchyData()

@@ -56,10 +56,6 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		{
 			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
 		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bShowDebugPoints))
-		{
-			VolumeActor->bShowDebugPoints = bShowDebugPoints;
-		}
 		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bAutoGenerate))
 		{
 			VolumeActor->SetEditorAutoGenerate(bAutoGenerate);
