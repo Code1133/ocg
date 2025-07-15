@@ -165,9 +165,6 @@ void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPrese
 
     IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
     IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-
-    SlopeNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    SlopeNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
 }
 
 void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
@@ -791,18 +788,20 @@ void UOCGMapGenerateComponent::ApplySpikeSmooth(const UMapPreset* MapPreset, TAr
     
     FIntPoint MapSize = MapPreset->MapResolution;
 
-    const int32 KernelRadius = MapPreset->SmoothingRadius;
+    const int32 KernelRadius = MapPreset->GaussianBlurRadius / 2.f;
     const int32 KernelSize = (2 * KernelRadius + 1);
     
     const float MaxAllowedSlope = FMath::Tan(FMath::DegreesToRadians(MapPreset->MaxSlopeAngle));
 
+    int32 Step = FMath::Max(KernelRadius / 2.f, 1);
+    
     for (int Iteration=0; Iteration<MapPreset->SmoothingIteration; Iteration++)
     {
         int32 SmoothedRegion = 0;
         TArray<uint16> OriginalHeightMap = InOutHeightMap; 
-        for (int32 y=KernelRadius; y<MapSize.Y-KernelRadius; y += KernelRadius / 2.f)
+        for (int32 y=KernelRadius; y<MapSize.Y-KernelRadius; y += Step)
         {
-            for (int32 x=KernelRadius; x<MapSize.X-KernelRadius; x += KernelRadius / 2.f)
+            for (int32 x=KernelRadius; x<MapSize.X-KernelRadius; x += Step)
             {
                 ProcessPlane(MapPreset, x, y, MapSize, KernelRadius, KernelSize, MaxAllowedSlope,
                 SmoothedRegion, OriginalHeightMap, InOutHeightMap);

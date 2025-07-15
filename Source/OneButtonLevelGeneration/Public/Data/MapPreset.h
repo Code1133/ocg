@@ -52,9 +52,6 @@ public:
 public:
 	//~ Begin UPROPERTY World Settings | Basics
 	//~ Begin UPROPERTY World Settings | Basics | Landscape Settings
-	UPROPERTY(EditAnywhere, Category = "World Settings | Basics | Landscape Settings")
-	uint32 Landscape_RegionKilometer = 1;
-
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
 		meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16)
@@ -192,7 +189,7 @@ public:
 	// Larger Radius gives softer smoothing effect
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "1", ClampMax = "25")
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "5", ClampMax = "25")
 	)
 	int32 GaussianBlurRadius = 5;
 
@@ -208,13 +205,6 @@ public:
 		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "1", ClampMax = "5")
 	)
 	int32 SmoothingIteration = 3;
-
-	// The radius of smoothing brush
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "1", ClampMax = "10")
-	)
-	int32 SmoothingRadius = 5;
 
 	// Slope larger than this angle will be smoothed
 	UPROPERTY(

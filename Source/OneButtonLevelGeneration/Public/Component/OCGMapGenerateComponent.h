@@ -63,7 +63,6 @@ private:
 	FVector2D BlendNoiseOffset;
 	FVector2D DetailNoiseOffset;
 	FVector2D IslandNoiseOffset;
-	FVector2D SlopeNoiseOffset;
 	float NoiseScale;
 	float PlainHeight;
 	FRandomStream Stream;
