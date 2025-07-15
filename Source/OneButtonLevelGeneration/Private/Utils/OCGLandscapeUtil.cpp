@@ -9,6 +9,9 @@
 #include "Landscape.h"
 #include "LandscapeEdit.h"
 #include "LandscapeInfo.h"
+#if ENGINE_MINOR_VERSION > 5
+#include "LandscapeEditLayer.h"
+#endif
 #endif
 
 OCGLandscapeUtil::OCGLandscapeUtil()
@@ -61,9 +64,11 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 		TArray<uint8> BlurredWeightMap;
 		BlurWeightMap(WeightMap, BlurredWeightMap, Width, Height);
 
-		// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
-		//FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+#if ENGINE_MINOR_VERSION > 5
+		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+#else
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+#endif
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 		if (!LandscapeInfo) return;
@@ -135,9 +140,11 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 	
 	if (InLandscape)
 	{
-		// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
-		//FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+#if ENGINE_MINOR_VERSION > 5
+		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+#else
 		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+#endif
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 		if (!LandscapeInfo) return;

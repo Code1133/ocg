@@ -19,7 +19,9 @@
 #if WITH_EDITOR
 #include "Landscape.h"
 #include "LandscapeSettings.h"
-//!TODO : #include "LandscapeEditLayer.h"추가
+#if ENGINE_MINOR_VERSION > 5
+#include "LandscapeEditLayer.h"
+#endif
 #include "LandscapeSubsystem.h"
 #include "Utils/OCGFileUtils.h"
 #include "Utils/OCGMaterialEditTool.h"
@@ -433,9 +435,11 @@ void UOCGLandscapeGenerateComponent::ImportMapDatas(UWorld* World, TArray<FLands
 
 		FIntRect ImportRegion = LandscapeExtent;
 
-		// !TODO : UE5.6에서는 바꿔야함 아래와 같이 하거나 이름으로 찾아야 할 듯
-		//FGuid CurrentLayerGuid = TargetLandscape->GetEditLayerConst(0)->GetGuid();
+#if ENGINE_MINOR_VERSION > 5
+		FGuid CurrentLayerGuid = TargetLandscape->GetEditLayerConst(0)->GetGuid();
+#else
 		FGuid CurrentLayerGuid = TargetLandscape->GetLayerConst(0)->Guid;
+#endif
 
 		const ELandscapeLayerPaintingRestriction PaintRestriction = ELandscapeLayerPaintingRestriction::None;
 		const bool bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
@@ -781,18 +785,21 @@ void UOCGLandscapeGenerateComponent::AddLandscapeComponent(ULandscapeInfo* InLan
 			TArray<ULandscapeComponent*> ComponentsUsingHeightmap;
 			ComponentsUsingHeightmap.Add(NewComponent);
 
-			// !TODO : UE5.6에서는 아래와 같이 변경
-			// for (const ULandscapeEditLayerBase* EditLayer : Landscape->GetEditLayersConst())
-			// {
-			// 	TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
-			// 	NewComponent->AddDefaultLayerData(EditLayer->GetGuid(), ComponentsUsingHeightmap, CreatedHeightmapTextures);
-			// }
+#if ENGINE_MINOR_VERSION > 5
+			for (const ULandscapeEditLayerBase* EditLayer : Landscape->GetEditLayersConst())
+			{
+				TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
+				NewComponent->AddDefaultLayerData(EditLayer->GetGuid(), ComponentsUsingHeightmap, CreatedHeightmapTextures);
+			}
+#else
 			
 			for (const FLandscapeLayer& EditLayer : Landscape->GetLayers())
 			{
 				TMap<UTexture2D*, UTexture2D*> CreatedHeightmapTextures;
 				NewComponent->AddDefaultLayerData(EditLayer.Guid, ComponentsUsingHeightmap, CreatedHeightmapTextures);
 			}
+#endif
+			
 		}
 
 		// Update Collision

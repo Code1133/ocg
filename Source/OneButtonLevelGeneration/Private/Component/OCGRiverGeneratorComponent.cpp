@@ -18,7 +18,9 @@
 
 #if WITH_EDITOR
 #include "Landscape.h"
-// !TODO : #include "LandscapeEditLayer.h"추가
+#if ENGINE_MINOR_VERSION > 5
+#include "LandscapeEditLayer.h"
+#endif
 #endif
 
 
@@ -215,9 +217,11 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			GeneratedRivers.Add(WaterBodyRiver);
 			CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
 
-			// !TODO : UE5.6에서는 아래와 같이 하거나 이름으로 찾아야 할 듯
-			// FGuid WaterLayerGuid = InLandscape->GetEditLayerConst(1)->GetGuid();
+#if ENGINE_MINOR_VERSION > 5
+			FGuid WaterLayerGuid = InLandscape->GetEditLayerConst(1)->GetGuid();
+#else
 			FGuid WaterLayerGuid = InLandscape->GetLayerConst(1)->Guid;
+#endif
 
 			FScopedSetLandscapeEditingLayer Scope(InLandscape, WaterLayerGuid, [&]
 			{
@@ -380,20 +384,20 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 	{
 		ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
 		if (!Info) return;
-
-		// !TODO : UE5.6에서는 변경 아래와 같이 하거나 이름으로 찾아야 할 듯
-		// FName BaseEditLayerName = FName(TEXT("Layer"));
-		// const ULandscapeEditLayerBase* BaseLayer = nullptr;
-		// {
-		// 	for (const ULandscapeEditLayerBase* Layer : TargetLandscape->GetEditLayersConst())
-		// 	{
-		// 		if (Layer->GetName() == BaseEditLayerName)
-		// 		{
-		// 			BaseLayer = Layer;
-		// 			break;
-		// 		}
-		// 	}
-		// }
+#if ENGINE_MINOR_VERSION > 5
+		FName BaseEditLayerName = FName(TEXT("Layer"));
+		const ULandscapeEditLayerBase* BaseLayer = nullptr;
+		{
+			for (const ULandscapeEditLayerBase* Layer : TargetLandscape->GetEditLayersConst())
+			{
+				if (Layer->GetName() == BaseEditLayerName)
+				{
+					BaseLayer = Layer;
+					break;
+				}
+			}
+		}
+#else
 		
 		FName BaseEditLayerName = FName(TEXT("Layer"));
 		const FLandscapeLayer* BaseLayer = nullptr;
@@ -405,15 +409,18 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 				break;
 			}
 		}
+#endif
 		
 		TArray<uint16> BlendedHeightData;
 		int32 SizeX, SizeY;
 		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
 
 		TArray<uint16> BaseLayerHeightData;
-		// !TODO : UE5.6에서는 변경 아래와 같이 하거나 이름으로 찾아야 할 듯
-		// OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->GetGuid(), SizeX, SizeY, BaseLayerHeightData);
+#if ENGINE_MINOR_VERSION > 5
+		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->GetGuid(), SizeX, SizeY, BaseLayerHeightData);
+#else
 		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->Guid, SizeX, SizeY, BaseLayerHeightData);
+#endif
 
 		CachedRiverHeightMap.Empty();
 		CachedRiverHeightMap.AddZeroed(SizeX * SizeY);
