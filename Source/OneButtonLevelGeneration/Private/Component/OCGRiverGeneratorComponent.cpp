@@ -411,8 +411,8 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		// 2. PNG로 익스포트
 		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
 
-		UMapPreset* MapPreset = GetLevelGenerator()->GetMapPreset();
-		if (MapPreset->bExportMapTextures)
+		UMapPreset* CurMapPreset = GetLevelGenerator()->GetMapPreset();
+		if (CurMapPreset->bExportMapTextures)
 		{
 			OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap16.png"));
 		}
