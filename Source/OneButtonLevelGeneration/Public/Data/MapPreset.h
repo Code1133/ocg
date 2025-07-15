@@ -50,6 +50,8 @@ public:
 	virtual UWorld* GetWorld() const override;
 
 public:
+	//~ Begin UPROPERTY World Settings | Basics
+	//~ Begin UPROPERTY World Settings | Basics | Landscape Settings
 	UPROPERTY(EditAnywhere, Category = "World Settings | Basics | Landscape Settings")
 	uint32 Landscape_RegionKilometer = 1;
 
@@ -75,6 +77,28 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "0", ClampMax = "50"))
 	int32 WaterBlendRadius = 10;
 
+	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "World Settings | Basics | Landscape Settings")
+	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
+
+	// The number of sections in a single landscape component. This along with the section size determines the size of each landscape component. A component is the base unit of rendering and culling.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "World Settings | Basics | Landscape Settings", meta=(ClampMin="1", ClampMax="2", UIMin="1", UIMax="2"))
+	int32 Landscape_SectionsPerComponent = 1;
+
+	// The number of components in the X and Y direction, determining the overall size of the landscape.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
+
+	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129"))
+	FIntPoint MapResolution = FIntPoint(1009, 1009);
+
+	// The Material used for Landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+	//~ End UPROPERTY World Settings | Basics | Landscape Settings
+
+	//~ Begin UPROPERTY World Settings | Basics | Height
 	// Landscapes Minimum Height
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MinHeight = -15000.0f;
@@ -83,18 +107,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MaxHeight = 20000.0f;
 
-	// Landscapes Minimum Height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMinHeight = 0.0f;
-
-	// Landscapes Maximum Height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMaxHeight = 0.0f;
-
 	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float SeaLevel = 0.4f;
+	//~ End UPROPERTY World Settings | Basics | Height
 
+	//~ Begin UPROPERTY World Settings | Basics | Temperature
 	// Landscapes Minimum Temperature
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature", meta = (ClampMin = -273.15))
 	float MinTemp = -30.0f;
@@ -102,18 +120,32 @@ public:
 	// Landscapes Maximum Temperature
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature", meta = (ClampMin = -273.15))
 	float MaxTemp = 80.0f;
+	//~ End UPROPERTY World Settings | Basics | Temperature
 
-	// Decides the amount of temperature drop per 1000 units of height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature", meta = (ClampMin = "0.0"))
-	float TempDropPer1000Units = 0.1f;
+	//~ Begin UPROPERTY World Settings | Basics | Noise
+	// Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.005"))
+	float ContinentNoiseScale = 0.003f;
 
-	// Decides the amount of humidity drop per distance from water
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0"))
-	float MoistureFalloffRate = 0.0005f;
+	// Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.03"))
+	float TerrainNoiseScale = 0.01f;
 
-	// Decides the amount of change in humidity caused by temperature
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float TemperatureInfluenceOnHumidity = 0.7f;
+	// Decides the frequency of Temperature Change
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.01"))
+	float TemperatureNoiseScale = 0.002f;
+	//~ End UPROPERTY World Settings | Basics | Noise
+	//~ End UPROPERTY World Settings | Basics
+
+	//~ Begin UPROPERTY World Settings | Advanced
+	//~ Begin UPROPERTY World Settings | Advanced | Height
+	// Landscapes Minimum Height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	float CurMinHeight = 0.0f;
+
+	// Landscapes Maximum Height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	float CurMaxHeight = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
 	bool bSmoothHeight = false;
@@ -199,8 +231,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 			meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0", ClampMax = "50"))
 	int32 BiomeHeightBlendRadius = 5;
+	//~ End UPROPERTY World Settings | Advanced | Height
 
-public:
+	//~ Begin UPROPERTY World Settings | Advanced | Temperature
+	// Decides the amount of temperature drop per 1000 units of height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature", meta = (ClampMin = "0.0"))
+	float TempDropPer1000Units = 0.1f;
+	//~ End UPROPERTY World Settings | Advanced | Temperature
+
+	//~ Begin UPROPERTY World Settings | Advanced | Humidity
+	// Decides the amount of humidity drop per distance from water
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0"))
+	float MoistureFalloffRate = 0.0005f;
+
+	// Decides the amount of change in humidity caused by temperature
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float TemperatureInfluenceOnHumidity = 0.7f;
+	//~ End UPROPERTY World Settings | Advanced | Humidity
+
+	//~ Begin UPROPERTY World Settings | Advanced | Noise
 	// --- Noise Settings ---
 	// Decides the difference between different noises (larger value gives more randomness)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0"))
@@ -209,18 +258,6 @@ public:
 	// Decides how much the noise is spread out
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0"))
 	float RedistributionFactor = 2.5f;
-
-	// Decides the frequency of Mountains
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.005"))
-	float ContinentNoiseScale = 0.003f;
-
-	// Decides the frequency of Mountains
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.03"))
-	float TerrainNoiseScale = 0.01f;
-
-	// Decides the frequency of Temperature Change
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise", meta = (ClampMin = "0.0001", ClampMax = "0.01"))
-	float TemperatureNoiseScale = 0.002f;
 
 	// Larger Octaves gives more detail to the landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1"))
@@ -233,8 +270,9 @@ public:
 	// Larger Persistence give more height change detail
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float Persistence = 0.5f; // 진폭 변화율 (작을수록 추가되는 노이즈의 높이가 낮아짐)
+	//~ End UPROPERTY World Settings | Advanced | Noise
 
-public:
+	//~ Begin UPROPERTY World Settings | Advanced | Erosion
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion")
 	bool bErosion = true;
 
@@ -297,6 +335,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
 		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0"))
 	float InitialSpeed = 2.0f;
+	//~ End UPROPERTY World Settings | Advanced | Erosion
+	//~ End UPROPERTY World Settings | Advanced
 
 	UPROPERTY()
 	TArray<uint16> HeightMapData;
@@ -308,26 +348,10 @@ public:
 	TArray<uint16> HumidityMapData;
 
 public:
-	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "World Settings | Basics | Landscape Settings")
-	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
-
-	// The number of sections in a single landscape component. This along with the section size determines the size of each landscape component. A component is the base unit of rendering and culling.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "World Settings | Basics | Landscape Settings", meta=(ClampMin="1", ClampMax="2", UIMin="1", UIMax="2"))
-	int32 Landscape_SectionsPerComponent = 1;
-
-	// The number of components in the X and Y direction, determining the overall size of the landscape.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
-
-	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129"))
-	FIntPoint MapResolution = FIntPoint(1009, 1009);
-
-public:
+	//~ Begin UPROPERTY River Settings
 	// Generates River. If true, the following river settings will be displayed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings")
-	uint8 bGenerateRiver : 1 = false;
+	bool bGenerateRiver = false;
 
 	// Generates River.
 	UFUNCTION(CallInEditor, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
@@ -394,13 +418,10 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
+	//~ End UPROPERTY River Settings
 	
 public:
-	// The Material used for Landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	TObjectPtr<UMaterialInstance> LandscapeMaterial;
-
-public:
+	//~ Begin UPROPERTY PCG
 	/** The PCG graph to be used for generation. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
@@ -416,8 +437,10 @@ public:
 	/** Forces the regeneration of the PCG graph in the editor. */
 	UFUNCTION(CallInEditor, Category = "PCG")
 	void ForceGenerate() const;
+	//~ End UPROPERTY PCG
 
 public:
+	//~ Begin UPROPERTY OCG
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
 
@@ -447,6 +470,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
+	//~ End UPROPERTY OCG
 
 #if WITH_EDITOR
 public:
