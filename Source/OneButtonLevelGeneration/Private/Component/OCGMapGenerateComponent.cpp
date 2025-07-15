@@ -1431,17 +1431,17 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
             }
         }
 
-        for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
-        {
-            FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
-            FName LayerName(LayerNameStr);
-            FString FileName = LayerNameStr + ".png";
-        
-            if (MapPreset->bExportMapTextures)
-            {
-                OCGMapDataUtils::ExportMap(WeightLayers[LayerName], CurResolution, FileName);
-            }
-        }
+        // for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
+        // {
+        //     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+        //     FName LayerName(LayerNameStr);
+        //     FString FileName = LayerNameStr + ".png";
+        //
+        //     if (MapPreset->bExportMapTextures)
+        //     {
+        //         OCGMapDataUtils::ExportMap(WeightLayers[LayerName], CurResolution, FileName);
+        //     }
+        // }
     }
 }
 

@@ -345,7 +345,7 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         // 스플라인 스케일 업데이트
         if (SplineComp->SplineCurves.Scale.Points.IsValidIndex(i))
         {
-            SplineComp->SetScaleAtSplinePoint(i, FVector(DesiredWidth, DesiredWidth, 1.0f), ESplineCoordinateSpace::Local);
+            SplineComp->SetScaleAtSplinePoint(i, FVector(DesiredWidth, DesiredDepth, 1.0f), ESplineCoordinateSpace::Local);
         }
     }
 
