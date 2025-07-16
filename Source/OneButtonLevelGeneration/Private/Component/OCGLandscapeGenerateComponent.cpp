@@ -16,6 +16,7 @@
 
 #include "Components/BoxComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Utils/OCGLandscapeUtil.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
@@ -94,37 +95,6 @@ UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// // ...
- //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> ColorRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color'"));
- //    if (ColorRVTFinder.Succeeded())
- //    {
- //        ColorRVT = ColorRVTFinder.Object;
- //    }
- //    else
- //    {
- //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
- //    }
- //
- //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> HeightRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height'"));
- //    if (HeightRVTFinder.Succeeded())
- //    {
- //        HeightRVT = HeightRVTFinder.Object;
- //    }
- //    else
- //    {
- //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
- //    }
- //
- //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> DisplacementRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement'"));
- //    if (DisplacementRVTFinder.Succeeded())
- //    {
- //        DisplacementRVT = DisplacementRVTFinder.Object;
- //    }
- //    else
- //    {
- //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
- //    }
 }
 
 
@@ -188,25 +158,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
         return;
     }
 
-    {	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
-    	// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
-    	//
-    	// const float RawScaleX = MapPreset->Landscape_Kilometer * 1000.f * 100.f / MapResolution.X;
-    	// const float RawScaleY = MapPreset->Landscape_Kilometer * 1000.f * 100.f / MapResolution.Y;
-    	// const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
-    	//
-    	// // 올림 후 uint32 변환
-    	// const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
-    	// const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
-    	// const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
-    	//    
-    	// const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
-    	// const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * QuadsPerComponent / 2, 0));
-    	//
-    	// TargetLandscape = World->SpawnActor<ALandscape>(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
-    	//TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
-    }
-
 	bool IsCreateNewLandscape = false;
 	if (ShouldCreateNewLandscape(World))
 	{
@@ -242,23 +193,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			(void)Owner->MarkPackageDirty();
 		}
 
-		// const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
-		//
-		// const float RawScaleX = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.X;
-		// const float RawScaleY = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.Y;
-		// const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
-		//
-		// // 올림 후 uint32 변환
-		// const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
-		// const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
-		// const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
-		//
-		// const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
-		// const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * LandscapeSetting.QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * LandscapeSetting.QuadsPerComponent / 2, 0));
-		//
-		// TargetLandscape = World->SpawnActor<ALandscape>(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
-		// TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
-
 		TargetLandscape = World->SpawnActor<ALandscape>();
 		TargetLandscape->Modify();
 		TargetLandscapeAsset = TargetLandscape;
@@ -269,26 +203,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		}
 		IsCreateNewLandscape = true;
 	}
-	// else
-	// {
-	// 	const float TotalHeight = MapPreset->MaxHeight - MapPreset->MinHeight;
-	//
-	// 	const float RawScaleX = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.X;
-	// 	const float RawScaleY = MapPreset->LandscapeScale * 1000.f * 100.f / MapPreset->MapResolution.Y;
-	// 	const float RawScaleZ = TotalHeight * 100.f * 0.001953125f;
-	//
-	// 	// 올림 후 uint32 변환
-	// 	const uint32 ScaleX = static_cast<uint32>(FMath::CeilToFloat(RawScaleX));
-	// 	const uint32 ScaleY = static_cast<uint32>(FMath::CeilToFloat(RawScaleY));
-	// 	const uint32 ScaleZ = static_cast<uint32>(FMath::CeilToFloat(RawScaleZ));
-	//
-	// 	const FVector LandscapeScale = FVector(ScaleX, ScaleY , ScaleZ);
-	// 	const FVector Offset = FTransform(MapPreset->Landscape_Rotation, FVector::ZeroVector, LandscapeScale).TransformVector(FVector(-MapPreset->Landscape_ComponentCount.X * LandscapeSetting.QuadsPerComponent / 2, -MapPreset->Landscape_ComponentCount.Y * LandscapeSetting.QuadsPerComponent / 2, 0));
-	//
-	// 	TargetLandscape->SetActorLocationAndRotation(MapPreset->Landscape_Location + Offset, MapPreset->Landscape_Rotation);
-	// 	TargetLandscape->SetActorRelativeScale3D(LandscapeScale);
-	// }
-
+	
     TargetLandscape->bCanHaveLayersContent = true;
 	if (TargetLandscape->LandscapeMaterial != MapPreset->LandscapeMaterial)
 	{
@@ -306,20 +221,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 	
 	FIntPoint MapResolution = MapPreset->MapResolution;
-	
-	// QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
-	// ComponentCountX = (MapResolution.X - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-	// ComponentCountY = (MapResolution.Y - 1) / (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);
-	// QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * QuadsPerSection;
- //    
-	// SizeX = ComponentCountX * QuadsPerComponent + 1;
-	// SizeY = ComponentCountY * QuadsPerComponent + 1;
-	// const int32 NumPixels = SizeX * SizeY;
-	//
-	// if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
-	// {
-	// 	UE_LOG(LogOCGModule, Warning, TEXT("LandscapeSize is not a recommended value."));
-	// }
 
 	int32 PrevStaticLightingLOD = TargetLandscape->StaticLightingLOD;
 	int32 CurStaticLightingLOD = FMath::DivideAndRoundUp(FMath::CeilLogTwo((LandscapeSetting.SizeX * LandscapeSetting.SizeY) / (2048 * 2048) + 1), static_cast<uint32>(2));
@@ -364,27 +265,13 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
 		);
 
-		{	// 기존 UE5 FLandscapeEditorDetailCustomization_NewLandscape::OnCreateButtonClicked()의 Landscape 로직을 Copy한 것
-			// TargetLandscape->Import(
-			// 	FGuid::NewGuid(),
-			// 	0, 0,
-			// 	LandscapeSetting.SizeX - 1, LandscapeSetting.SizeY - 1,
-			// 	MapPreset->Landscape_SectionsPerComponent,
-			// 	LandscapeSetting.QuadsPerSection,
-			// 	HeightmapDataPerLayer,
-			// 	nullptr,
-			// 	MaterialLayerDataPerLayer,
-			// 	ELandscapeImportAlphamapType::Additive,
-			// 	TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
-			// );    
-		}
 		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
 		
 		FActorLabelUtilities::SetActorLabelUnique(TargetLandscape, ALandscape::StaticClass()->GetName());
 		
 		LandscapeInfo->UpdateLayerInfoMap(TargetLandscape);
 	
-		AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		OCGLandscapeUtil::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 	
 		ManageLandscapeRegions(World, TargetLandscape);
 	
@@ -409,7 +296,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 	else
 	{
-		AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		OCGLandscapeUtil::UpdateTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
 	
@@ -546,22 +433,11 @@ void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(const UWorld* Wo
 	   
 	LandscapeSetting.SizeX = LandscapeSetting.ComponentCountX * LandscapeSetting.QuadsPerComponent + 1;
 	LandscapeSetting.SizeY = LandscapeSetting.ComponentCountY * LandscapeSetting.QuadsPerComponent + 1;
-	const int32 NumPixels = LandscapeSetting.SizeX * LandscapeSetting.SizeY;
 	
 	if ((MapPreset->MapResolution.X - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapPreset->MapResolution.Y - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
 	{
 		UE_LOG(LogOCGModule, Warning, TEXT("LandscapeSize is not a recommended value."));
 	}
-
-	// LandscapeSetting.QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
- //    LandscapeSetting.TotalLandscapeComponentSize = FIntPoint(MapPreset->Landscape_ComponentCount.X, MapPreset->Landscape_ComponentCount.Y);
- //    LandscapeSetting.ComponentCountX = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, LandscapeSetting.TotalLandscapeComponentSize.X) : LandscapeSetting.TotalLandscapeComponentSize.X;
- //    LandscapeSetting.ComponentCountY = bNeedsLandscapeRegions ? FMath::Min(MapPreset->WorldPartitionRegionSize, LandscapeSetting.TotalLandscapeComponentSize.Y) : LandscapeSetting.TotalLandscapeComponentSize.Y;
- //
- //    LandscapeSetting.QuadsPerComponent = MapPreset->Landscape_SectionsPerComponent * LandscapeSetting.QuadsPerSection;
- //
- //    LandscapeSetting.SizeX = LandscapeSetting.ComponentCountX * LandscapeSetting.QuadsPerComponent + 1;
- //    LandscapeSetting.SizeY = LandscapeSetting.ComponentCountY * LandscapeSetting.QuadsPerComponent + 1;
 #endif
 }
 
@@ -614,7 +490,7 @@ void UOCGLandscapeGenerateComponent::AddTargetLayers(ALandscape* Landscape,
 #endif
 }
 
-void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALandscape* Landscape)
+void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, const ALandscape* Landscape)
 {
 #if WITH_EDITOR
     ULandscapeInfo* LandscapeInfo = Landscape->GetLandscapeInfo();
@@ -627,7 +503,6 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
 	}
      
     ULandscapeSubsystem* LandscapeSubsystem = World->GetSubsystem<ULandscapeSubsystem>();
-	//LandscapeSubsystem->ChangeGridSize(LandscapeInfo, MapPreset->WorldPartitionGridSize);
     ChangeGridSize(World, LandscapeInfo, MapPreset->WorldPartitionGridSize);
 	
     if (LandscapeInfo)
@@ -666,8 +541,7 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
     	auto AddComponentsToRegion = [this, World, LandscapeProxy, LandscapeInfo, LandscapeSubsystem, &RegionVolumes, &LandscapeBounds, MapPreset](const FIntPoint& RegionCoordinate, const TArray<FIntPoint>& NewComponents)
     	{
     		TRACE_CPUPROFILER_EVENT_SCOPE(AddComponentsToRegion);
-    		
-    		// Create a LocationVolume around the region 
+
     		int32 RegionSizeXTexels = LandscapeSetting.QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
     		int32 RegionSizeYTexels = LandscapeSetting.QuadsPerSection * WorldPartitionRegionSize * MapPreset->Landscape_SectionsPerComponent;
 		
@@ -695,9 +569,7 @@ void UOCGLandscapeGenerateComponent::ManageLandscapeRegions(UWorld* World, ALand
     	SaveObjects(MakeArrayView(MakeArrayView(TArrayView<ALandscape*>(TArray<ALandscape*> { LandscapeInfo->LandscapeActor.Get() }))));
 
     	ForEachComponentByRegion(WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
-
-    	// update the zcomponent of the volumes 
-    	//const float ZScale =  LandscapeBounds.Max.Z - LandscapeBounds.Min.Z;
+    	
     	for (ALocationVolume* RegionVolume : RegionVolumes)
     	{
     		const FVector Scale = RegionVolume->GetActorScale();
@@ -772,7 +644,6 @@ void UOCGLandscapeGenerateComponent::AddLandscapeComponent(ULandscapeInfo* InLan
 		InLandscapeInfo->XYtoAddCollisionMap.Remove(ComponentCoordinate);
 	}
 
-	// Need to register to use general height/xyoffset data update
 	for (int32 Idx = 0; Idx < NewComponents.Num(); Idx++)
 	{
 		NewComponents[Idx]->RegisterComponent();
@@ -853,8 +724,7 @@ ALocationVolume* UOCGLandscapeGenerateComponent::CreateLandscapeRegionVolume(UWo
     LocationVolume->AttachToActor(InParentLandscapeActor, FAttachmentTransformRules::KeepWorldTransform);
     const FVector Scale{ InRegionSize * Shrink,  InRegionSize * Shrink, InRegionSize * 0.5f };
     LocationVolume->SetActorScale3D(Scale);
-
-    // Specify a cube shape for the LocationVolume
+	
     UCubeBuilder* Builder = NewObject<UCubeBuilder>();
     Builder->X = 1.0f;
     Builder->Y = 1.0f;
@@ -1354,7 +1224,7 @@ ALandscapeProxy* UOCGLandscapeGenerateComponent::FindOrAddLandscapeStreamingProx
 		const FIntPoint CellLocation(static_cast<int32>(InCellCoord.X) * Landscape->GetGridSize(), static_cast<int32>(InCellCoord.Y) * Landscape->GetGridSize());
 
 		ALandscapeProxy* LandscapeProxy = CastChecked<ALandscapeProxy>(PartitionActor);
-		// copy shared properties to this new proxy
+		
 		LandscapeProxy->SynchronizeSharedProperties(Landscape);
 		const FVector ProxyLocation = Landscape->GetActorLocation() + FVector(CellLocation.X * Landscape->GetActorRelativeScale3D().X, CellLocation.Y * Landscape->GetActorRelativeScale3D().Y, 0.0f);
 
@@ -1432,8 +1302,8 @@ FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIn
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
 	
     FVector WorldLocation = LandscapeOrigin + FVector(
-        2 * (MapPoint.X / (float)MapPreset->MapResolution.X) * LandscapeExtent.X + OffsetX,
-        2 * (MapPoint.Y / (float)MapPreset->MapResolution.Y) * LandscapeExtent.Y + OffsetY,
+        2 * (MapPoint.X / static_cast<float>(MapPreset->MapResolution.X)) * LandscapeExtent.X + OffsetX,
+        2 * (MapPoint.Y / static_cast<float>(MapPreset->MapResolution.Y)) * LandscapeExtent.Y + OffsetY,
         0.0f 
     );
 

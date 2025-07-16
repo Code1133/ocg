@@ -9,6 +9,7 @@
 #include "Landscape.h"
 #include "LandscapeEdit.h"
 #include "LandscapeInfo.h"
+#include "LandscapeSettings.h"
 #if ENGINE_MINOR_VERSION > 5
 #include "LandscapeEditLayer.h"
 #endif
@@ -23,7 +24,7 @@ OCGLandscapeUtil::~OCGLandscapeUtil()
 }
 
 void OCGLandscapeUtil::ExtractHeightMap(ALandscape* InLandscape, const FGuid InGuid, int32& OutWidth, int32& OutHeight,
-	TArray<uint16>& OutHeightMap)
+                                        TArray<uint16>& OutHeightMap)
 {
 #if WITH_EDITOR
 	if (InLandscape)
@@ -53,7 +54,7 @@ void OCGLandscapeUtil::ExtractHeightMap(ALandscape* InLandscape, const FGuid InG
 }
 
 void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex, int32 Width, int32 Height,
-	const TArray<uint16>& InHeightDiffMap, TArray<uint8>& OutOriginWeightMap)
+	const TArray<uint16>& InHeightDiffMap)
 {
 #if WITH_EDITOR
 	if (InLandscape)
@@ -93,22 +94,18 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 			int32 RegionWidth = Region.Width() + 1;
 			int32 RegionHeight = Region.Height() + 1;
 			int32 NumPixels = RegionWidth * RegionHeight;
-			
-			OutOriginWeightMap.AddZeroed(RegionWidth * RegionHeight);
-			
-			AlphamapAccessor.GetDataFast(Region.Min.X, Region.Min.Y, Region.Max.X - 1, Region.Max.Y - 1, OutOriginWeightMap.GetData());
 
+			TArray<uint8> OriginWeightMap;
+			GetWeightMap(InLandscape, 0, OriginWeightMap);
+			
 			TArray<uint8> TargetWeightData;
 			TargetWeightData.AddZeroed(RegionWidth * RegionHeight);
 
 			for (int32 i = 0; i < NumPixels; ++i)
 			{
-				float Origin = OutOriginWeightMap[i] / 255.f;
+				float Origin = OriginWeightMap[i] / 255.f;
 				float New = 0;
-				// if (i < WeightMap.Num())
-				// {
-				// 	New =  FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
-				// }
+
 				if (i < BlurredWeightMap.Num())
 				{
 					New = FMath::Clamp(WeightMap[i] / 255.f, 0.f, 1.f);
@@ -124,9 +121,9 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 
 			InLandscape->ReregisterAllComponents();
 			
-			//OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Width, Height), TEXT("AddWeightMap.png"));
-			//OCGMapDataUtils::ExportMap(BlurredWeightMap, FIntPoint(Width, Height), TEXT("BlurredWeightMap.png"));
-			//OCGMapDataUtils::ExportMap(TargetWeightData, FIntPoint(RegionWidth, RegionHeight), TEXT("FinalWeightMap.png"));
+			OCGMapDataUtils::ExportMap(OriginWeightMap, FIntPoint(Width, Height), TEXT("AddWeightMap.png"));
+			OCGMapDataUtils::ExportMap(BlurredWeightMap, FIntPoint(Width, Height), TEXT("BlurredWeightMap.png"));
+			OCGMapDataUtils::ExportMap(TargetWeightData, FIntPoint(RegionWidth, RegionHeight), TEXT("FinalWeightMap.png"));
 		}
 	}
 #endif
@@ -170,7 +167,72 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 
 			InLandscape->ReregisterAllComponents();
 
-			//OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Region.Max.X - 1, Region.Max.Y - 1), TEXT("OriginWeightMap.png"));
+			OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(Region.Max.X - 1, Region.Max.Y - 1), TEXT("OriginWeightMap.png"));
+		}
+	}
+#endif
+}
+
+void OCGLandscapeUtil::GetWeightMap(ALandscape* InLandscape, int32 InLayerIndex, TArray<uint8>& OutOriginWeightMap)
+{
+#if	WITH_EDITOR
+	if (InLandscape)
+	{
+#if ENGINE_MINOR_VERSION > 5
+		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+#else
+		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+#endif
+		
+		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
+		if (!LandscapeInfo) return;
+
+		ULandscapeLayerInfoObject* LayerInfo = LandscapeInfo->Layers[InLayerIndex].LayerInfoObj;
+		
+		if (!LayerInfo) return;
+
+		FIntRect Region;
+		if (LandscapeInfo->GetLandscapeExtent(Region))
+		{
+			Region.Max.X += 1;
+			Region.Max.Y += 1;
+			
+			FScopedSetLandscapeEditingLayer Scope(InLandscape, CurrentLayerGuid, [InLandscape]
+			{
+				check(InLandscape);
+				InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All);
+			});
+
+			FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, LayerInfo);
+			int32 RegionWidth = Region.Width() + 1;
+			int32 RegionHeight = Region.Height() + 1;
+			int32 NumPixels = RegionWidth * RegionHeight;
+
+			if (!OutOriginWeightMap.IsEmpty())
+				OutOriginWeightMap.Empty();
+			
+			OutOriginWeightMap.AddZeroed(RegionWidth * RegionHeight);
+			
+			AlphamapAccessor.GetDataFast(Region.Min.X, Region.Min.Y, Region.Max.X - 1, Region.Max.Y - 1, OutOriginWeightMap.GetData());
+		}
+	}
+#endif
+}
+
+void OCGLandscapeUtil::CleanUpWeightMap(ALandscape* InLandscape)
+{
+#if	WITH_EDITOR
+	if (InLandscape)
+	{
+		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
+		if (!LandscapeInfo) return;
+
+		for (int32 LayerIndex = 1; LayerIndex < LandscapeInfo->Layers.Num(); ++LayerIndex)
+		{
+			TArray<uint8> LayerWeightMap;
+
+			GetWeightMap(InLandscape, LayerIndex, LayerWeightMap);
+			ApplyWeightMap(InLandscape, LayerIndex, LayerWeightMap);
 		}
 	}
 #endif
@@ -214,4 +276,141 @@ void OCGLandscapeUtil::BlurWeightMap(const TArray<uint8>& InWeight, TArray<uint8
 	{
 		OutWeight[i] = FMath::Clamp(FMath::RoundToInt(TempAccum[i]), 0, 255);
 	}
+}
+
+void OCGLandscapeUtil::ClearTargetLayers(ALandscape* InLandscape)
+{
+	if (InLandscape == nullptr) return;
+
+	TArray<FName> LayerNames;
+	InLandscape->GetTargetLayers().GetKeys(LayerNames);
+	
+	for (const FName& LayerName : LayerNames)
+	{
+		InLandscape->RemoveTargetLayer(LayerName);
+	}
+
+}
+
+void OCGLandscapeUtil::UpdateTargetLayers(ALandscape* InLandscape,
+	const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers)
+{
+#if WITH_EDITOR
+	if (!InLandscape) return;
+	ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
+	if (LandscapeInfo)
+	{
+		LandscapeInfo->UpdateLayerInfoMap(InLandscape);
+	}
+
+	// Assume single entry in map
+	const TArray<FLandscapeImportLayerInfo>& ImportInfos = MaterialLayerDataPerLayers.begin()->Value;
+	const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
+	const ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
+
+	for (const FLandscapeImportLayerInfo& ImportInfo : ImportInfos)
+	{
+		ULandscapeLayerInfoObject* LayerInfoObj = ImportInfo.LayerInfo;
+		const FName LayerName = ImportInfo.LayerName;
+		if (!LayerInfoObj)
+		{
+			LayerInfoObj = InLandscape->CreateLayerInfo(*LayerName.ToString(), DefaultLayerInfo);
+			if (LayerInfoObj)
+			{
+				LayerInfoObj->LayerUsageDebugColor = LayerInfoObj->GenerateLayerUsageDebugColor();
+				(void)LayerInfoObj->MarkPackageDirty();
+			}
+		}
+		
+		if (LayerInfoObj)
+		{
+			if (!InLandscape->GetTargetLayers().Contains(LayerName))
+			{
+				InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObj));
+				if (LandscapeInfo)
+				{
+					const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+					if (Index != INDEX_NONE)
+					{
+						FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+						LayerSettings.LayerInfoObj = LayerInfoObj;
+					}
+				}
+				
+			}
+			else
+			{
+				InLandscape->UpdateTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObj));
+				if (LandscapeInfo)
+				{
+					const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+					if (Index != INDEX_NONE)
+					{
+						FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+						LayerSettings.LayerInfoObj = LayerInfoObj;
+					}
+				}
+			}
+		}
+		else
+		{
+			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings());
+		}
+	}
+#endif
+}
+
+void OCGLandscapeUtil::AddTargetLayers(ALandscape* InLandscape,
+	const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers)
+{
+#if WITH_EDITOR
+	if (!InLandscape) return;
+	ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
+	if (LandscapeInfo)
+	{
+		LandscapeInfo->UpdateLayerInfoMap(InLandscape);
+	}
+
+	// Assume single entry in map
+	const TArray<FLandscapeImportLayerInfo>& ImportInfos = MaterialLayerDataPerLayers.begin()->Value;
+	const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
+	const ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
+
+	for (const FLandscapeImportLayerInfo& ImportInfo : ImportInfos)
+	{
+		ULandscapeLayerInfoObject* LayerInfoObj = ImportInfo.LayerInfo;
+		const FName LayerName = ImportInfo.LayerName;
+		if (!LayerInfoObj)
+		{
+			LayerInfoObj = InLandscape->CreateLayerInfo(*LayerName.ToString(), DefaultLayerInfo);
+			if (LayerInfoObj)
+			{
+				LayerInfoObj->LayerUsageDebugColor = LayerInfoObj->GenerateLayerUsageDebugColor();
+				(void)LayerInfoObj->MarkPackageDirty();
+			}
+		}
+		
+		if (LayerInfoObj)
+		{
+			if (!InLandscape->GetTargetLayers().Contains(LayerName))
+			{
+				InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObj));
+				if (LandscapeInfo)
+				{
+					const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+					if (Index != INDEX_NONE)
+					{
+						FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+						LayerSettings.LayerInfoObj = LayerInfoObj;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Add a target layer with no layer info asset
+			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings());
+		}
+	}
+#endif
 }

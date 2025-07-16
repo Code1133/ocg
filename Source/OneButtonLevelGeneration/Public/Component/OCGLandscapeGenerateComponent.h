@@ -106,20 +106,6 @@ private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
 	FLandscapeSetting LandscapeSetting;
 	
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 QuadsPerSection;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// FIntPoint TotalLandscapeComponentSize;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 ComponentCountX;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 ComponentCountY;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 QuadsPerComponent;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 SizeX;
-	// UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
-	// int32 SizeY;
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	FVector VolumeExtent;
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
@@ -140,7 +126,7 @@ private:
 
 	static void AddTargetLayers(ALandscape* Landscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
 
-	void ManageLandscapeRegions(UWorld* World, ALandscape* Landscape);
+	void ManageLandscapeRegions(UWorld* World, const ALandscape* Landscape);
 
 	static void AddLandscapeComponent(ULandscapeInfo* InLandscapeInfo, ULandscapeSubsystem* InLandscapeSubsystem, const TArray<FIntPoint>& InComponentCoordinates, TArray<ALandscapeProxy*>& OutCreatedStreamingProxies);
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+struct FLandscapeImportLayerInfo;
 class ALandscape;
 /**
  * 
@@ -16,12 +17,21 @@ public:
 
 	static void ExtractHeightMap(ALandscape* InLandscape, const FGuid InGuid, int32& OutWidth, int32& OutHeight, TArray<uint16>& OutHeightMap);
 
-	static void AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex, int32 Width, int32 Height, const TArray<uint16>& InHeightDiffMap, TArray<
-	                           uint8>& OutOriginWeightMap);
+	static void AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex, int32 Width, int32 Height, const TArray<uint16>& InHeightDiffMap);
 
 	static void ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint8>& WeightMap);
+	
+	static void GetWeightMap(ALandscape* InLandscape, int32 InLayerIndex, TArray<uint8>& OutOriginWeightMap);
+
+	static void CleanUpWeightMap(ALandscape* InLandscape);
 
 	static void MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight);
 
 	static void BlurWeightMap(const TArray<uint8>& InWeight, TArray<uint8>& OutWeight, int32 Width, int32 Height);
+
+	static void ClearTargetLayers(ALandscape* InLandscape);
+
+	static void UpdateTargetLayers(ALandscape* InLandscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
+	
+	static void AddTargetLayers(ALandscape* InLandscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
 };

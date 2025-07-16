@@ -460,8 +460,12 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 	
 	if (TargetLandscape)
 	{
-		OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
-		OCGLandscapeUtil::AddWeightMap(TargetLandscape, 0, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap, PrevWaterWeightMap);
+		if (!PrevWaterWeightMap.IsEmpty())
+		{
+			OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
+		}
+		OCGLandscapeUtil::GetWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
+		OCGLandscapeUtil::AddWeightMap(TargetLandscape, 0, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap);
 	}
 }
 

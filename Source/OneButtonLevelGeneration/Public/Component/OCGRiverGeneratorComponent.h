@@ -10,6 +10,7 @@ class AOCGLevelGenerator;
 class UMapPreset;
 class AWaterBodyRiver;
 
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ONEBUTTONLEVELGENERATION_API UOCGRiverGenerateComponent : public UActorComponent
 {
@@ -66,7 +67,7 @@ private:
 
 	UPROPERTY()
 	TArray<uint8> PrevWaterWeightMap;
-	
+
 	uint16 RiverHeightMapWidth;
 	uint16 RiverHeightMapHeight;
 };
