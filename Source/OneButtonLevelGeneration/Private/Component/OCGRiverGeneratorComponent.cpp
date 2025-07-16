@@ -340,7 +340,7 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         }
 
         // 최종 값 계산: (기본값 * 배율) + 최소값
-        const float DesiredWidth = (MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin * MapPreset->LandscapeScale;
+        const float DesiredWidth = ((MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin) * MapPreset->LandscapeScale;
         const float DesiredDepth = (MapPreset->RiverDepthBaseValue * DepthMultiplier) + MapPreset->RiverDepthMin;
         const float DesiredVelocity = (MapPreset->RiverVelocityBaseValue * VelocityMultiplier) + MapPreset->RiverVelocityMin;
 
