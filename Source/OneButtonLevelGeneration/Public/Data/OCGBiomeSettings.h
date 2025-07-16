@@ -10,7 +10,7 @@ struct FOCGBiomeStaticMesh
     GENERATED_BODY()
 	
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-    UStaticMesh* StaticMesh;
+    UStaticMesh* StaticMesh = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
     int Weight = 1;
@@ -30,15 +30,15 @@ struct FOCGBiomeSettings
 
 	//Sets Biomes standard Temperature (degree celsius)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-	float Temperature;
+	float Temperature = 15.0f;
 
 	//Sets Biomes standard Humidity (value between 0~1)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float Humidity;
+	float Humidity = 0.5f;
 
 	//디버그 용 후에 삭제 예정
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-	FLinearColor Color;
+	FLinearColor Color = FLinearColor::Black;
 
 	//나중에 사용할수도?
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")

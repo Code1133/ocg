@@ -28,25 +28,25 @@ struct FLandscapeSetting
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	uint32 QuadsPerSection;
+	uint32 QuadsPerSection = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	FIntPoint TotalLandscapeComponentSize;
+	FIntPoint TotalLandscapeComponentSize = FIntPoint::ZeroValue;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 ComponentCountX;
+	int32 ComponentCountX = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 ComponentCountY;
+	int32 ComponentCountY = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 QuadsPerComponent;
+	int32 QuadsPerComponent = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 SizeX;
+	int32 SizeX = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 SizeY;
+	int32 SizeY = 0;
 
 	// == 연산자 오버로드
 	bool operator==(FLandscapeSetting const& Other) const
