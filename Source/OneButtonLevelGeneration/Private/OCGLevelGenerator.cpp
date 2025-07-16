@@ -2,6 +2,8 @@
 
 #include "OCGLevelGenerator.h"
 
+#include <OCGLog.h>
+
 #include "Landscape.h"
 #include "WaterBodyActor.h"
 #include "WaterBodyComponent.h"
@@ -47,6 +49,38 @@ void AOCGLevelGenerator::Generate()
 
 void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 {
+	if (!MapPreset || MapPreset->Biomes.IsEmpty())
+	{
+		// Error message
+		const FText DialogTitle = FText::FromString(TEXT("Error"));
+		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
+
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+
+		return;
+	}
+	for (const auto& Biome : MapPreset->Biomes)
+	{
+		if (Biome.BiomeName == NAME_None)
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Biome name cannot be empty. Please set a valid name for each biome."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+		}
+	}
+	
+	if (!MapPreset)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("MapPreset is not set! Please set a valid MapPreset before generating."));
+		return;
+	}
+
+	if (MapPreset->Biomes.Num() < 1)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("MapPreset does not contain any biomes! Please add biomes to the MapPreset before generating."));
+		return;
+	}
 	if (MapGenerateComponent)
 	{
 		MapGenerateComponent->GenerateMaps();

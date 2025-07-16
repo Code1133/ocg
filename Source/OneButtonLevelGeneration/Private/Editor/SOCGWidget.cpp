@@ -114,6 +114,7 @@ FReply SOCGWidget::OnGenerateLevelClicked()
     if (LevelGeneratorActor.IsValid() && LevelGeneratorActor->GetMapPreset())
     {
         // Assuming OnClickGenerate is a valid function in your AOCGLevelGenerator
+        
         LevelGeneratorActor->OnClickGenerate(GEditor->GetEditorWorldContext().World());
     }
     return FReply::Handled();

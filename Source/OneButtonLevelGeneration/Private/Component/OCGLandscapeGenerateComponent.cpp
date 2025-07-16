@@ -409,6 +409,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 	else
 	{
+		AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 		ImportMapDatas(World, *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
 	
@@ -596,15 +597,18 @@ void UOCGLandscapeGenerateComponent::AddTargetLayers(ALandscape* Landscape,
 		
         if (LayerInfoObj)
         {
-            Landscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObj));
-            if (LandscapeInfo)
-            {
-                const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
-                if (Index != INDEX_NONE)
-                {
-                    LandscapeInfo->Layers[Index].LayerInfoObj = LayerInfoObj;
-                }
-            }
+        	if (!Landscape->GetTargetLayers().Contains(LayerName))
+        	{
+        		Landscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObj));
+        		if (LandscapeInfo)
+        		{
+        			const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+        			if (Index != INDEX_NONE)
+        			{
+        				LandscapeInfo->Layers[Index].LayerInfoObj = LayerInfoObj;
+        			}
+        		}
+        	}
         }
     }
 #endif
