@@ -36,13 +36,13 @@ struct FOCGBiomeSettings
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float Humidity = 0.5f;
 
-	//디버그 용 후에 삭제 예정
+	//Sets the color of the biome in exported biome map
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
 	FLinearColor Color = FLinearColor::Black;
 
-	//나중에 사용할수도?
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-    int Weight = 1;
+	//The weight of the biome in the overall generation process. Higher weights increase the likelihood of this biome being selected.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float Weight = 1;
 
 	//Sets the terrain feature of this Biome (0 = Plain, 1 = Mountain)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))

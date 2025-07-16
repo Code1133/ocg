@@ -1101,6 +1101,12 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
 void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
     const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
+    float TotalWeight = 0.0f;
+    for (const auto Biome : MapPreset->Biomes)
+    {
+        TotalWeight += Biome.Weight;
+    }
+    
     const FIntPoint CurResolution = MapPreset->MapResolution;
     
     BiomeColorMap.SetNumUninitialized(CurResolution.X * CurResolution.Y);
@@ -1142,8 +1148,6 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
             const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
             const float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
-            if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
-                UE_LOG(LogOCGModule, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = &MapPreset->WaterBiome;
             uint32 CurrentBiomeIndex = INDEX_NONE;
@@ -1163,7 +1167,8 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
                     const FOCGBiomeSettings* BiomeSettings = &MapPreset->Biomes[BiomeIndex - 1];
                     float TempDiff = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
                     float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
-                    float Dist = FVector2D(TempDiff, HumidityDiff).Length();
+                    float Weight = 1.f - BiomeSettings->Weight / TotalWeight;
+                    float Dist = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
                     if (Dist < MinDist)
                     {
                         MinDist = Dist;
@@ -1200,6 +1205,13 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
 {
     if (!MapPreset->bContainWater)
         return;
+
+    float TotalWeight = 0.0f;
+    for (const auto Biome : MapPreset->Biomes)
+    {
+        TotalWeight += Biome.Weight;
+    }
+    
     const FIntPoint CurResolution = MapPreset->MapResolution;
 
     float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
@@ -1216,8 +1228,6 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
             const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
             const float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
-            if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
-                UE_LOG(LogOCGModule, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = &MapPreset->WaterBiome;
             uint32 CurrentBiomeIndex = INDEX_NONE;
@@ -1237,7 +1247,8 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
                     const FOCGBiomeSettings* BiomeSettings = &MapPreset->Biomes[BiomeIndex - 1];
                     float TempDiff = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
                     float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
-                    float Dist = FVector2D(TempDiff, HumidityDiff).Length();
+                    float Weight = 1.f - BiomeSettings->Weight / TotalWeight;
+                    float Dist = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
                     if (Dist < MinDist)
                     {
                         MinDist = Dist;
@@ -1268,6 +1279,18 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
     }
     ExportMap(MapPreset, BiomeColorMap, "BiomeMap1.png");
     BlendBiome(MapPreset);
+
+    for (int LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
+    {
+        FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
+        FName LayerName(LayerNameStr);
+        FString FileName = LayerNameStr + ".png";
+        
+        if (MapPreset->bExportMapTextures)
+        {
+            OCGMapDataUtils::ExportMap(WeightLayers.FindRef(LayerName), CurResolution, FileName);
+        }
+    }
 }
 
 void UOCGMapGenerateComponent::MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)
@@ -1430,18 +1453,6 @@ void UOCGMapGenerateComponent::BlendBiome(const UMapPreset* MapPreset)
                 WeightLayers[LayerName][i] = FMath::RoundToInt(WeightLayers[LayerName][i] * NormalizationFactor);
             }
         }
-
-        // for (LayerIndex = 0; LayerIndex < WeightLayers.Num(); ++LayerIndex)
-        // {
-        //     FString LayerNameStr = FString::Printf(TEXT("Layer%d"), LayerIndex);
-        //     FName LayerName(LayerNameStr);
-        //     FString FileName = LayerNameStr + ".png";
-        //
-        //     if (MapPreset->bExportMapTextures)
-        //     {
-        //         OCGMapDataUtils::ExportMap(WeightLayers[LayerName], CurResolution, FileName);
-        //     }
-        // }
     }
 }
 
