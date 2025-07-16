@@ -229,7 +229,8 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 		// Set LayerName to Layer{idx} for each Biome
 		if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 		{
-			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), *Index));
+			const uint32 LayerIdx = *Index + 1;
+			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), LayerIdx));
 			continue;
 		}
 		Data.LayerName_Internal = NAME_None;
