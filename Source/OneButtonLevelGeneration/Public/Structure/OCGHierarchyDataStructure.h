@@ -125,7 +125,7 @@ struct FLandscapeHierarchyData
 
 	/** Random seed for point generation. Same seed produces same results. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
-	int32 Seed;
+	int32 Seed = 1337;
 
 	/** Weight of the blended layer. Values between 0 and 1, higher values increase this layer's influence. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
