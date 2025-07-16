@@ -1128,14 +1128,14 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
     FName WaterLayerName(WaterLayerNameStr);
     WeightLayers.Add(WaterLayerName, WaterWeightLayer);
 
-    float SeaLevelHeight;
+    uint16 SeaLevelHeight;
     if (MapPreset->bContainWater)
     {
-        SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+        SeaLevelHeight = 65535 * MapPreset->SeaLevel;
     }
     else
     {
-        SeaLevelHeight = MapPreset->MinHeight;
+        SeaLevelHeight = 0;
     }
     
     for (int32 y = 0; y < CurResolution.Y; ++y)
@@ -1143,7 +1143,7 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             const int32 Index = y * CurResolution.X + x;
-            float Height = HeightMapToWorldHeight(InHeightMap[Index]);
+            float Height = InHeightMap[Index];
             float NormalizedTemp = static_cast<float>(InTempMap[y * CurResolution.X + x]) / 65535.f;
             const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
@@ -1214,16 +1214,14 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
     
     const FIntPoint CurResolution = MapPreset->MapResolution;
 
-    float SeaLevelHeight = MapPreset->MinHeight + MapPreset->SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight);
+    uint16 SeaLevelHeight = 65535 * MapPreset->SeaLevel;
     
     for (int32 y = 0; y < CurResolution.Y; ++y)
     {
         for (int32 x = 0; x < CurResolution.X; ++x)
         {
             const int32 Index = y * CurResolution.X + x;
-            float Height = HeightMapToWorldHeight(InHeightMap[Index]);
-            if (BiomeNameMap[Index] != TEXT("Layer0") || Height < SeaLevelHeight)
-                continue;
+            float Height = InHeightMap[Index];
             float NormalizedTemp = static_cast<float>(InTempMap[y * CurResolution.X + x]) / 65535.f;
             const float Temp = FMath::Lerp(CachedGlobalMinTemp, CachedGlobalMaxTemp, NormalizedTemp);
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
