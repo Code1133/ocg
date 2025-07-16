@@ -2,12 +2,12 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "OneButtonLevelGeneration",
-	"Description": "One Button Level Generation Plugin",
-	"Category": "Procedural Content Generation",
+	"FriendlyName": "One-Click Level Generation",
+	"Description": "One-Click Level Generation Plugin",
+	"Category": "Editor",
 	"CreatedBy": "Code1133",
 	"CreatedByURL": "",
-	"DocsURL": "",
+	"DocsURL": "https://code1133.github.io/ocg-docs/",
 	"MarketplaceURL": "",
 	"SupportURL": "",
 	"CanContainContent": true,
@@ -34,9 +34,9 @@
 			"Name": "PCGGeometryScriptInterop",
 			"Enabled": true
 		},
-        {
-          "Name": "PCGWaterInterop",
-          "Enabled": true
-        }
+		{
+			"Name": "PCGWaterInterop",
+			"Enabled": true
+		}
 	]
 }
