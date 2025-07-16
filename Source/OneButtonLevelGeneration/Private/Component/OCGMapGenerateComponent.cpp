@@ -1101,7 +1101,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
 void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
     const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
 {
-    float TotalWeight = 0.0f;
+    float TotalWeight = 0.f;
     for (const auto Biome : MapPreset->Biomes)
     {
         TotalWeight += Biome.Weight;

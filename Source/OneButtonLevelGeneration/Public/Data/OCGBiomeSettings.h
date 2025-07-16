@@ -41,8 +41,8 @@ struct FOCGBiomeSettings
 	FLinearColor Color = FLinearColor::Black;
 
 	//The weight of the biome in the overall generation process. Higher weights increase the likelihood of this biome being selected.
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-    float Weight = 1;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0"))
+    int Weight = 1;
 
 	//Sets the terrain feature of this Biome (0 = Plain, 1 = Mountain)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (ClampMin = "0.0", ClampMax = "1.0"))
