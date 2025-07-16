@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 
 #include "OCGLevelGenerator.h"
+#include "OCGLog.h"
 #include "WaterBodyRiverActor.h"
 #include "WaterBodyRiverComponent.h"
 #include "WaterEditorSettings.h"
@@ -79,7 +80,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	
 	if (!InWorld || !TargetLandscape || !MapPreset)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("River generation failed: Invalid world or landscape or map preset."));
+		UE_LOG(LogOCGModule, Warning, TEXT("River generation failed: Invalid world or landscape or map preset."));
 		return;
 	}
 
@@ -91,7 +92,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	const TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
 	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("River generation failed: HeightMapData is not set or has insufficient data."));
+		UE_LOG(LogOCGModule, Warning, TEXT("River generation failed: HeightMapData is not set or has insufficient data."));
 		return;
 	}
 
@@ -525,13 +526,13 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 
 	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HeightMapData is not set or has insufficient data."));
+		UE_LOG(LogOCGModule, Warning, TEXT("HeightMapData is not set or has insufficient data."));
 		return FVector::ZeroVector;
 	}
 
 	if (MapPreset->MapResolution.X < 1 || MapPreset->MapResolution.Y < 1)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MapResolution is invalid."));
+		UE_LOG(LogOCGModule, Warning, TEXT("MapResolution is invalid."));
 		return FVector::ZeroVector;
 	}
 
@@ -616,7 +617,7 @@ FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint()
 	
 	if (!MapPreset || !LevelGenerator)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MapPreset is not set. Cannot generate random start point for river."));
+		UE_LOG(LogOCGModule, Error, TEXT("MapPreset is not set. Cannot generate random start point for river."));
 		return FIntPoint(0, 0);
 	}
 
@@ -676,7 +677,7 @@ void UOCGRiverGenerateComponent::CacheRiverStartPoints()
 {
 	if (!TargetLandscape || !GetLevelGenerator() || !GetLevelGenerator()->GetMapPreset())
 	{
-		UE_LOG(LogTemp, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
+		UE_LOG(LogOCGModule, Error, TEXT("TargetLandscape or LevelGenerator is not set. Cannot cache river start points."));
 		return;
 	}
 	
@@ -692,7 +693,7 @@ void UOCGRiverGenerateComponent::CacheRiverStartPoints()
 		(MaxHeight - MinHeight) * MapPreset->SeaLevel - 5;
     
 	uint16 HighThreshold = SeaHeight + (MaxHeight - SeaHeight) * StartPointThresholdMultiplier;
-	UE_LOG(LogTemp, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
+	UE_LOG(LogOCGModule, Log, TEXT("High Threshold for River Start Point: %d"), HighThreshold);
 
 	FVector LandscapeOrigin = TargetLandscape->GetLoadedBounds().GetCenter();
 	FVector LandscapeExtent = TargetLandscape->GetLoadedBounds().GetExtent();

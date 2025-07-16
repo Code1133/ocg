@@ -2,6 +2,7 @@
 
 #include "Data/MapData.h"
 
+#include "OCGLog.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/SavePackage.h"
 
@@ -14,7 +15,7 @@ bool OCGMapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& 
 {
 	if (!Texture || !Texture->GetPlatformData() || Texture->GetPixelFormat() != PF_G16)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Texture is invalid or not PF_G16 format"));
+		UE_LOG(LogOCGModule, Error, TEXT("Texture is invalid or not PF_G16 format"));
 		return false;
 	}
 
@@ -42,7 +43,7 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
 
     if (!FPaths::FileExists(FullPath))
     {
-        UE_LOG(LogTemp, Error, TEXT("ImportMap: File does not exist: %s"), *FullPath);
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FullPath);
         return false;
     }
 
@@ -50,7 +51,7 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
     TArray<uint8> CompressedData;
     if (!FFileHelper::LoadFileToArray(CompressedData, *FullPath))
     {
-        UE_LOG(LogTemp, Error, TEXT("ImportMap: Failed to load file: %s"), *FullPath);
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to load file: %s"), *FullPath);
         return false;
     }
 
@@ -60,14 +61,14 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
 
     if (!ImageWrapper.IsValid() || !ImageWrapper->SetCompressed(CompressedData.GetData(), CompressedData.Num()))
     {
-        UE_LOG(LogTemp, Error, TEXT("ImportMap: Failed to decode PNG."));
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to decode PNG."));
         return false;
     }
 
     // Check if the image is 16-bit grayscale and extract raw data
     if (ImageWrapper->GetBitDepth() != 16 || ImageWrapper->GetFormat() != ERGBFormat::Gray)
     {
-        UE_LOG(LogTemp, Error, TEXT("ImportMap: PNG format is not 16-bit grayscale."));
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: PNG format is not 16-bit grayscale."));
         return false;
     }
 
@@ -77,7 +78,7 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
     TArray<uint8> RawData;
     if (!ImageWrapper->GetRaw(ERGBFormat::Gray, 16, RawData))
     {
-        UE_LOG(LogTemp, Error, TEXT("ImportMap: Failed to extract raw image data."));
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to extract raw image data."));
         return false;
     }
 
@@ -88,7 +89,7 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
     const uint16* RawPtr = reinterpret_cast<const uint16*>(RawData.GetData());
     FMemory::Memcpy(OutMapData.GetData(), RawPtr, NumPixels * sizeof(uint16));
 
-    UE_LOG(LogTemp, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap."), Width, Height);
+    UE_LOG(LogOCGModule, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap."), Width, Height);
 
     // Save resolution if needed
     OutResolution = FIntPoint(Width, Height);
@@ -108,14 +109,14 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 
 	if (!FPaths::FileExists(FullPath))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ImportTextureFromPNG: File does not exist: %s"), *FullPath);
+		UE_LOG(LogOCGModule, Error, TEXT("ImportTextureFromPNG: File does not exist: %s"), *FullPath);
 		return nullptr;
 	}
 
 	TArray<uint8> FileData;
 	if (!FFileHelper::LoadFileToArray(FileData, *FullPath))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ImportTextureFromPNG: Failed to load file: %s"), *FullPath);
+		UE_LOG(LogOCGModule, Error, TEXT("ImportTextureFromPNG: Failed to load file: %s"), *FullPath);
 		return nullptr;
 	}
 
@@ -125,7 +126,7 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 
 	if (!ImageWrapper.IsValid() || !ImageWrapper->SetCompressed(FileData.GetData(), FileData.Num()))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ImportTextureFromPNG: Failed to decode PNG."));
+		UE_LOG(LogOCGModule, Error, TEXT("ImportTextureFromPNG: Failed to decode PNG."));
 		return nullptr;
 	}
 
@@ -136,7 +137,7 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 	TArray<uint8> RawData;
 	if (!ImageWrapper->GetRaw(ERGBFormat::RGBA, 8, RawData))
 	{
-		UE_LOG(LogTemp, Error, TEXT("ImportTextureFromPNG: Failed to extract raw image data."));
+		UE_LOG(LogOCGModule, Error, TEXT("ImportTextureFromPNG: Failed to extract raw image data."));
 		return nullptr;
 	}
 
@@ -147,7 +148,7 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 	UPackage* Package = CreatePackage(*PackageName);
 	if (!Package)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create package for texture"));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to create package for texture"));
 		return nullptr;
 	}
 
@@ -184,12 +185,12 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 
 	if (bSuccess)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Texture imported and saved successfully: %s"), *FilePath);
+		UE_LOG(LogOCGModule, Log, TEXT("Texture imported and saved successfully: %s"), *FilePath);
 		return Texture;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to save texture to disk: %s"), *FilePath);
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to save texture to disk: %s"), *FilePath);
 		return nullptr;
 	}
 #else
@@ -204,18 +205,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Res
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
-	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
-	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Full Path: %s"), *FullPath);
 
 	// Get the platform file interface to check and create directories
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
 	{
-		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
+		UE_LOG(LogOCGModule, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
 			return false;
 		}
 	}
@@ -226,7 +227,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Res
 
 	if (!ImageWrapper.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create Image Wrapper."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to create Image Wrapper."));
 		return false;
 	}
 
@@ -237,7 +238,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Res
 	const int32 ExpectedSize = Width * Height;
 	if (InMap.Num() != ExpectedSize)
 	{
-		UE_LOG(LogTemp, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
+		UE_LOG(LogOCGModule, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
 		return false;
 	}
 	
@@ -247,18 +248,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Res
 
 		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Map exported successfully to: %s"), *FullPath);
+			UE_LOG(LogOCGModule, Log, TEXT("Map exported successfully to: %s"), *FullPath);
 			return true;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to save map file: %s"), *FullPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to save map file: %s"), *FullPath);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to set raw data to Image Wrapper."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw data to Image Wrapper."));
 		return false;
 	}
 #endif
@@ -271,18 +272,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
-	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
-	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Full Path: %s"), *FullPath);
 
 	// Get the platform file interface to check and create directories
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
 	{
-		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
+		UE_LOG(LogOCGModule, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
 			return false;
 		}
 	}
@@ -293,7 +294,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 
 	if (!ImageWrapper.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create Image Wrapper."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to create Image Wrapper."));
 		return false;
 	}
 
@@ -304,7 +305,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 	const int32 ExpectedSize = Width * Height;
 	if (InMap.Num() != ExpectedSize)
 	{
-		UE_LOG(LogTemp, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
+		UE_LOG(LogOCGModule, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
 		return false;
 	}
 
@@ -315,18 +316,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 
 		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Map exported successfully to: %s"), *FullPath);
+			UE_LOG(LogOCGModule, Log, TEXT("Map exported successfully to: %s"), *FullPath);
 			return true;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to save map file: %s"), *FullPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to save map file: %s"), *FullPath);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to set raw data to Image Wrapper."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw data to Image Wrapper."));
 		return false;
 	}
 #endif
@@ -339,18 +340,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
 
-	UE_LOG(LogTemp, Log, TEXT("Target Directory: %s"), *DirectoryPath);
-	UE_LOG(LogTemp, Log, TEXT("Target Full Path: %s"), *FullPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Directory: %s"), *DirectoryPath);
+	UE_LOG(LogOCGModule, Log, TEXT("Target Full Path: %s"), *FullPath);
 
 	// Get the platform file interface to check and create directories
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
 	if (!PlatformFile.DirectoryExists(*DirectoryPath)) 
 	{
-		UE_LOG(LogTemp, Log, TEXT("Directory does not exist. Creating directory..."));
+		UE_LOG(LogOCGModule, Log, TEXT("Directory does not exist. Creating directory..."));
 		if (!PlatformFile.CreateDirectoryTree(*DirectoryPath))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
 			return false; 
 		}
 	}
@@ -360,7 +361,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 
 	if (!ImageWrapper.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to create Image Wrapper for color map."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to create Image Wrapper for color map."));
 		return false;
 	}
 
@@ -371,7 +372,7 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 	const int32 ExpectedSize = Width * Height;
 	if (InMap.Num() != ExpectedSize)
 	{
-		UE_LOG(LogTemp, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
+		UE_LOG(LogOCGModule, Error, TEXT("InMap size (%d) does not match resolution (%d x %d = %d)"), InMap.Num(), Width, Height, ExpectedSize);
 		return false;
 	}
 
@@ -382,18 +383,18 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 		const TArray64<uint8>& PngData = ImageWrapper->GetCompressed(100);
 		if (FFileHelper::SaveArrayToFile(PngData, *FullPath))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Saved to %s"), *FullPath);
+			UE_LOG(LogOCGModule, Log, TEXT("Saved to %s"), *FullPath);
 			return true;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to save color map file : %s"), *FullPath);
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to save color map file : %s"), *FullPath);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to set raw color data to Image Wrapper."));
+		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw color data to Image Wrapper."));
 		return false;
 	}
 #endif

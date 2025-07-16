@@ -5,6 +5,7 @@
 
 #include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
+#include "OCGLog.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Data/MapPreset.h"
 
@@ -102,7 +103,7 @@ UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
  //    }
  //    else
  //    {
- //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
+ //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Color RuntimeVirtualTexture at the specified path."));
  //    }
  //
  //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> HeightRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height'"));
@@ -112,7 +113,7 @@ UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
  //    }
  //    else
  //    {
- //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
+ //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Height RuntimeVirtualTexture at the specified path."));
  //    }
  //
  //    static ConstructorHelpers::FObjectFinder<URuntimeVirtualTexture> DisplacementRVTFinder(TEXT("/Script/Engine.RuntimeVirtualTexture'/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement'"));
@@ -122,7 +123,7 @@ UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
  //    }
  //    else
  //    {
- //        UE_LOG(LogTemp, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
+ //        UE_LOG(LogOCGModule, Warning, TEXT("Failed to find default Displacement RuntimeVirtualTexture at the specified path."));
  //    }
 }
 
@@ -183,7 +184,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 
     if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
     {
-        UE_LOG(LogTemp, Error, TEXT("유효한 에디터 월드가 아닙니다."));
+        UE_LOG(LogOCGModule, Error, TEXT("유효한 에디터 월드가 아닙니다."));
         return;
     }
 
@@ -263,7 +264,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		TargetLandscapeAsset = TargetLandscape;
 		if (!TargetLandscape)
 		{
-			UE_LOG(LogTemp, Error, TEXT("Failed to spawn ALandscape actor."));
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to spawn ALandscape actor."));
 			return;
 		}
 		IsCreateNewLandscape = true;
@@ -317,7 +318,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	//
 	// if ((MapResolution.X - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapResolution.Y - 1) % (QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
 	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
+	// 	UE_LOG(LogOCGModule, Warning, TEXT("LandscapeSize is not a recommended value."));
 	// }
 
 	int32 PrevStaticLightingLOD = TargetLandscape->StaticLightingLOD;
@@ -548,7 +549,7 @@ void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(const UWorld* Wo
 	
 	if ((MapPreset->MapResolution.X - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0 || (MapPreset->MapResolution.Y - 1) % (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent) != 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("LandscapeSize is not a recommended value."));
+		UE_LOG(LogOCGModule, Warning, TEXT("LandscapeSize is not a recommended value."));
 	}
 
 	// LandscapeSetting.QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
@@ -998,7 +999,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::P
         else
         {
             LayerInfo.LayerName = TempLayerName;
-            UE_LOG(LogTemp, Warning, TEXT("Layer %d not found in Material Names, using default name: %s"), Index, *TempLayerName.ToString());
+            UE_LOG(LogOCGModule, Warning, TEXT("Layer %d not found in Material Names, using default name: %s"), Index, *TempLayerName.ToString());
         }
 
         ULandscapeLayerInfoObject* LayerInfoObject = nullptr;
@@ -1009,14 +1010,14 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::P
         
         if (LayerInfoObject == nullptr)
         {
-            UE_LOG(LogTemp, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
+            UE_LOG(LogOCGModule, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
             
             // LayerInfoSavePath는 멤버 변수로 가정합니다. 필요시 파라미터로 전달할 수 있습니다.
             LayerInfoObject = CreateLayerInfo(InTargetLandscape, LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
         }
         else
         {
-            UE_LOG(LogTemp, Log, TEXT("Found and reused existing LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
+            UE_LOG(LogOCGModule, Log, TEXT("Found and reused existing LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
         }
         
         if(LayerInfoObject)
@@ -1026,7 +1027,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> UOCGLandscapeGenerateComponent::P
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
+            UE_LOG(LogOCGModule, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
         }
     }
 
@@ -1044,7 +1045,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(ALand
 #if WITH_EDITOR
     if (!InLandscape)
     {
-        UE_LOG(LogTemp, Error, TEXT("TargetLandscape is null."));
+        UE_LOG(LogOCGModule, Error, TEXT("TargetLandscape is null."));
         return nullptr;
     }
 
@@ -1080,7 +1081,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     // 1. 경로 유효성 검사
     if (!InPackagePath.StartsWith(TEXT("/Game/")))
     {
-        UE_LOG(LogTemp, Error, TEXT("PackagePath must start with /Game/. Path was: %s"), *InPackagePath);
+        UE_LOG(LogOCGModule, Error, TEXT("PackagePath must start with /Game/. Path was: %s"), *InPackagePath);
         return nullptr;
     }
     
@@ -1089,7 +1090,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     const FString SanitizedAssetName = ObjectTools::SanitizeObjectName(InAssetName);
     if (SanitizedAssetName.IsEmpty())
     {
-        UE_LOG(LogTemp, Error, TEXT("Asset name '%s' became empty after sanitization."), *InAssetName);
+        UE_LOG(LogOCGModule, Error, TEXT("Asset name '%s' became empty after sanitization."), *InAssetName);
         return nullptr;
     }
 
@@ -1103,7 +1104,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     // 5. 애셋을 찾았다면, 즉시 반환합니다.
     if (FoundLayerInfo)
     {
-        UE_LOG(LogTemp, Log, TEXT("Found and reused existing LayerInfo: %s"), *ObjectPathToLoad);
+        UE_LOG(LogOCGModule, Log, TEXT("Found and reused existing LayerInfo: %s"), *ObjectPathToLoad);
         return FoundLayerInfo;
     }
 
@@ -1111,19 +1112,19 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
     // InPackagePath는 "/Game/MyFolder/MySubFolder" 형태일 것으로 예상됩니다.
     if (!FOCGFileUtils::EnsureContentDirectoryExists(FullPackageName))
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to ensure directory exists for package path: %s"), *InPackagePath);
+        UE_LOG(LogOCGModule, Error, TEXT("Failed to ensure directory exists for package path: %s"), *InPackagePath);
         return nullptr;
     }
 
     // 6. 애셋을 찾지 못했으므로, 새로 생성하는 로직을 실행합니다.
-    UE_LOG(LogTemp, Log, TEXT("LayerInfo not found at '%s'. Creating a new one."), *ObjectPathToLoad);
+    UE_LOG(LogOCGModule, Log, TEXT("LayerInfo not found at '%s'. Creating a new one."), *ObjectPathToLoad);
 
     const FName AssetFName(*SanitizedAssetName);
 
     UPackage* Package = CreatePackage(*FullPackageName);
     if (!Package)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create package: %s"), *FullPackageName);
+        UE_LOG(LogOCGModule, Error, TEXT("Failed to create package: %s"), *FullPackageName);
         return nullptr;
     }
     
@@ -1139,7 +1140,7 @@ ULandscapeLayerInfoObject* UOCGLandscapeGenerateComponent::CreateLayerInfo(const
 
     if (!NewLayerInfo)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create ULandscapeLayerInfoObject in package: %s"), *FullPackageName);
+        UE_LOG(LogOCGModule, Error, TEXT("Failed to create ULandscapeLayerInfoObject in package: %s"), *FullPackageName);
         return nullptr;
     }
     
@@ -1417,7 +1418,7 @@ FVector UOCGLandscapeGenerateComponent::GetLandscapePointWorldPosition(const FIn
 {
     if (!TargetLandscape || !GetLevelGenerator())
     {
-        UE_LOG(LogTemp , Error, TEXT("TargetLandscape or MapPreset is not set. Cannot get world position."));
+        UE_LOG(LogOCGModule , Error, TEXT("TargetLandscape or MapPreset is not set. Cannot get world position."));
         return FVector::ZeroVector;
     }
 
@@ -1458,15 +1459,15 @@ void UOCGLandscapeGenerateComponent::PostInitProperties()
 		DisplacementRVT = DisplacementRVTAsset.LoadSynchronous();
 		if (!ColorRVT)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load ColorRVT from %s"), *ColorRVTAsset.ToString());
+			UE_LOG(LogOCGModule, Warning, TEXT("Failed to load ColorRVT from %s"), *ColorRVTAsset.ToString());
 		}
 		if (!HeightRVT)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load HeightRVT from %s"), *HeightRVTAsset.ToString());
+			UE_LOG(LogOCGModule, Warning, TEXT("Failed to load HeightRVT from %s"), *HeightRVTAsset.ToString());
 		}
 		if (!DisplacementRVT)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to load DisplacementRVT from %s"), *DisplacementRVTAsset.ToString());
+			UE_LOG(LogOCGModule, Warning, TEXT("Failed to load DisplacementRVT from %s"), *DisplacementRVTAsset.ToString());
 		}
 	}
 }

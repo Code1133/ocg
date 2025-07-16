@@ -3,6 +3,7 @@
 #include "Editor/MapPresetFactory.h"
 
 #include "OCGDeveloperSettings.h"
+#include "OCGLog.h"
 #include "PCGGraph.h"
 #include "Data/MapPreset.h"
 
@@ -23,7 +24,7 @@ UObject* UMapPresetFactory::FactoryCreateNew(UClass* Class, UObject* InParent, F
 
 	if (!Settings)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Invalid OCGDeveloperSettings!"));
+		UE_LOG(LogOCGModule, Error, TEXT("UMapPreset::UMapPreset() Invalid OCGDeveloperSettings!"));
 		return NewPreset;		
 	}
 
@@ -36,7 +37,7 @@ UObject* UMapPresetFactory::FactoryCreateNew(UClass* Class, UObject* InParent, F
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Failed to load default landscape material!"));
+			UE_LOG(LogOCGModule, Error, TEXT("UMapPreset::UMapPreset() Failed to load default landscape material!"));
 		}
 	}
 
@@ -49,7 +50,7 @@ UObject* UMapPresetFactory::FactoryCreateNew(UClass* Class, UObject* InParent, F
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("UMapPreset::UMapPreset() Failed to load default PCG graph!"));
+			UE_LOG(LogOCGModule, Error, TEXT("UMapPreset::UMapPreset() Failed to load default PCG graph!"));
 		}
 	}
 

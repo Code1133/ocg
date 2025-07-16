@@ -3,6 +3,7 @@
 #include "Component/OCGMapGenerateComponent.h"
 
 #include "OCGLevelGenerator.h"
+#include "OCGLog.h"
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
@@ -1142,7 +1143,7 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
             const float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
             if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
-                UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
+                UE_LOG(LogOCGModule, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = &MapPreset->WaterBiome;
             uint32 CurrentBiomeIndex = INDEX_NONE;
@@ -1186,7 +1187,7 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
                 }
                 else
                 {
-                    UE_LOG(LogTemp, Display, TEXT("Current Biome index is invalid"));
+                    UE_LOG(LogOCGModule, Display, TEXT("Current Biome index is invalid"));
                 }
             }
         }
@@ -1216,7 +1217,7 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
             float NormalizedHumidity = static_cast<float>(InHumidityMap[y * CurResolution.X + x]) / 65535.f;
             const float Humidity = FMath::Lerp(CachedGlobalMinHumidity, CachedGlobalMaxHumidity, NormalizedHumidity);
             if (y == CurResolution.Y / 2 && x == CurResolution.X / 2)
-                UE_LOG(LogTemp, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
+                UE_LOG(LogOCGModule, Display, TEXT("Temp : %f, Humidity : %f"), Temp, Humidity);
             const FOCGBiomeSettings* CurrentBiome = nullptr;
             const FOCGBiomeSettings* WaterBiome = &MapPreset->WaterBiome;
             uint32 CurrentBiomeIndex = INDEX_NONE;
@@ -1260,7 +1261,7 @@ void UOCGMapGenerateComponent::FinalizeBiome(const UMapPreset* MapPreset, const 
                 }
                 else
                 {
-                    UE_LOG(LogTemp, Display, TEXT("Current Biome index is invalid"));
+                    UE_LOG(LogOCGModule, Display, TEXT("Current Biome index is invalid"));
                 }
             }
         }

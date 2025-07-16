@@ -3,6 +3,7 @@
 #include "Data/MapPreset.h"
 
 #include "OCGLevelGenerator.h"
+#include "OCGLog.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
 #include "Component/OCGRiverGeneratorComponent.h"
@@ -118,7 +119,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			if (Biomes.Num() > 7)
 			{
 				Biomes.SetNum(7);
-				UE_LOG(LogTemp, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 7);
+				UE_LOG(LogOCGModule, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 7);
 			}
 		}
 		else
@@ -126,7 +127,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			if (Biomes.Num() > 8)
 			{
 				Biomes.SetNum(8);
-				UE_LOG(LogTemp, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 8);
+				UE_LOG(LogOCGModule, Warning, TEXT("BioModulemes arrays are allowed up to %d. you have deleted excesses"), 8);
 			}
 		}
 	}

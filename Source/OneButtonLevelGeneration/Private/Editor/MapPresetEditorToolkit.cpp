@@ -5,6 +5,7 @@
 #include "FileHelpers.h"
 #include "Landscape.h"
 #include "OCGLevelGenerator.h"
+#include "OCGLog.h"
 #include "WaterBodyActor.h"
 #include "Data/MapPreset.h"
 #include "Editor/MapPresetApplicationMode.h"
@@ -404,7 +405,7 @@ void FMapPresetEditorToolkit::ExportPreviewSceneToLevel()
 {
 	if (!MapPresetEditorWorld)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Toolkit or its EditorWorld is null, cannot export."));
+		UE_LOG(LogOCGModule, Warning, TEXT("Toolkit or its EditorWorld is null, cannot export."));
 		return;
 	}
 	
