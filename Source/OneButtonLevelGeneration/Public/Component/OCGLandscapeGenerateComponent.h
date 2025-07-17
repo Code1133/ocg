@@ -28,6 +28,12 @@ struct FLandscapeSetting
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 WorldPartitionGridSize = 2;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
+	int32 WorldPartitionRegionSize = 16;
+	
+	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
 	uint32 QuadsPerSection = 0;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
@@ -51,7 +57,9 @@ struct FLandscapeSetting
 	// == 연산자 오버로드
 	bool operator==(FLandscapeSetting const& Other) const
 	{
-		return QuadsPerSection               == Other.QuadsPerSection
+		return WorldPartitionGridSize		 == Other.WorldPartitionGridSize
+			&& WorldPartitionRegionSize		 == Other.WorldPartitionRegionSize
+			&& QuadsPerSection               == Other.QuadsPerSection
 			&& TotalLandscapeComponentSize   == Other.TotalLandscapeComponentSize
 			&& ComponentCountX               == Other.ComponentCountX
 			&& ComponentCountY               == Other.ComponentCountY
@@ -96,12 +104,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Landscape", meta = (AllowPrivateAccess="true"))
 	TSoftObjectPtr<ALandscape> TargetLandscapeAsset;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
-	int32 WorldPartitionGridSize = 2;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,  Category = "Landscape",  meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64, AllowPrivateAccess="true"))
-	int32 WorldPartitionRegionSize = 16;
-
 private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
 	FLandscapeSetting LandscapeSetting;
@@ -120,46 +122,12 @@ public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscape(UWorld* World);
 private:
-	void ImportMapDatas(UWorld* World, TArray<FLandscapeImportLayerInfo> ImportLayers);
-
 	void InitializeLandscapeSetting(const UWorld* World);
-
-	static void AddTargetLayers(ALandscape* Landscape, const TMap<FGuid, TArray<FLandscapeImportLayerInfo>>& MaterialLayerDataPerLayers);
-
-	void ManageLandscapeRegions(UWorld* World, const ALandscape* Landscape);
-
-	static void AddLandscapeComponent(ULandscapeInfo* InLandscapeInfo, ULandscapeSubsystem* InLandscapeSubsystem, const TArray<FIntPoint>& InComponentCoordinates, TArray<ALandscapeProxy*>& OutCreatedStreamingProxies);
-
-	static ALocationVolume* CreateLandscapeRegionVolume(UWorld* InWorld, ALandscapeProxy* InParentLandscapeActor, const FIntPoint& InRegionCoordinate, double InRegionSize);
-
-	static void ForEachComponentByRegion(int32 RegionSize, const TArray<FIntPoint>& ComponentCoordinates, const TFunctionRef<bool(const FIntPoint&, const TArray<FIntPoint>&)>& RegionFn);
-
-	void ForEachRegion_LoadProcessUnload(ULandscapeInfo* InLandscapeInfo, const FIntRect& InDomain, const UWorld* InWorld, const TFunctionRef<bool(const FBox&, const TArray<ALandscapeProxy*>)>& InRegionFn);
-	
-	template<typename T>
-	void SaveObjects(TArrayView<T*> InObjects)
-	{
-		TArray<UPackage*> Packages;
-		Algo::Transform(InObjects, Packages, [](const UObject* InObject) { return InObject->GetPackage(); });
-		UEditorLoadingAndSavingUtils::SavePackages(Packages, /* bOnlyDirty = */ false);
-	}
-	
-	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset) const;
-
-	static ULandscapeLayerInfoObject* CreateLayerInfo(ALandscape* InLandscape, const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate = nullptr);
-
-	static ULandscapeLayerInfoObject* CreateLayerInfo(const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate = nullptr);
-
-	FString LayerInfoSavePath = TEXT("/Game/Landscape/LayerInfos");
 	
 	AOCGLevelGenerator* GetLevelGenerator() const;
 
 	bool CreateRuntimeVirtualTextureVolume(ALandscape* InLandscapeActor);
-
-	static bool ChangeGridSize(const UWorld* InWorld, ULandscapeInfo* InLandscapeInfo, uint32 InNewGridSizeInComponents);
-
-	static ALandscapeProxy* FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem, ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord);
-
+	
 	bool ShouldCreateNewLandscape(const UWorld* World);
 
 	static bool IsLandscapeSettingChanged(const FLandscapeSetting& Prev, const FLandscapeSetting& Curr);
