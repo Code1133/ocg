@@ -69,6 +69,29 @@ static void GetRuntimeVirtualTextureVolumes(ALandscape* InLandscapeActor, TArray
     }
 }
 
+static TArray<ALocationVolume*> GetLandscapeRegionVolumes(const ALandscape* InLandscape)
+{
+#if WITH_EDITOR
+	TArray<ALocationVolume*> LandscapeRegionVolumes;
+	TArray<AActor*> Children;
+	if (InLandscape)
+	{
+		InLandscape->GetAttachedActors(Children);
+	}
+
+	TArray<ALocationVolume*> LandscapeRegions;
+	for (AActor* Child : Children)
+	{
+		if (ALocationVolume* LandscapeRegion = Cast<ALocationVolume>(Child))
+		{
+			LandscapeRegionVolumes.Add(LandscapeRegion);
+		}
+	}
+
+	return LandscapeRegionVolumes;
+#endif
+}
+
 // Sets default values for this component's properties
 UOCGLandscapeGenerateComponent::UOCGLandscapeGenerateComponent()
 	: ColorRVTAsset(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color")))
@@ -166,6 +189,11 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		// 3. Landscape 삭제
 		if (TargetLandscape)
 		{
+			for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape))
+			{
+				Volume->Destroy();
+			}
+			
 			TargetLandscape->Destroy();
 		}
 
@@ -281,7 +309,8 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	}
 	else
 	{
-		OCGLandscapeUtil::UpdateTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		OCGLandscapeUtil::ClearTargetLayers(TargetLandscape);
+		OCGLandscapeUtil::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 		OCGLandscapeUtil::ImportMapDatas(World, TargetLandscape, LevelGenerator->GetHeightMapData(), *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
 	
@@ -295,22 +324,9 @@ void UOCGLandscapeGenerateComponent::InitializeLandscapeSetting(const UWorld* Wo
 #if WITH_EDITOR
     AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
     const UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
-    
-    bool bIsWorldPartition = false;
-    if (World && World->GetSubsystem<ULandscapeSubsystem>())
-    {
-        bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
-    }
-
+	
 	LandscapeSetting.WorldPartitionGridSize = MapPreset->WorldPartitionGridSize;
 	LandscapeSetting.WorldPartitionRegionSize = MapPreset->WorldPartitionRegionSize;
-	
-    bool bLandscapeLargerThanRegion = false;
-    if (MapPreset)
-    {
-        bLandscapeLargerThanRegion = static_cast<int32>(LandscapeSetting.WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.X || static_cast<int32>(LandscapeSetting.WorldPartitionRegionSize) < MapPreset->Landscape_ComponentCount.Y;
-    }
-    const bool bNeedsLandscapeRegions =  bIsWorldPartition && bLandscapeLargerThanRegion;
 
 	LandscapeSetting.QuadsPerSection = static_cast<uint32>(MapPreset->Landscape_QuadsPerSection);
 	LandscapeSetting.ComponentCountX = (MapPreset->MapResolution.X - 1) / (LandscapeSetting.QuadsPerSection * MapPreset->Landscape_SectionsPerComponent);

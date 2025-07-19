@@ -16,6 +16,7 @@
 #include "Data/MapPreset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Utils/OCGLandscapeUtil.h"
+#include "Utils/OCGMaterialEditTool.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
@@ -460,12 +461,23 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 	
 	if (TargetLandscape)
 	{
+		UMaterial* CurrentLandscapeMaterial = Cast<UMaterial>(GetLevelGenerator()->GetMapPreset()->LandscapeMaterial->Parent);
+
+		TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(CurrentLandscapeMaterial);
+
+		const ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
+		int32 LayerIndex = 0;
+		if (LandscapeInfo && !LayerNames.IsEmpty())
+		{
+			LayerIndex = LandscapeInfo->GetLayerInfoIndex(LayerNames[0]);
+		}
+		
 		if (!PrevWaterWeightMap.IsEmpty())
 		{
-			OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
+			OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, LayerIndex, PrevWaterWeightMap);
 		}
-		OCGLandscapeUtil::GetWeightMap(TargetLandscape, 0, PrevWaterWeightMap);
-		OCGLandscapeUtil::AddWeightMap(TargetLandscape, 0, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap);
+		OCGLandscapeUtil::GetWeightMap(TargetLandscape, LayerIndex, PrevWaterWeightMap);
+		OCGLandscapeUtil::AddWeightMap(TargetLandscape, LayerIndex, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap);
 	}
 }
 

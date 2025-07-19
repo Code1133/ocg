@@ -135,7 +135,7 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 			int32 NumPixels = RegionWidth * RegionHeight;
 
 			TArray<uint8> OriginWeightMap;
-			GetWeightMap(InLandscape, 0, OriginWeightMap);
+			GetWeightMap(InLandscape, InLayerIndex, OriginWeightMap);
 			
 			TArray<uint8> TargetWeightData;
 			TargetWeightData.AddZeroed(RegionWidth * RegionHeight);
@@ -320,15 +320,22 @@ void OCGLandscapeUtil::BlurWeightMap(const TArray<uint8>& InWeight, TArray<uint8
 void OCGLandscapeUtil::ClearTargetLayers(ALandscape* InLandscape)
 {
 	if (InLandscape == nullptr) return;
+	ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 
 	TArray<FName> LayerNames;
 	InLandscape->GetTargetLayers().GetKeys(LayerNames);
 	
 	for (const FName& LayerName : LayerNames)
 	{
-		InLandscape->RemoveTargetLayer(LayerName);
+		if (LandscapeInfo)
+		{
+			if (InLandscape->GetTargetLayers().Contains(LayerName))
+			{
+				LandscapeInfo->DeleteLayer(InLandscape->GetTargetLayers().FindRef(LayerName).LayerInfoObj, LayerName);
+			}
+		}
 	}
-
+	
 }
 
 void OCGLandscapeUtil::UpdateTargetLayers(ALandscape* InLandscape,
@@ -462,7 +469,7 @@ void OCGLandscapeUtil::ManageLandscapeRegions(UWorld* World, const ALandscape* L
 	}
      
     ULandscapeSubsystem* LandscapeSubsystem = World->GetSubsystem<ULandscapeSubsystem>();
-    OCGLandscapeUtil::ChangeGridSize(World, LandscapeInfo, InMapPreset->WorldPartitionGridSize);
+    ChangeGridSize(World, LandscapeInfo, InLandscapeSetting.WorldPartitionGridSize);
 	
     if (LandscapeInfo)
     {
@@ -484,12 +491,12 @@ void OCGLandscapeUtil::ManageLandscapeRegions(UWorld* World, const ALandscape* L
 	const bool bNeedsLandscapeRegions = bIsWorldPartition && bLandscapeLargerThanRegion;
 
     if (bNeedsLandscapeRegions)
-    {
+    {    	
     	TArray<FIntPoint> NewComponents;
-    	NewComponents.Empty(InLandscapeSetting.TotalLandscapeComponentSize.X * InLandscapeSetting.TotalLandscapeComponentSize.Y);
-    	for (int32 Y = 0; Y < InLandscapeSetting.TotalLandscapeComponentSize.Y; Y++)
+    	NewComponents.Empty(InLandscapeSetting.ComponentCountX * InLandscapeSetting.ComponentCountY);
+    	for (int32 Y = 0; Y < InLandscapeSetting.ComponentCountY; Y++)
     	{
-    		for (int32 X = 0; X < InLandscapeSetting.TotalLandscapeComponentSize.X; X++)
+    		for (int32 X = 0; X < InLandscapeSetting.ComponentCountX; X++)
     		{
     			NewComponents.Add(FIntPoint(X, Y));
     		}
@@ -505,27 +512,27 @@ void OCGLandscapeUtil::ManageLandscapeRegions(UWorld* World, const ALandscape* L
     		const int32 RegionSizeYTexels = InLandscapeSetting.QuadsPerSection * InMapPreset->WorldPartitionRegionSize * InMapPreset->Landscape_SectionsPerComponent;
 
     		const double RegionSizeX = RegionSizeXTexels * LandscapeProxy->GetActorScale3D().X;
-    		ALocationVolume* RegionVolume = OCGLandscapeUtil::CreateLandscapeRegionVolume(World, LandscapeProxy, RegionCoordinate, RegionSizeX);
+    		ALocationVolume* RegionVolume = CreateLandscapeRegionVolume(World, LandscapeProxy, RegionCoordinate, RegionSizeX);
     		if (RegionVolume)
     		{
     			RegionVolumes.Add(RegionVolume);
     		}
 		
     		TArray<ALandscapeProxy*> CreatedStreamingProxies;
-    		OCGLandscapeUtil::AddLandscapeComponent(LandscapeInfo, LandscapeSubsystem, NewComponents, CreatedStreamingProxies);
+    		AddLandscapeComponent(LandscapeInfo, LandscapeSubsystem, NewComponents, CreatedStreamingProxies);
 		
     		// ensures all the final height textures have been updated.
     		LandscapeInfo->ForceLayersFullUpdate();
 
-    		OCGLandscapeUtil::SaveLandscapeProxies(World, MakeArrayView(CreatedStreamingProxies)); 
+    		SaveLandscapeProxies(World, MakeArrayView(CreatedStreamingProxies)); 
     		LandscapeBounds += LandscapeInfo->GetCompleteBounds();
 			
     		return true;
     	};
 
-    	OCGLandscapeUtil::SaveObjects(MakeArrayView(MakeArrayView(TArrayView<ALandscape*>(TArray<ALandscape*> { LandscapeInfo->LandscapeActor.Get() }))));
+    	SaveObjects(MakeArrayView(MakeArrayView(TArrayView<ALandscape*>(TArray<ALandscape*> { LandscapeInfo->LandscapeActor.Get() }))));
 
-    	OCGLandscapeUtil::ForEachComponentByRegion(InMapPreset->WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
+    	ForEachComponentByRegion(InMapPreset->WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
     	
     	for (ALocationVolume* RegionVolume : RegionVolumes)
     	{
@@ -534,7 +541,7 @@ void OCGLandscapeUtil::ManageLandscapeRegions(UWorld* World, const ALandscape* L
     		RegionVolume->SetActorScale3D(NewScale);
     	}
     	
-    	OCGLandscapeUtil::SaveObjects(MakeArrayView(RegionVolumes));
+    	SaveObjects(MakeArrayView(RegionVolumes));
     	TArray<ALandscapeProxy*> AllProxies;
 		
     	// save the initial region & unload it
@@ -547,7 +554,7 @@ void OCGLandscapeUtil::ManageLandscapeRegions(UWorld* World, const ALandscape* L
 			return true;
 		});
 
-    	OCGLandscapeUtil::SaveLandscapeProxies(World, MakeArrayView(AllProxies));
+    	SaveLandscapeProxies(World, MakeArrayView(AllProxies));
     }
 #endif
 }
@@ -820,8 +827,7 @@ void OCGLandscapeUtil::AddLandscapeComponent(ULandscapeInfo* InLandscapeInfo, UL
 	{
 		NewComponents[Idx]->RegisterComponent();
 	}
-
-	const bool bHasXYOffset = false;
+	
 	ALandscape* Landscape = InLandscapeInfo->LandscapeActor.Get();
 
 	bool bHasLandscapeLayersContent = Landscape && Landscape->HasLayersContent();
@@ -858,7 +864,7 @@ void OCGLandscapeUtil::AddLandscapeComponent(ULandscapeInfo* InLandscapeInfo, UL
 		if (!bHasLandscapeLayersContent)
 		{
 			ULandscapeHeightfieldCollisionComponent* CollisionComp = NewComponent->GetCollisionComponent();
-			if (CollisionComp && !bHasXYOffset)
+			if (CollisionComp)
 			{
 				CollisionComp->MarkRenderStateDirty();
 				CollisionComp->RecreateCollision();
