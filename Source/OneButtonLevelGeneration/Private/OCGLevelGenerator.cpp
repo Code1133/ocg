@@ -74,9 +74,8 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 			const FText DialogText = FText::FromString(TEXT("Invalid Biome Name. Please set a valid name for each biome."));
 
 			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
 		}
-
-		return;
 	}
 
 	if (MapGenerateComponent)
