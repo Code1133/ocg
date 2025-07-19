@@ -23,6 +23,7 @@ private:
 	FReply OnCreateLevelGeneratorClicked();
 	FReply OnGenerateLevelClicked();
 	FReply OnCreateNewMapPresetClicked();
+	void OnMapChanged(uint32 _);
 
 	FString GetMapPresetPath() const;
 	void OnMapPresetChanged(const FAssetData& AssetData);

@@ -136,6 +136,11 @@ FReply SOCGWidget::OnCreateNewMapPresetClicked()
     return FReply::Handled();
 }
 
+void SOCGWidget::OnMapChanged(uint32 _)
+{
+    bLevelGeneratorExistsInLevel = false;
+}
+
 FString SOCGWidget::GetMapPresetPath() const
 {
     if (LevelGeneratorActor.IsValid() && LevelGeneratorActor->GetMapPreset())
@@ -263,6 +268,8 @@ void SOCGWidget::RegisterDelegates()
         OnLevelActorDeletedDelegateHandle = GEngine->OnLevelActorDeleted().AddRaw(this, &SOCGWidget::OnLevelActorDeleted);
     }
     USelection::SelectionChangedEvent.AddRaw(this, &SOCGWidget::OnActorSelectionChanged);
+    FEditorDelegates::MapChange.AddRaw(this, &SOCGWidget::OnMapChanged);
+
 }
 
 void SOCGWidget::UnregisterDelegates()
@@ -272,6 +279,7 @@ void SOCGWidget::UnregisterDelegates()
         GEngine->OnLevelActorDeleted().Remove(OnLevelActorDeletedDelegateHandle);
     }
     USelection::SelectionChangedEvent.RemoveAll(this);
+    FEditorDelegates::MapChange.RemoveAll(this);
 }
 
 void SOCGWidget::FindExistingLevelGenerator()
