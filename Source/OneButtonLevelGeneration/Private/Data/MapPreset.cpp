@@ -6,7 +6,9 @@
 #include "OCGLog.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
+#include "ToolContextInterfaces.h"
 #include "Component/OCGRiverGeneratorComponent.h"
+#include "Editor/SOCGWidget.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGUtils.h"
@@ -266,7 +268,36 @@ void UMapPreset::ForceGenerate() const
 
 void UMapPreset::RegenerateRiver()
 {
-	if (UWorld* World = GetWorld())
+#if WITH_EDITOR
+
+	UWorld* World = nullptr;
+	if (FSlateApplication::IsInitialized())
+	{
+		TSharedPtr<SWidget> FocusedWidget = FSlateApplication::Get().GetUserFocusedWidget(0);
+		if (FocusedWidget.IsValid())
+		{
+			TSharedPtr<SWidget> CurrentWidget = FocusedWidget;
+			bool bFoundOwner = false;
+
+			while (CurrentWidget.IsValid())
+			{
+				const FName WidgetType = CurrentWidget->GetType();
+
+				if (WidgetType == FName("SOCGWidget"))
+				{
+					UE_LOG(LogOCGModule, Log, TEXT("Regenerate River from SOCGWidget"));
+					bFoundOwner = true;
+					break; 
+				}
+
+				CurrentWidget = CurrentWidget->GetParentWidget();
+			}
+
+			World = bFoundOwner ? GEditor->GetEditorWorldContext().World() : GetWorld();
+		}
+	}
+	
+	if (World)
 	{
 		TArray<AOCGLevelGenerator*> Actors =
 			FOCGUtils::GetAllActorsOfClass<AOCGLevelGenerator>(World);
@@ -276,4 +307,5 @@ void UMapPreset::RegenerateRiver()
 			LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
 		}
 	}
+#endif
 }

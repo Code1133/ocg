@@ -127,9 +127,9 @@ FReply SOCGWidget::OnCreateNewMapPresetClicked()
 
     if (NewAsset && LevelGeneratorActor.IsValid())
     {
-        UMapPreset* MapPreset = Cast<UMapPreset>(NewAsset);
+        MapPreset = Cast<UMapPreset>(NewAsset);
         
-        LevelGeneratorActor->SetMapPreset(MapPreset);
+        LevelGeneratorActor->SetMapPreset(MapPreset.Get());
         RefreshDetailsView();
     }
     
@@ -235,8 +235,9 @@ void SOCGWidget::ShowMapPresetDetails()
         Args.bHideSelectionTip = true;
         MapPresetDetailsView = PropertyModule.CreateDetailView(Args);
     }
-    
-    MapPresetDetailsView->SetObject(LevelGeneratorActor->GetMapPreset());
+
+    MapPreset = LevelGeneratorActor->GetMapPreset();
+    MapPresetDetailsView->SetObject(MapPreset.Get());
     if (DetailsContainer.IsValid())
     {
         DetailsContainer->SetContent(MapPresetDetailsView.ToSharedRef());
@@ -339,4 +340,19 @@ FReply SOCGWidget::OnGeneratorButtonClicked()
 bool SOCGWidget::IsGeneratorButtonEnabled() const
 {
     return !LevelGeneratorActor.IsValid();
+}
+
+FReply SOCGWidget::OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent)
+{
+    SCompoundWidget::OnFocusReceived(MyGeometry, InFocusEvent);
+
+    if (GEditor)
+    {
+        if (MapPreset.IsValid())
+        {
+            MapPreset->LandscapeGenerator = LevelGeneratorActor.Get();
+        }
+    }
+    
+    return FReply::Handled();
 }

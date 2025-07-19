@@ -51,7 +51,10 @@ private:
 	FText GetGeneratorButtonText() const;
 	FReply OnGeneratorButtonClicked();
 	bool IsGeneratorButtonEnabled() const;
-	
+
+	virtual FReply OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent) override;
+
+	TWeakObjectPtr<class UMapPreset> MapPreset;
 	TWeakObjectPtr<AOCGLevelGenerator> LevelGeneratorActor;
 	TSharedPtr<IDetailsView> MapPresetDetailsView;
 	TSharedPtr<SBox> DetailsContainer;
