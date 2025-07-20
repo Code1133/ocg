@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "FileHelpers.h"
+#include "Landscape.h"
 #include "ActorPartition/ActorPartitionSubsystem.h"
 
 struct FLandscapeSetting;
@@ -50,7 +51,6 @@ public:
 	static void ImportMapDatas(UWorld* World, ALandscape* InLandscape, TArray<uint16> ImportHeightMap, TArray<FLandscapeImportLayerInfo> ImportLayers);
 
 	static TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset);
-
 private:
 	static FString LayerInfoSavePath;
 	

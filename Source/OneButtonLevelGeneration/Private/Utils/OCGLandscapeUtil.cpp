@@ -104,10 +104,17 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 		TArray<uint8> BlurredWeightMap;
 		BlurWeightMap(WeightMap, BlurredWeightMap, Width, Height);
 
+		FGuid CurrentLayerGuid = FGuid();
 #if ENGINE_MINOR_VERSION > 5
-		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->GetGuid();
+		}
 #else
-		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->Guid;
+		}
 #endif
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
@@ -176,10 +183,17 @@ void OCGLandscapeUtil::ApplyWeightMap(ALandscape* InLandscape, int32 InLayerInde
 	
 	if (InLandscape)
 	{
-#if ENGINE_MINOR_VERSION > 5
-		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+		FGuid CurrentLayerGuid = FGuid();
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 5
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->GetGuid();
+		}
 #else
-		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->Guid;
+		}
 #endif
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
@@ -217,10 +231,17 @@ void OCGLandscapeUtil::GetWeightMap(ALandscape* InLandscape, int32 InLayerIndex,
 #if	WITH_EDITOR
 	if (InLandscape)
 	{
+		FGuid CurrentLayerGuid = FGuid();
 #if ENGINE_MINOR_VERSION > 5
-		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->GetGuid();
+		}
 #else
-		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->Guid;
+		}
 #endif
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
@@ -579,10 +600,17 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 
 		FIntRect ImportRegion = LandscapeExtent;
 
+		FGuid CurrentLayerGuid = FGuid();
 #if ENGINE_MINOR_VERSION > 5
-		FGuid CurrentLayerGuid = InLandscape->GetEditLayerConst(0)->GetGuid();
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->GetGuid();
+		}
 #else
-		FGuid CurrentLayerGuid = InLandscape->GetLayerConst(0)->Guid;
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetLayerConst(FName(TEXT("Layer"))))
+		{
+			CurrentLayerGuid = BaseLayer->Guid;
+		}
 #endif
 
 		const ELandscapeLayerPaintingRestriction PaintRestriction = ELandscapeLayerPaintingRestriction::None;
