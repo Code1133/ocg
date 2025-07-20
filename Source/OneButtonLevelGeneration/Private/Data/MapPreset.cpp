@@ -93,22 +93,36 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		// Landscape resolution formula
 		// ComponentSize = QuadsPerSection * SectionsPerComponent
 		// TotalResolution = ComponentSize * ComponentCount + 1
-		int32 ComponentSize;
+		const int32 ComponentSize = static_cast<float>(Landscape_QuadsPerSection) * Landscape_SectionsPerComponent;
 		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, MapResolution))
 		{
-			ComponentSize = static_cast<float>(Landscape_QuadsPerSection) * Landscape_SectionsPerComponent;
-			FIntPoint ComponentCount;
-			ComponentCount.X = (MapResolution.X - 1) / ComponentSize;
-			ComponentCount.Y = (MapResolution.Y - 1) / ComponentSize;
-			Landscape_ComponentCount = ComponentCount;
+			// MapResolution이 변경되면 ComponentCount 재계산
+			if (ComponentSize > 0)
+			{
+				FIntPoint NewComponentCount;
+				NewComponentCount.X = (MapResolution.X - 1) / ComponentSize;
+				NewComponentCount.Y = (MapResolution.Y - 1) / ComponentSize;
+
+				if (Landscape_ComponentCount != NewComponentCount)
+				{
+					Landscape_ComponentCount = NewComponentCount;
+				}
+			}
 		}
 		else
 		{
-			ComponentSize = static_cast<float>(Landscape_QuadsPerSection) * Landscape_SectionsPerComponent;
-			FIntPoint NewMapResolution;
-			NewMapResolution.X = ComponentSize * Landscape_ComponentCount.X + 1;
-			NewMapResolution.Y = ComponentSize * Landscape_ComponentCount.Y + 1;
-			MapResolution = NewMapResolution;
+			// 나머지 값이 바뀌었을 경우 MapResolution 재계산
+			if (ComponentSize > 0)
+			{
+				FIntPoint NewMapResolution;
+				NewMapResolution.X = ComponentSize * Landscape_ComponentCount.X + 1;
+				NewMapResolution.Y = ComponentSize * Landscape_ComponentCount.Y + 1;
+
+				if (MapResolution != NewMapResolution)
+				{
+					MapResolution = NewMapResolution;
+				}
+			}
 		}
 	}
 	
