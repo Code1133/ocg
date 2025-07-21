@@ -25,6 +25,7 @@
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Factories/WorldFactory.h"
+#include "Utils/OCGLandscapeUtil.h"
 
 class ADirectionalLight;
 
@@ -44,7 +45,6 @@ void FMapPresetEditorToolkit::InitEditor(const EToolkitMode::Type Mode,
 	);
 
 	EditingPreset = MapPreset;
-	EditingPreset->EditorToolkit = SharedThis(this);
 	
 	MapPresetEditorWorld = CreateEditorWorld();
 
@@ -119,7 +119,6 @@ FMapPresetEditorToolkit::~FMapPresetEditorToolkit()
 {
 	if (EditingPreset.Get())
 	{
-		EditingPreset->EditorToolkit = nullptr;
 		EditingPreset = nullptr;
 	}
 
@@ -323,6 +322,23 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		]
 	];
 
+	CustomToolbarBox->AddSlot()
+	.AutoWidth()
+	.HAlign(HAlign_Right)
+	.Padding(2.0f)
+	[
+		SNew(SButton)
+		.ButtonStyle(GenerateButtonStyle)
+		.HAlign(HAlign_Center)
+		.OnClicked(FOnClicked::CreateSP(this, &FMapPresetEditorToolkit::OnRegenerateRiverClicked))
+		.ToolTipText(FMapPresetEditorCommands::Get().RegenerateRiverAction->GetDescription())
+		[
+			SNew(STextBlock)
+			.Text(FMapPresetEditorCommands::Get().RegenerateRiverAction->GetLabel())
+			.Justification(ETextJustify::Center)
+		]
+	];
+
 	ToolbarBuilder.AddWidget(CustomToolbarBox);
 }
 
@@ -359,6 +375,15 @@ FReply FMapPresetEditorToolkit::OnExportToLevelClicked()
 {
 	ExportPreviewSceneToLevel();
 	
+	return FReply::Handled();
+}
+
+FReply FMapPresetEditorToolkit::OnRegenerateRiverClicked()
+{
+	if (LevelGenerator.IsValid())
+	{
+		OCGLandscapeUtil::RegenerateRiver(MapPresetEditorWorld, LevelGenerator.Get());
+	}
 	return FReply::Handled();
 }
 

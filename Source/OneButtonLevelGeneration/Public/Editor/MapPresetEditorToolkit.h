@@ -70,7 +70,7 @@ private:
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
 	FReply OnGenerateClicked();
 	FReply OnExportToLevelClicked();
-	
+	FReply OnRegenerateRiverClicked();
 
 	UWorld* CreateEditorWorld();
 	void SetupDefaultActors();

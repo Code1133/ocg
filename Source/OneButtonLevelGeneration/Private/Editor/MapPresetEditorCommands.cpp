@@ -21,6 +21,9 @@ void FMapPresetEditorCommands::RegisterCommands()
 
 	UI_COMMAND(ExportToLevelAction, "Export to Level", "Export current preset to a new level.",
 		EUserInterfaceActionType::Button, FInputChord());
+
+	UI_COMMAND(RegenerateRiverAction, "Regenerate River", "Regenerate river at another location.",
+		EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

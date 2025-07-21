@@ -83,7 +83,7 @@ void UOCGMapGenerateComponent::GenerateMaps()
     //하이트맵 부드럽게 만들기
     SmoothHeightMap(MapPreset, HeightMapData);
     SlowTask.EnterProgressFrame(1.0f);
-    //수정된 하이트맵에 따라서 물 바이옴 다시 계산
+    //수정된 하이트맵에 따라서 바이옴 다시 계산
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
     SlowTask.EnterProgressFrame(1.0f);
     //침식 진행
@@ -506,6 +506,9 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
         return;
     TArray<float> MinHeights;
     TArray<float> BlurredMinHeights;
+
+    float HeightRange = MapPreset->MaxHeight - MapPreset->MinHeight;
+    
     //각 바이옴 구역의 최소 높이를 월드 기준 float로 반환
     CalculateBiomeMinHeights(InOutHeightMap, InBiomeMap, MinHeights, MapPreset);
     if (MapPreset->BiomeHeightBlendRadius > 0)
@@ -517,7 +520,7 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
         SeaLevel = MapPreset->SeaLevel;
     else
         SeaLevel = 0.f;
-    float SeaLevelHeightF = SeaLevel * (MapPreset->MaxHeight - MapPreset->MinHeight) + MapPreset->MinHeight;
+    float SeaLevelHeightF = SeaLevel * HeightRange + MapPreset->MinHeight;
     uint16 SeaLevelHeight = WorldHeightToHeightMap(SeaLevelHeightF);
     for (int32 y = 0; y<MapPreset->MapResolution.Y; y++)
     {
@@ -540,10 +543,12 @@ void UOCGMapGenerateComponent::ModifyLandscapeWithBiome(const UMapPreset* MapPre
             }
             uint16 BiomeMinHeight = WorldHeightToHeightMap(BlurredMinHeights[Index]);
             uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, BiomeMinHeight, (1.0f - MtoPRatio) * MapPreset->PlainSmoothFactor);
-            
+
+            float MaxAmplitude = (65535 - TargetPlainHeight) * LandscapeZScale / HeightRange / 128.f;
+            float Amplitude = MaxAmplitude * MapPreset->BiomeNoiseAmplitude;
             float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(x), static_cast<float>(y)) *
-                MapPreset->BiomeNoiseScale) * MapPreset->BiomeNoiseAmplitude + MapPreset->BiomeNoiseAmplitude;
-            float HeightToAdd = DetailNoise * (MapPreset->MaxHeight - MapPreset->MinHeight) * 128.f / LandscapeZScale;
+                MapPreset->BiomeNoiseScale) * Amplitude + Amplitude;
+            float HeightToAdd = DetailNoise * HeightRange * 128.f / LandscapeZScale;
             float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0, 65535);
 
             uint16 NewHeight = FMath::Lerp(TargetPlainHeight, MountainHeight, MtoPRatio);

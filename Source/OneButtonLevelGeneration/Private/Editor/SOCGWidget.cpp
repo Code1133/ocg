@@ -11,6 +11,7 @@
 #include "IDetailsView.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
+#include "Utils/OCGLandscapeUtil.h"
 #include "Utils/OCGUtils.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
@@ -42,6 +43,16 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             .Text(FText::FromString(TEXT("Generate")))
             .OnClicked(this, &SOCGWidget::OnGenerateLevelClicked)
             .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
+        ]
+
+        //Regenerate River Button
+        + SVerticalBox::Slot()
+        .AutoHeight().Padding(5)
+        [
+            SNew(SButton)
+            .Text(FText::FromString(TEXT("Regenerate River")))
+            .OnClicked(this, &SOCGWidget::OnRegenerateRiverClicked)
+            .IsEnabled(this, &SOCGWidget::IsRegenerateRiverButtonEnabled)
         ]
         
         // MapPreset Asset Selection and Creation UI
@@ -340,6 +351,24 @@ FReply SOCGWidget::OnGeneratorButtonClicked()
 bool SOCGWidget::IsGeneratorButtonEnabled() const
 {
     return !LevelGeneratorActor.IsValid();
+}
+
+FReply SOCGWidget::OnRegenerateRiverClicked()
+{
+    if (LevelGeneratorActor.IsValid())
+    {
+        OCGLandscapeUtil::RegenerateRiver(GEditor->GetEditorWorldContext().World(), LevelGeneratorActor.Get());
+    }
+    return FReply::Handled();
+}
+
+bool SOCGWidget::IsRegenerateRiverButtonEnabled() const
+{
+    if (!LevelGeneratorActor.IsValid())
+        return false;
+    if (LevelGeneratorActor->GetLandscape())
+        return true;
+    return false;
 }
 
 FReply SOCGWidget::OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent)

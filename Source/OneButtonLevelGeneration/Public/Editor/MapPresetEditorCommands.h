@@ -16,4 +16,5 @@ public:
 public:
 	TSharedPtr<FUICommandInfo> GenerateAction;
 	TSharedPtr<FUICommandInfo> ExportToLevelAction;
+	TSharedPtr<FUICommandInfo> RegenerateRiverAction;
 };

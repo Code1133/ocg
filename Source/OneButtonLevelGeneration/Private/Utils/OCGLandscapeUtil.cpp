@@ -7,6 +7,7 @@
 
 #include "OCGLevelGenerator.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
+#include "Component/OCGRiverGeneratorComponent.h"
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Utils/OCGMaterialEditTool.h"
@@ -1233,4 +1234,12 @@ FGuid OCGLandscapeUtil::GetLandscapeLayerGuid(const ALandscape* Landscape, FName
 	}
 #endif
 	return {};
+}
+
+void OCGLandscapeUtil::RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator)
+{
+#if WITH_EDITOR
+	if (World && LevelGenerator)
+		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
+#endif
 }

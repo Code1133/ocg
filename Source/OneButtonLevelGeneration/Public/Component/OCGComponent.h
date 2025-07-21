@@ -17,11 +17,4 @@ UOCGComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UOCGComponent();
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	TArray<FOCGBiomeSettings> Biomes; 
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
-	UMaterialInstance* LandscapeMaterialInstance = nullptr;
 };

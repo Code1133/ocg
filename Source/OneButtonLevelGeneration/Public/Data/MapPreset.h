@@ -474,10 +474,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings")
 	bool bGenerateRiver = false;
 
-	// Generates River.
-	UFUNCTION(CallInEditor, Category = "River Settings", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	void RegenerateRiver();
-
 	// Count of rivers to generate.
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
@@ -640,7 +636,5 @@ public:
 public:
 	UPROPERTY(Transient)
 	TWeakObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
-
-	TWeakPtr<class FMapPresetEditorToolkit> EditorToolkit;
 #endif
 };

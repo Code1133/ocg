@@ -52,6 +52,9 @@ private:
 	FReply OnGeneratorButtonClicked();
 	bool IsGeneratorButtonEnabled() const;
 
+	FReply OnRegenerateRiverClicked();
+	bool IsRegenerateRiverButtonEnabled() const;
+
 	virtual FReply OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent) override;
 
 	TWeakObjectPtr<class UMapPreset> MapPreset;
