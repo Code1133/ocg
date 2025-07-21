@@ -514,6 +514,13 @@ public:
 
 	// --- Advanced River Settings ---
 
+	// If this value is high, the river will be generated more downhill, if low, the river will be generated more uphill.
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
+		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
+	)
+	float UphillPenaltyMultiplier = 50.0f;
+
 	// Base of the river velocity. RiverVelocityCurve value will be normalized and multiplied by this value to get the final velocity of the river.
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
