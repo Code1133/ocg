@@ -10,6 +10,15 @@ class AOCGLevelGenerator;
 class UMapPreset;
 class AWaterBodyRiver;
 
+USTRUCT()
+struct FMaskedWeight
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<uint8> MaskedWeightMap;
+};
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ONEBUTTONLEVELGENERATION_API UOCGRiverGenerateComponent : public UActorComponent
@@ -67,6 +76,9 @@ private:
 
 	UPROPERTY()
 	TArray<uint8> PrevWaterWeightMap;
+
+	UPROPERTY()
+	TMap<FName, FMaskedWeight> PrevRiverMaskedWeight;
 
 	uint16 RiverHeightMapWidth;
 	uint16 RiverHeightMapHeight;

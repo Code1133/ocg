@@ -27,13 +27,25 @@ public:
 	~OCGLandscapeUtil();
 
 	static void ExtractHeightMap(ALandscape* InLandscape, const FGuid InGuid, int32& OutWidth, int32& OutHeight, TArray<uint16>& OutHeightMap);
-
-	static void AddWeightMap(ALandscape* InLandscape, int32 InLayerIndex, int32 Width, int32 Height, const TArray<uint16>& InHeightDiffMap);
-
-	static void ApplyWeightMap(ALandscape* InLandscape, int32 InLayerIndex, const TArray<uint8>& WeightMap);
 	
-	static void GetWeightMap(ALandscape* InLandscape, int32 InLayerIndex, TArray<uint8>& OutOriginWeightMap);
+	static void AddWeightMap(ALandscape* InLandscape, int32 InTargetLayerIndex, const TArray<uint8>& InWeightMap);
 
+	static void AddWeightMap(ALandscape* InLandscape, ULandscapeLayerInfoObject* InLayerInfo, const TArray<uint8>& InWeightMap);
+
+	static void ApplyWeightMap(ALandscape* InLandscape, int32 InTargetLayerIndex, const TArray<uint8>& InWeightMap);
+	
+	static void ApplyWeightMap(ALandscape* InLandscape, ULandscapeLayerInfoObject* InLayerInfo, const TArray<uint8>& InWeightMap);
+
+	static void ApplyMaskedWeightMap(ALandscape* InLandscape, ULandscapeLayerInfoObject* InLayerInfo, const TArray<uint8>& OriginWeightMap, const TArray<uint8>& InMaskedWeightMap);
+	
+	static void GetWeightMap(ALandscape* InLandscape, int32 InTargetLayerIndex, TArray<uint8>& OutOriginWeightMap);
+
+	static void GetWeightMap(ALandscape* InLandscape, ULandscapeLayerInfoObject* InLayerInfo, TArray<uint8>& OutOriginWeightMap);
+	
+	static void GetMaskedWeightMap(ALandscape* InLandscape, int32 InTargetLayerIndex, const TArray<uint8>& Mask, TArray<uint8>& OutWeightMap);
+
+	static void GetMaskedWeightMap(ALandscape* InLandscape, ULandscapeLayerInfoObject* InLayerInfo, const TArray<uint8>& Mask, TArray<uint8>& OutWeightMap);
+	
 	static void CleanUpWeightMap(ALandscape* InLandscape);
 
 	static void MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight);

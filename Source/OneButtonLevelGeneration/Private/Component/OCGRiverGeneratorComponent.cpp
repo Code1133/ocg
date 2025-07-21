@@ -60,6 +60,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	if (bForceCleanUpPrevWaterWeightMap)
 	{
 		PrevWaterWeightMap.Empty();
+		PrevRiverMaskedWeight.Empty();
 	}
 		
 	// Clear WaterBrushManager actors
@@ -149,42 +150,55 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 
 					FIntPoint Neighbor = FIntPoint(Current.X + dx, Current.Y + dy);
 					if (Neighbor.X < 0 || Neighbor.X >= MapResolution.X || Neighbor.Y < 0 || Neighbor.Y >= MapResolution.Y) continue;
-
-					// 1. 현재 노드와 이웃 노드의 높이 가져오기
-					const int32 CurrentIdx = Current.Y * MapResolution.X + Current.X;
-					const int32 NeighborIdx = Neighbor.Y * MapResolution.X + Neighbor.X;
-					const float CurrentHeight = static_cast<float>(HeightMapData[CurrentIdx]);
-					const float NeighborHeight = static_cast<float>(HeightMapData[NeighborIdx]);
-
-					// 2. 이동 비용 계산 (기본 거리 + 지형 페널티)
-					// 2-1. 기본 이동 거리 비용
-					float MovementCost = (dx != 0 && dy != 0) ? 1.414f : 1.0f;
-
-					// 2-2. 오르막길 페널티 추가 (핵심)
-					const float HeightDifference = NeighborHeight - CurrentHeight;
-					if (HeightDifference > 0)
+					
+					float NewCost = CostSoFar[Current] + 1; 
+            
+					if (!CostSoFar.Contains(Neighbor) || NewCost < CostSoFar[Neighbor])
 					{
-						// 이 값을 0으로 설정하면 페널티가 없어져야 정상입니다.
-						// 1.0 ~ 20.0 사이의 값으로 테스트 해보세요.
-						const float UphillPenaltyMultiplier = MapPreset->UphillPenaltyMultiplier;
-						MovementCost += HeightDifference * UphillPenaltyMultiplier;
-					}
-
-					// 3. 시작점부터 이웃 노드까지의 총 예상 비용(G) 계산
-					const float TentativeCostG = CostSoFar[Current] + MovementCost;
-
-					// 4. 이 경로가 기존에 발견된 경로보다 더 나은지 확인
-					if (!CostSoFar.Contains(Neighbor) || TentativeCostG < CostSoFar[Neighbor])
-					{
-						// 더 나은 경로이므로 정보 업데이트
+						CostSoFar.Add(Neighbor, NewCost);
+						int32 nIdx = Neighbor.Y * MapResolution.X + Neighbor.X;
+						float Heuristic = HeightMapData[nIdx] - SeaHeight; 
+						float NewPriority = NewCost + Heuristic;
+						//float NewPriority = HeightMapData[nIdx];
+						Frontier.Add({Neighbor, NewPriority});
 						CameFrom.Add(Neighbor, Current);
-						CostSoFar.Add(Neighbor, TentativeCostG);
-
-						// 5. 최종 우선순위(F = G + H) 계산 및 Frontier에 추가
-						const float HeuristicH = NeighborHeight - SeaHeight;
-						const float PriorityF = TentativeCostG + HeuristicH;
-						Frontier.Add({Neighbor, PriorityF});
 					}
+
+					// // 1. 현재 노드와 이웃 노드의 높이 가져오기
+					// const int32 CurrentIdx = Current.Y * MapResolution.X + Current.X;
+					// const int32 NeighborIdx = Neighbor.Y * MapResolution.X + Neighbor.X;
+					// const float CurrentHeight = static_cast<float>(HeightMapData[CurrentIdx]);
+					// const float NeighborHeight = static_cast<float>(HeightMapData[NeighborIdx]);
+					//
+					// // 2. 이동 비용 계산 (기본 거리 + 지형 페널티)
+					// // 2-1. 기본 이동 거리 비용
+					// float MovementCost = (dx != 0 && dy != 0) ? 1.414f : 1.0f;
+					//
+					// // 2-2. 오르막길 페널티 추가 (핵심)
+					// const float HeightDifference = NeighborHeight - CurrentHeight;
+					// if (HeightDifference > 0)
+					// {
+					// 	// 이 값을 0으로 설정하면 페널티가 없어져야 정상입니다.
+					// 	// 1.0 ~ 20.0 사이의 값으로 테스트 해보세요.
+					// 	const float UphillPenaltyMultiplier = MapPreset->UphillPenaltyMultiplier;
+					// 	MovementCost += HeightDifference * UphillPenaltyMultiplier;
+					// }
+					//
+					// // 3. 시작점부터 이웃 노드까지의 총 예상 비용(G) 계산
+					// const float TentativeCostG = CostSoFar[Current] + MovementCost;
+					//
+					// // 4. 이 경로가 기존에 발견된 경로보다 더 나은지 확인
+					// if (!CostSoFar.Contains(Neighbor) || TentativeCostG < CostSoFar[Neighbor])
+					// {
+					// 	// 더 나은 경로이므로 정보 업데이트
+					// 	CameFrom.Add(Neighbor, Current);
+					// 	CostSoFar.Add(Neighbor, TentativeCostG);
+					//
+					// 	// 5. 최종 우선순위(F = G + H) 계산 및 Frontier에 추가
+					// 	const float HeuristicH = NeighborHeight - SeaHeight;
+					// 	const float PriorityF = TentativeCostG + HeuristicH;
+					// 	Frontier.Add({Neighbor, PriorityF});
+					// }
 				}
 			}
 		}
@@ -407,32 +421,19 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 	
 	if (TargetLandscape)
 	{
-		ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
+		const ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
 		if (!Info) return;
+
+		FGuid CurrentLayerGuid = FGuid();
 #if ENGINE_MINOR_VERSION > 5
-		FName BaseEditLayerName = FName(TEXT("Layer"));
-		const ULandscapeEditLayerBase* BaseLayer = nullptr;
+		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
 		{
-			for (const ULandscapeEditLayerBase* Layer : TargetLandscape->GetEditLayersConst())
-			{
-				if (Layer->GetName() == BaseEditLayerName)
-				{
-					BaseLayer = Layer;
-					break;
-				}
-			}
+			CurrentLayerGuid = BaseLayer->GetGuid();
 		}
 #else
-		
-		FName BaseEditLayerName = FName(TEXT("Layer"));
-		const FLandscapeLayer* BaseLayer = nullptr;
-		for (const FLandscapeLayer& Layer : TargetLandscape->GetLayers())
+		if (const FLandscapeLayer* BaseLayer = TargetLandscape->GetLayerConst(FName(TEXT("Layer"))))
 		{
-			if (Layer.Name == BaseEditLayerName)
-			{
-				BaseLayer = &Layer;
-				break;
-			}
+			CurrentLayerGuid = BaseLayer->Guid;
 		}
 #endif
 		
@@ -441,11 +442,7 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
 
 		TArray<uint16> BaseLayerHeightData;
-#if ENGINE_MINOR_VERSION > 5
-		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->GetGuid(), SizeX, SizeY, BaseLayerHeightData);
-#else
-		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, BaseLayer->Guid, SizeX, SizeY, BaseLayerHeightData);
-#endif
+		OCGLandscapeUtil::ExtractHeightMap(TargetLandscape, CurrentLayerGuid, SizeX, SizeY, BaseLayerHeightData);
 
 		CachedRiverHeightMap.Empty();
 		CachedRiverHeightMap.AddZeroed(SizeX * SizeY);
@@ -464,7 +461,7 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		// 2. PNG로 익스포트
 		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
 
-		UMapPreset* CurMapPreset = GetLevelGenerator()->GetMapPreset();
+		const UMapPreset* CurMapPreset = GetLevelGenerator()->GetMapPreset();
 		
 		if (CurMapPreset && CurMapPreset->bExportMapTextures)
 		{
@@ -489,18 +486,50 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 		TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(CurrentLandscapeMaterial);
 
 		const ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
-		int32 LayerIndex = 0;
+		ULandscapeLayerInfoObject* FirstLayer = nullptr;
 		if (LandscapeInfo && !LayerNames.IsEmpty())
 		{
-			LayerIndex = LandscapeInfo->GetLayerInfoIndex(LayerNames[0]);
+			FirstLayer = LandscapeInfo->GetLayerInfoByName(LayerNames[0]);
 		}
 		
-		if (!PrevWaterWeightMap.IsEmpty())
+		if (!PrevRiverMaskedWeight.IsEmpty())
 		{
-			OCGLandscapeUtil::ApplyWeightMap(TargetLandscape, LayerIndex, PrevWaterWeightMap);
+			for (auto Item : PrevRiverMaskedWeight)
+			{
+				if (LandscapeInfo && !LayerNames.IsEmpty())
+				{
+					ULandscapeLayerInfoObject* LanyerInfo = LandscapeInfo->GetLayerInfoByName(Item.Key);
+					TArray<uint8> OriginWeightMap;
+					OCGLandscapeUtil::GetWeightMap(TargetLandscape, LanyerInfo, OriginWeightMap);
+					OCGLandscapeUtil::ApplyMaskedWeightMap(TargetLandscape, LanyerInfo, OriginWeightMap, Item.Value.MaskedWeightMap);
+				}
+			}
 		}
-		OCGLandscapeUtil::GetWeightMap(TargetLandscape, LayerIndex, PrevWaterWeightMap);
-		OCGLandscapeUtil::AddWeightMap(TargetLandscape, LayerIndex, RiverHeightMapWidth, RiverHeightMapHeight, CachedRiverHeightMap);
+		TArray<uint8> WeightMap;
+		OCGLandscapeUtil::MakeWeightMapFromHeightDiff(CachedRiverHeightMap, WeightMap);
+		TArray<uint8> BlurredWeightMap;
+		OCGLandscapeUtil::BlurWeightMap(WeightMap, BlurredWeightMap, RiverHeightMapWidth, RiverHeightMapHeight);
+
+		if (MapPreset->bExportMapTextures)
+		{
+			OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(RiverHeightMapWidth, RiverHeightMapHeight), TEXT("AddWeightMap.png"));
+			OCGMapDataUtils::ExportMap(BlurredWeightMap, FIntPoint(RiverHeightMapWidth, RiverHeightMapHeight), TEXT("BlurredWeightMap.png"));
+		}
+			
+		for (FLandscapeInfoLayerSettings Layer : LandscapeInfo->Layers)
+		{
+			FMaskedWeight MaskedWeight;
+			OCGLandscapeUtil::GetMaskedWeightMap(TargetLandscape, Layer.LayerInfoObj, BlurredWeightMap, MaskedWeight.MaskedWeightMap);
+			if (MapPreset->bExportMapTextures)
+			{
+				FString FileName = Layer.LayerName.ToString() + TEXT(".png");
+				OCGMapDataUtils::ExportMap(MaskedWeight.MaskedWeightMap, FIntPoint(RiverHeightMapWidth, RiverHeightMapHeight), FileName);	
+			}
+			
+			PrevRiverMaskedWeight.Add(Layer.LayerName, MaskedWeight);
+		}
+		
+		OCGLandscapeUtil::AddWeightMap(TargetLandscape, FirstLayer, BlurredWeightMap);
 	}
 }
 
