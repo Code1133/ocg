@@ -24,6 +24,9 @@ void FMapPresetEditorCommands::RegisterCommands()
 
 	UI_COMMAND(RegenerateRiverAction, "Regenerate River", "Regenerate river at another location.",
 		EUserInterfaceActionType::Button, FInputChord());
+
+	UI_COMMAND(ForceGeneratePCGAction, "Force Generate PCG", "Forces the regeneration of the PCG graph in the editor.",
+		EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

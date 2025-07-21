@@ -604,10 +604,6 @@ public:
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;
-
-	/** Forces the regeneration of the PCG graph in the editor. */
-	UFUNCTION(CallInEditor, Category = "PCG")
-	void ForceGenerate() const;
 	//~ End UPROPERTY PCG
 
 public:

@@ -323,6 +323,23 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 	];
 
 	CustomToolbarBox->AddSlot()
+		.AutoWidth()
+		.HAlign(HAlign_Right)
+		.Padding(2.0f)
+		[
+			SNew(SButton)
+			.ButtonStyle(GenerateButtonStyle)
+			.HAlign(HAlign_Center)
+			.OnClicked(FOnClicked::CreateSP(this, &FMapPresetEditorToolkit::OnForceGeneratePCGClicked))
+			.ToolTipText(FMapPresetEditorCommands::Get().ForceGeneratePCGAction->GetDescription())
+			[
+				SNew(STextBlock)
+				.Text(FMapPresetEditorCommands::Get().ForceGeneratePCGAction->GetLabel())
+				.Justification(ETextJustify::Center)
+			]
+		];
+	
+	CustomToolbarBox->AddSlot()
 	.AutoWidth()
 	.HAlign(HAlign_Right)
 	.Padding(2.0f)
@@ -382,7 +399,18 @@ FReply FMapPresetEditorToolkit::OnRegenerateRiverClicked()
 {
 	if (LevelGenerator.IsValid())
 	{
-		OCGLandscapeUtil::RegenerateRiver(MapPresetEditorWorld, LevelGenerator.Get());
+		if (LevelGenerator->GetLandscape())
+			OCGLandscapeUtil::RegenerateRiver(MapPresetEditorWorld, LevelGenerator.Get());
+	}
+	return FReply::Handled();
+}
+
+FReply FMapPresetEditorToolkit::OnForceGeneratePCGClicked()
+{
+	if (LevelGenerator.IsValid())
+	{    
+		if (LevelGenerator->GetLandscape())
+			OCGLandscapeUtil::ForceGeneratePCG(MapPresetEditorWorld);
 	}
 	return FReply::Handled();
 }

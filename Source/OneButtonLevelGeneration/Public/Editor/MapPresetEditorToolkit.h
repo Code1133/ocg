@@ -71,6 +71,7 @@ private:
 	FReply OnGenerateClicked();
 	FReply OnExportToLevelClicked();
 	FReply OnRegenerateRiverClicked();
+	FReply OnForceGeneratePCGClicked();
 
 	UWorld* CreateEditorWorld();
 	void SetupDefaultActors();

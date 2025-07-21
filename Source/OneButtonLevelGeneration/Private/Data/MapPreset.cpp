@@ -265,17 +265,3 @@ UWorld* UMapPreset::GetWorld() const
 	return nullptr;
 #endif
 }
-
-void UMapPreset::ForceGenerate() const
-{
-	if (UWorld* World = GetWorld())
-	{
-		const TArray<AOCGLandscapeVolume*> Actors =
-			FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
-
-		for (const AOCGLandscapeVolume* VolumeActor : Actors)
-		{
-			VolumeActor->GetPCGComponent()->Generate(true);
-		}
-	}
-}

@@ -6,11 +6,14 @@
 #include <OCGLog.h>
 
 #include "OCGLevelGenerator.h"
+#include "PCGComponent.h"
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "Component/OCGRiverGeneratorComponent.h"
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
+#include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGMaterialEditTool.h"
+#include "Utils/OCGUtils.h"
 
 #if WITH_EDITOR
 #include "Landscape.h"
@@ -1418,4 +1421,15 @@ void OCGLandscapeUtil::RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelG
 	if (World && LevelGenerator)
 		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
 #endif
+}
+
+void OCGLandscapeUtil::ForceGeneratePCG(UWorld* World)
+{
+	const TArray<AOCGLandscapeVolume*> Actors =
+				FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+
+	for (const AOCGLandscapeVolume* VolumeActor : Actors)
+	{
+		VolumeActor->GetPCGComponent()->Generate(true);
+	}
 }

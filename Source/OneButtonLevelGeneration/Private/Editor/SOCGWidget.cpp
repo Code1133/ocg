@@ -45,6 +45,16 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
         ]
 
+        //Force Generate PCG Button
+        + SVerticalBox::Slot()
+        .AutoHeight().Padding(5)
+        [
+            SNew(SButton)
+            .Text(FText::FromString(TEXT("Force Generate PCG")))
+            .OnClicked(this, &SOCGWidget::OnForceGeneratePCGClicked)
+            .IsEnabled(this, &SOCGWidget::IsForceGeneratePCGButtonEnabled)
+        ]
+
         //Regenerate River Button
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
@@ -363,6 +373,24 @@ FReply SOCGWidget::OnRegenerateRiverClicked()
 }
 
 bool SOCGWidget::IsRegenerateRiverButtonEnabled() const
+{
+    if (!LevelGeneratorActor.IsValid())
+        return false;
+    if (LevelGeneratorActor->GetLandscape())
+        return true;
+    return false;
+}
+
+FReply SOCGWidget::OnForceGeneratePCGClicked()
+{
+    if (LevelGeneratorActor->GetLandscape())
+    {
+        OCGLandscapeUtil::ForceGeneratePCG(GEditor->GetEditorWorldContext().World());
+    }
+    return FReply::Handled();
+}
+
+bool SOCGWidget::IsForceGeneratePCGButtonEnabled() const
 {
     if (!LevelGeneratorActor.IsValid())
         return false;
