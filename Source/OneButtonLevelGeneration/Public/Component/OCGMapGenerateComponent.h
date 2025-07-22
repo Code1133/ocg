@@ -75,6 +75,7 @@ private:
 public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateMaps();
+	void GenerateMapsWithHeightMap();
 
 private:
 	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
@@ -87,7 +88,7 @@ private:
 	float CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const;
 	void GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
 	void GenerateHumidityMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
-	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
+	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap, bool bExportMap = false);
 	void BlendBiome(const UMapPreset* MapPreset);
 	void ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const;
 	void ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap, const FString& FileName) const;

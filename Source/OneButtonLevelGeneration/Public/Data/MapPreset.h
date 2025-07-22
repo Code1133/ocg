@@ -114,6 +114,11 @@ public:
 	// The Material used for Landscape
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+
+	// You can use your own Height Map Texture to generate landscape. Texture resolution must be equal to Map Resolution.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (FilePathFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|16-bit RAW (*.r16;*.raw)|*.r16;*.raw"))
+	FFilePath HeightmapFilePath;
+	
 	//~ End UPROPERTY World Settings | Basics | Landscape Settings
 
 	//~ Begin UPROPERTY World Settings | Basics | Height

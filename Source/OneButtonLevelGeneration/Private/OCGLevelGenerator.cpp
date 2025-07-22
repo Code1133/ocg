@@ -15,7 +15,9 @@
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "Component/OCGRiverGeneratorComponent.h"
 #include "Component/OCGTerrainGenerateComponent.h"
+#include "Data/MapData.h"
 #include "Data/MapPreset.h"
+#include "Utils/OCGLandscapeUtil.h"
 
 AOCGLevelGenerator::AOCGLevelGenerator()
 {
@@ -78,9 +80,40 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 		}
 	}
 
+	bool bHasHeightMap = false;
+	if (!MapPreset->HeightmapFilePath.FilePath.IsEmpty())
+	{
+		FIntPoint TextureResolution;
+		if (OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, TextureResolution, MapPreset->HeightmapFilePath.FilePath))
+		{
+			bHasHeightMap = true;
+		}
+		else
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+		if (TextureResolution != MapPreset->MapResolution)
+		{
+			bHasHeightMap = false;
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Height Map resolution does not match map resolution."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+		
+	}
+
 	if (MapGenerateComponent)
 	{
-		MapGenerateComponent->GenerateMaps();
+		if (!bHasHeightMap)
+			MapGenerateComponent->GenerateMaps();
+		else
+			MapGenerateComponent->GenerateMapsWithHeightMap();
 	}
 
 	if (LandscapeGenerateComponent)

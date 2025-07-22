@@ -95,6 +95,43 @@ void UOCGMapGenerateComponent::GenerateMaps()
     SlowTask.EnterProgressFrame();
 }
 
+void UOCGMapGenerateComponent::GenerateMapsWithHeightMap()
+{
+    FScopedSlowTask SlowTask(6.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "GenerateMap", "Generating Maps"));
+    SlowTask.MakeDialog(); // 로딩 창 표시
+    
+    AOCGLevelGenerator* LevelGenerator = GetLevelGenerator();
+    if (!LevelGenerator || !LevelGenerator->GetMapPreset())
+        return;
+    
+    UMapPreset* MapPreset = LevelGenerator->GetMapPreset();
+    if (!MapPreset) return;
+
+    Initialize(MapPreset);
+
+    const FIntPoint CurMapResolution = MapPreset->MapResolution;
+
+    TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
+    TArray<uint16>& TemperatureMapData = MapPreset->TemperatureMapData;
+    TArray<uint16>& HumidityMapData = MapPreset->HumidityMapData;
+    
+    //온도 맵 생성
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Temperature Map")));
+    GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
+    //습도 맵 계산
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Humidity Map")));
+    GenerateHumidityMap(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData);
+    //높이, 온도, 습도 기반 바이옴 결정
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Biome Map")));
+    TArray<const FOCGBiomeSettings*> BiomeMap; 
+    DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap, true);
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Calculating max and min heights")));
+    GetMaxMinHeight(MapPreset, HeightMapData);
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Exporting Height Map as PNG")));
+    ExportMap(MapPreset, HeightMapData, "HeightMap.png");
+    SlowTask.EnterProgressFrame();
+}
+
 FIntPoint UOCGMapGenerateComponent::FixToNearestValidResolution(const FIntPoint InResolution)
 {
     auto Fix = [](int32 Value) {
@@ -1104,7 +1141,7 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
 }
 
 void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap,
-    const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap)
+    const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap, bool bExportMap)
 {
     float TotalWeight = 0.f;
     for (const auto Biome : MapPreset->Biomes)
@@ -1202,6 +1239,8 @@ void UOCGMapGenerateComponent::DecideBiome(const UMapPreset* MapPreset, const TA
             }
         }
     }
+    if (bExportMap)
+        ExportMap(MapPreset, BiomeColorMap, "BiomeMap1.png");
     BlendBiome(MapPreset);
 }
 

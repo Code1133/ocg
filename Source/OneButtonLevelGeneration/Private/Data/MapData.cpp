@@ -34,67 +34,77 @@ bool OCGMapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& 
 	return true;
 }
 
-bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FileName)
+bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FilePath)
 {
 #if WITH_EDITOR
-    const FString ContentDir = FPaths::ProjectContentDir();
-    const FString SubDir = TEXT("Maps/");
-    const FString FullPath = FPaths::Combine(ContentDir, SubDir, FileName);
-
-    if (!FPaths::FileExists(FullPath))
+    if (!FPaths::FileExists(FilePath))
     {
-        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FullPath);
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FilePath);
         return false;
     }
 
     // Load PNG file
     TArray<uint8> CompressedData;
-    if (!FFileHelper::LoadFileToArray(CompressedData, *FullPath))
+    if (!FFileHelper::LoadFileToArray(CompressedData, *FilePath))
     {
-        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to load file: %s"), *FullPath);
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to load file: %s"), *FilePath);
         return false;
     }
 
     // Create Image Wrapper
     IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-    TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
-
+	EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(CompressedData.GetData(), CompressedData.Num());
+	if (ImageFormat == EImageFormat::Invalid)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Unrecognized image format for file: %s"), *FilePath);
+		return false;
+	}
+	
+    TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
     if (!ImageWrapper.IsValid() || !ImageWrapper->SetCompressed(CompressedData.GetData(), CompressedData.Num()))
     {
-        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to decode PNG."));
+        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to decode Image."));
         return false;
     }
 
-    // Check if the image is 16-bit grayscale and extract raw data
-    if (ImageWrapper->GetBitDepth() != 16 || ImageWrapper->GetFormat() != ERGBFormat::Gray)
-    {
-        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: PNG format is not 16-bit grayscale."));
-        return false;
-    }
-
-    const int32 Width = ImageWrapper->GetWidth();
-    const int32 Height = ImageWrapper->GetHeight();
+	const int32 Width = ImageWrapper->GetWidth();
+	const int32 Height = ImageWrapper->GetHeight();
+	const int32 NumPixels = Width * Height;
+	OutMapData.SetNumUninitialized(NumPixels);
+	OutResolution = FIntPoint(Width, Height);
 
     TArray<uint8> RawData;
-    if (!ImageWrapper->GetRaw(ERGBFormat::Gray, 16, RawData))
-    {
-        UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to extract raw image data."));
-        return false;
-    }
+	if (ImageWrapper->GetBitDepth() == 16 && ImageWrapper->GetRaw(ERGBFormat::Gray, 16, RawData))
+	{
+		FMemory::Memcpy(OutMapData.GetData(), RawData.GetData(), RawData.Num());
+	}
+	else if (ImageWrapper->GetRaw(ERGBFormat::Gray, 8, RawData))
+	{
+		for (int32 i = 0; i < NumPixels; ++i)
+		{
+			const uint8 GrayValue = RawData[i];
+			OutMapData[i] = static_cast<uint16>((static_cast<float>(GrayValue) / 255.0f) * 65535.0f);
+		}
+	}
 
-    // Convert raw data to uint16 array
-    const int32 NumPixels = Width * Height;
-    OutMapData.SetNumUninitialized(NumPixels);
+	else if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, RawData))
+	{
+		const FColor* ColorData = reinterpret_cast<const FColor*>(RawData.GetData());
+		for (int32 i = 0; i < NumPixels; ++i)
+		{
+			const uint8 GrayValue = ColorData[i].R;
+			OutMapData[i] = static_cast<uint16>((static_cast<float>(GrayValue) / 255.0f) * 65535.0f);
+		}
+	}
+	else
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to decode image to a supported format (16-bit Gray, 8-bit Gray, or BGRA8)."));
+		return false;
+	}
+    
+	UE_LOG(LogOCGModule, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap from %s."), Width, Height, *FilePath);
 
-    const uint16* RawPtr = reinterpret_cast<const uint16*>(RawData.GetData());
-    FMemory::Memcpy(OutMapData.GetData(), RawPtr, NumPixels * sizeof(uint16));
-
-    UE_LOG(LogOCGModule, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap."), Width, Height);
-
-    // Save resolution if needed
-    OutResolution = FIntPoint(Width, Height);
-
-    return true;
+	return true;
 #else
     return false;
 #endif

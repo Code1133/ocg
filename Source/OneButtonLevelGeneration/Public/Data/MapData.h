@@ -24,7 +24,7 @@ namespace OCGMapDataUtils
 {
 	bool TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray);
 	
-	bool ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FileName);
+	bool ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FilePath);
 
 	UTexture2D* ImportTextureFromPNG(const FString& FileName);
 
