@@ -40,7 +40,7 @@ public:
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void ApplyWaterWeight();
 private:
-	void ExportWaterEditLayerHeightMap();
+	void ExportWaterEditLayerHeightMap(const uint16 MinDiffThreshold = 1);
 	
 	void ClearAllRivers();
 

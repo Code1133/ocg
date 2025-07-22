@@ -376,7 +376,7 @@ AOCGLevelGenerator* UOCGRiverGenerateComponent::GetLevelGenerator() const
 	return Cast<AOCGLevelGenerator>(GetOwner());
 }
 
-void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
+void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap(const uint16 MinDiffThreshold)
 {
 	if (TargetLandscape == nullptr)
 	{
@@ -413,12 +413,16 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 
 		RiverHeightMapWidth = SizeX;
 		RiverHeightMapHeight = SizeY;
+
+		const uint16*  BlendedData = BlendedHeightData.GetData();
+		uint16*        BaseData    = BaseLayerHeightData.GetData();
+		uint16*        CachedData  = CachedRiverHeightMap.GetData();
 		
 		if (BlendedHeightData.Num() == BaseLayerHeightData.Num() && BlendedHeightData.Num() == SizeY * SizeY)
 		{
 			for (int i = 0; i < BlendedHeightData.Num(); ++i)
 			{
-				CachedRiverHeightMap[i] = BlendedHeightData[i] - BaseLayerHeightData[i];
+				CachedData[i] = static_cast<uint16>((FMath::Abs(BaseData[i] - BlendedData[i]) > static_cast<uint16>(MinDiffThreshold)) * UINT16_MAX);
 			}
 		}
 		
@@ -429,14 +433,14 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap()
 		
 		if (CurMapPreset && CurMapPreset->bExportMapTextures)
 		{
-			OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap16.png"));
+			OCGMapDataUtils::ExportMap(CachedRiverHeightMap, Resolution, TEXT("WaterHeightMap.png"));
 		}
 	}
 }
 
 void UOCGRiverGenerateComponent::ApplyWaterWeight()
 {
-	ExportWaterEditLayerHeightMap();
+	ExportWaterEditLayerHeightMap(2);
 	
 	if (TargetLandscape == nullptr)
 	{
@@ -471,9 +475,10 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 		}
 		TArray<uint8> WeightMap;
 		OCGLandscapeUtil::MakeWeightMapFromHeightDiff(CachedRiverHeightMap, WeightMap);
+		
 		TArray<uint8> BlurredWeightMap;
 		OCGLandscapeUtil::BlurWeightMap(WeightMap, BlurredWeightMap, RiverHeightMapWidth, RiverHeightMapHeight);
-
+		
 		if (MapPreset->bExportMapTextures)
 		{
 			OCGMapDataUtils::ExportMap(WeightMap, FIntPoint(RiverHeightMapWidth, RiverHeightMapHeight), TEXT("AddWeightMap.png"));

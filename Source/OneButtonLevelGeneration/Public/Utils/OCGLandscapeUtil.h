@@ -48,7 +48,7 @@ public:
 	
 	static void CleanUpWeightMap(ALandscape* InLandscape);
 
-	static void MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight);
+	static void MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight, uint16 MinDiffThreshold = 0);
 
 	static void BlurWeightMap(const TArray<uint8>& InWeight, TArray<uint8>& OutWeight, int32 Width, int32 Height);
 

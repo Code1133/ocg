@@ -422,14 +422,10 @@ void OCGLandscapeUtil::CleanUpWeightMap(ALandscape* InLandscape)
 #endif
 }
 
-void OCGLandscapeUtil::MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight)
+void OCGLandscapeUtil::MakeWeightMapFromHeightDiff(const TArray<uint16>& HeightDiff, TArray<uint8>& OutWeight, const uint16 MinDiffThreshold)
 {
 #if WITH_EDITOR
 	const int32 Num       = HeightDiff.Num();
-	const int32 Threshold = 4096;  // 예: 이 값 이하일 땐 싱글스레드
-	const uint16 MinDiffThreshold = 1;   // 1 이하는 노이즈로 간주
-
-
 	OutWeight.SetNumUninitialized(Num);
 
 	const uint16* HeightData = HeightDiff.GetData();
