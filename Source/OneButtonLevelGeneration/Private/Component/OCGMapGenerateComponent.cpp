@@ -56,7 +56,6 @@ void UOCGMapGenerateComponent::GenerateMaps()
     if (!MapPreset) return;
 
     Initialize(MapPreset);
-    SlowTask.EnterProgressFrame(1.0f);
 
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
@@ -65,32 +64,33 @@ void UOCGMapGenerateComponent::GenerateMaps()
     TArray<uint16>& HumidityMapData = MapPreset->HumidityMapData;
     
     //Height Map 채우기
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Height Map")));
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
-    SlowTask.EnterProgressFrame(1.0f);
     //온도 맵 생성
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Temperature Map")));
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
-    SlowTask.EnterProgressFrame(1.0f);
     //습도 맵 계산
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Humidity Map")));
     GenerateHumidityMap(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData);
-    SlowTask.EnterProgressFrame(1.0f);
     //높이, 온도, 습도 기반 바이옴 결정
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Biome Map")));
     TArray<const FOCGBiomeSettings*> BiomeMap; 
     DecideBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
-    SlowTask.EnterProgressFrame(1.0f);
     //바이옴 별 특징 적용
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Modifying Heightmap with Biome")));
     ModifyLandscapeWithBiome(MapPreset, HeightMapData, BiomeMap);
-    SlowTask.EnterProgressFrame(1.0f);
     //하이트맵 부드럽게 만들기
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Smoothing Height Map")));
     SmoothHeightMap(MapPreset, HeightMapData);
-    SlowTask.EnterProgressFrame(1.0f);
     //수정된 하이트맵에 따라서 바이옴 다시 계산
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Finalizing Biome Map")));
     FinalizeBiome(MapPreset, HeightMapData, TemperatureMapData, HumidityMapData, BiomeMap);
-    SlowTask.EnterProgressFrame(1.0f);
     //침식 진행
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Working on Erosion")));
     ErosionPass(MapPreset, HeightMapData);
-    SlowTask.EnterProgressFrame(1.0f);
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Calculating max and min heights")));
     GetMaxMinHeight(MapPreset, HeightMapData);
-    SlowTask.EnterProgressFrame(1.0f);
+    SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Exporting Height Map as PNG")));
     ExportMap(MapPreset, HeightMapData, "HeightMap.png");
     SlowTask.EnterProgressFrame();
 }

@@ -7,6 +7,7 @@
 #include "PCGComponent.h"
 #include "PCGGraph.h"
 #include "ToolContextInterfaces.h"
+#include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGRiverGeneratorComponent.h"
 #include "Editor/SOCGWidget.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
@@ -264,4 +265,16 @@ UWorld* UMapPreset::GetWorld() const
 #else
 	return nullptr;
 #endif
+}
+
+void UMapPreset::PreviewMaps()
+{
+	bool bOriginalExportSetting = bExportMapTextures;
+	if (!bOriginalExportSetting)
+		bExportMapTextures = true;
+	if (LandscapeGenerator.IsValid())
+	{
+		LandscapeGenerator->GetMapGenerateComponent()->GenerateMaps();
+	}
+	bExportMapTextures = bOriginalExportSetting;
 }

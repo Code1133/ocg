@@ -611,6 +611,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
 
+	// Generate maps without generating landscape
+	UFUNCTION(CallInEditor, Category = "OCG")
+	void PreviewMaps();
+
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	bool bExportMapTextures = false;
