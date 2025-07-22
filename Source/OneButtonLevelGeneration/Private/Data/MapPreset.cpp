@@ -269,6 +269,28 @@ UWorld* UMapPreset::GetWorld() const
 
 void UMapPreset::PreviewMaps()
 {
+	if (Biomes.IsEmpty())
+	{
+		// Error message
+		const FText DialogTitle = FText::FromString(TEXT("Error"));
+		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
+
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+
+		return;
+	}
+	
+	for (const auto& Biome : Biomes)
+	{
+		if (Biome.BiomeName == NAME_None)
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Invalid Biome Name. Please set a valid name for each biome."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+	}
 	bool bOriginalExportSetting = bExportMapTextures;
 	if (!bOriginalExportSetting)
 		bExportMapTextures = true;
