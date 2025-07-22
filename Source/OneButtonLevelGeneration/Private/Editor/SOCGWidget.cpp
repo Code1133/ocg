@@ -44,6 +44,24 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             .OnClicked(this, &SOCGWidget::OnGenerateLevelClicked)
             .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
         ]
+        // Generate Level With Random Seed Button
+        + SVerticalBox::Slot()
+        .AutoHeight().Padding(5)
+        [
+            SNew(SButton)
+            .Text(FText::FromString(TEXT("Generate With Random Seed")))
+            .OnClicked_Lambda([this]()-> FReply
+            {
+                if (MapPreset.Get())
+                {
+                    const int32 Seed = FMath::Rand();
+                    UE_LOG(LogTemp, Display, TEXT("Seed: %i"), Seed);
+                    MapPreset->Seed = Seed;
+                }
+                return OnGenerateLevelClicked();
+            })
+            .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
+        ]
 
         //Force Generate PCG Button
         + SVerticalBox::Slot()
@@ -134,8 +152,6 @@ FReply SOCGWidget::OnGenerateLevelClicked()
 {
     if (LevelGeneratorActor.IsValid() && LevelGeneratorActor->GetMapPreset())
     {
-        // Assuming OnClickGenerate is a valid function in your AOCGLevelGenerator
-        
         LevelGeneratorActor->OnClickGenerate(GEditor->GetEditorWorldContext().World());
     }
     return FReply::Handled();
