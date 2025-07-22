@@ -16,7 +16,7 @@ void FOneButtonLevelGenerationStyle::Initialize()
 
         StyleSet->Set("ClassIcon.MapPreset", new FSlateImageBrush(ContentDir / TEXT("MapPreset128.png"), FVector2D(16,16)));
         StyleSet->Set("ClassThumbnail.MapPreset", new FSlateImageBrush(ContentDir / TEXT("MapPreset128.png"), FVector2D(64,64)));
-
+        StyleSet->Set("OneButtonLevelGeneration.TabIcon", new FSlateImageBrush(ContentDir / TEXT("MapPreset128.png"), FVector2D(16, 16)));
         FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
     }
 }

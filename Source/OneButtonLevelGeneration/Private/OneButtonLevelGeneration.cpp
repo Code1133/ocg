@@ -23,13 +23,14 @@ void FOneButtonLevelGenerationModule::StartupModule()
 
 	// Initialize the style for the module
 	FOneButtonLevelGenerationStyle::Initialize();
-
+	
 	UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FOneButtonLevelGenerationModule::RegisterMenus));
 	
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(OCGWindowTabName,
 		FOnSpawnTab::CreateRaw(this, &FOneButtonLevelGenerationModule::OnSpawnPluginTab))
 		.SetDisplayName(FText::FromString("OCG Window"))
-		.SetMenuType(ETabSpawnerMenuType::Hidden);
+		.SetMenuType(ETabSpawnerMenuType::Hidden)
+		.SetIcon(FSlateIcon("OneButtonLevelGenerationStyle", "OneButtonLevelGeneration.TabIcon"));
 }
 
 void FOneButtonLevelGenerationModule::ShutdownModule()
@@ -61,7 +62,7 @@ void FOneButtonLevelGenerationModule::RegisterMenus()
 	Section.AddMenuEntry("OCGWindowButton",
 		FText::FromString(TEXT("OCG Window")),
 		FText::FromString(TEXT("Open the OCG Level Generator window")),
-		FSlateIcon(),
+		FSlateIcon("OneButtonLevelGenerationStyle", "OneButtonLevelGeneration.TabIcon"),
 		FUIAction(FExecuteAction::CreateRaw(this, &FOneButtonLevelGenerationModule::OnPluginButtonClicked))
 	);
 }
