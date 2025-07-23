@@ -189,20 +189,21 @@ void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
 
 void UOCGMapGenerateComponent::InitializeNoiseOffsets(const UMapPreset* MapPreset)
 {
-    PlainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    PlainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    float StandardNoiseOffset = MapPreset->StandardNoiseOffset * NoiseScale;
+    PlainNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    PlainNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 
-    MountainNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    MountainNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    MountainNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    MountainNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
     
-    BlendNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    BlendNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    BlendNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    BlendNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 
-    DetailNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    DetailNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    DetailNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    DetailNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 
-    IslandNoiseOffset.X = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
-    IslandNoiseOffset.Y = Stream.FRandRange(-MapPreset->StandardNoiseOffset, MapPreset->StandardNoiseOffset);
+    IslandNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
+    IslandNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 }
 
 void UOCGMapGenerateComponent::GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap)
@@ -961,13 +962,7 @@ void UOCGMapGenerateComponent::GenerateTempMap(const UMapPreset* MapPreset, cons
             }
 
             float NormalizedBaseTemp = (BaseTemp - MapPreset->MinTemp) / TempRange;
-            //온도 차이 벌리기
-            //if (MapPreset->RedistributionFactor > 1.f && NormalizedBaseTemp > 0.f && NormalizedBaseTemp < 1.f)
-            //{
-            //    const float PowX = FMath::Pow(NormalizedBaseTemp, MapPreset->RedistributionFactor);
-            //    const float Pow1_X = FMath::Pow(1-NormalizedBaseTemp, MapPreset->RedistributionFactor);
-            //    NormalizedBaseTemp = PowX/(PowX + Pow1_X);
-            //}
+
             BaseTemp = MapPreset->MinTemp + NormalizedBaseTemp * TempRange;
             // ==========================================================
             //          3. 최종 온도 값 저장
@@ -1107,13 +1102,6 @@ void UOCGMapGenerateComponent::GenerateHumidityMap(const UMapPreset* MapPreset, 
         }
 
         FinalHumidity = FMath::Clamp(FinalHumidity, 0.0f, 1.0f);
-        //습도 차이 벌리기
-        //if (MapPreset->RedistributionFactor > 1.f && FinalHumidity > 0.f && FinalHumidity < 1.f)
-        //{
-        //    const float PowX = FMath::Pow(FinalHumidity, MapPreset->RedistributionFactor);
-        //    const float Pow1_X = FMath::Pow(1-FinalHumidity, MapPreset->RedistributionFactor);
-        //    FinalHumidity = PowX/(PowX + Pow1_X);
-        //}
         
         HumidityMapFloat[i] = FinalHumidity;
         

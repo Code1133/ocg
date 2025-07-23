@@ -491,7 +491,7 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 			OCGLandscapeUtil::GetMaskedWeightMap(TargetLandscape, Layer.LayerInfoObj, BlurredWeightMap, MaskedWeight.MaskedWeightMap);
 			if (MapPreset->bExportMapTextures)
 			{
-				FString FileName = Layer.LayerName.ToString() + TEXT(".png");
+				FString FileName = TEXT("River") + Layer.LayerName.ToString() + TEXT(".png");
 				OCGMapDataUtils::ExportMap(MaskedWeight.MaskedWeightMap, FIntPoint(RiverHeightMapWidth, RiverHeightMapHeight), FileName);	
 			}
 			
