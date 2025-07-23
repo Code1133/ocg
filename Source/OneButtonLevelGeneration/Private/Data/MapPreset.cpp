@@ -126,6 +126,8 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 				}
 			}
 		}
+
+		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
 	}
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HeightmapFilePath))
@@ -144,6 +146,14 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 				Landscape_ComponentCount = NewComponentCount;
 			}
 		}
+
+		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+	}
+
+	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
+	{
+		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		int i=0;
 	}
 	
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))

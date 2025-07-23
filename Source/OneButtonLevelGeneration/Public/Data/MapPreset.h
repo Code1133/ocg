@@ -64,11 +64,14 @@ public:
 	)
 	int32 WorldPartitionRegionSize = 16;
 
-	// Decides Landscape Size(Changes Landscape Actor Scale)
+	// Horizontal size of your Landscape (Changes Landscape Actor Scale)
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 0.1f)
+		meta = (ClampMin = 0.00001f)
 	)
+	float LandscapeSize = 1.009;
+
+	UPROPERTY()
 	float LandscapeScale = 1;
 
 	// If true changing LandscapeScale changes the terrain formation
