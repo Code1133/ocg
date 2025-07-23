@@ -202,10 +202,7 @@ struct FLandscapeHierarchyData
 	bool bShowDebugPoint = false;
 
 	/** Color used to visualize this layer during debugging. */
-	UPROPERTY(
-		EditAnywhere, BlueprintReadOnly, DisplayName = "Point Debug Color", Category = "OCG|Debug", AdvancedDisplay,
-		meta = (EditCondition = "bShowDebugPoint")
-	)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "Point Debug Color", Category = "OCG|Debug")
 	FLinearColor DebugColorLinear = FLinearColor::White;
 
 	FLandscapeHierarchyData()
