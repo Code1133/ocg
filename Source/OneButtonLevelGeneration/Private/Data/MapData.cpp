@@ -409,3 +409,44 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 	}
 #endif
 }
+
+bool OCGMapDataUtils::GetImageResolution(FIntPoint& OutResolution, const FString& FilePath)
+{
+#if WITH_EDITOR
+	if (!FPaths::FileExists(FilePath))
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FilePath);
+		return false;
+	}
+
+	// Load PNG file
+	TArray<uint8> CompressedData;
+	if (!FFileHelper::LoadFileToArray(CompressedData, *FilePath))
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to load file: %s"), *FilePath);
+		return false;
+	}
+
+	// Create Image Wrapper
+	IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	EImageFormat ImageFormat = ImageWrapperModule.DetectImageFormat(CompressedData.GetData(), CompressedData.Num());
+	if (ImageFormat == EImageFormat::Invalid)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Unrecognized image format for file: %s"), *FilePath);
+		return false;
+	}
+	
+	TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(ImageFormat);
+	if (!ImageWrapper.IsValid() || !ImageWrapper->SetCompressed(CompressedData.GetData(), CompressedData.Num()))
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: Failed to decode Image."));
+		return false;
+	}
+
+	const int32 Width = ImageWrapper->GetWidth();
+	const int32 Height = ImageWrapper->GetHeight();
+	OutResolution = FIntPoint(Width, Height);
+	return true;
+#endif
+	return false;
+}

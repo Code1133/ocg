@@ -9,6 +9,7 @@
 #include "ToolContextInterfaces.h"
 #include "Component/OCGMapGenerateComponent.h"
 #include "Component/OCGRiverGeneratorComponent.h"
+#include "Data/MapData.h"
 #include "Editor/SOCGWidget.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
@@ -123,6 +124,24 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 				{
 					MapResolution = NewMapResolution;
 				}
+			}
+		}
+	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HeightmapFilePath))
+	{
+		FIntPoint HeightmapResolution;
+		if (OCGMapDataUtils::GetImageResolution(HeightmapResolution, HeightmapFilePath.FilePath))
+		{
+			MapResolution = HeightmapResolution;
+			const int32 ComponentSize = static_cast<float>(Landscape_QuadsPerSection) * Landscape_SectionsPerComponent;
+			FIntPoint NewComponentCount;
+			NewComponentCount.X = (MapResolution.X - 1) / ComponentSize;
+			NewComponentCount.Y = (MapResolution.Y - 1) / ComponentSize;
+
+			if (Landscape_ComponentCount != NewComponentCount)
+			{
+				Landscape_ComponentCount = NewComponentCount;
 			}
 		}
 	}

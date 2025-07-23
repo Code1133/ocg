@@ -33,4 +33,6 @@ namespace OCGMapDataUtils
 	bool ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName);
 
 	bool ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName);
+
+	bool GetImageResolution(FIntPoint& OutResolution, const FString& FilePath);
 }
