@@ -52,6 +52,10 @@ public:
 	void AddWaterPlane(UWorld* InWorld);
 	void SetDefaultWaterProperties(class AWaterBody* InWaterBody);
 	
+	void DrawDebugLandscape(TArray<uint16>& HeightMapData);
+
+	void SetHasHeightMap(bool InHasHeightMap) {bHasHeightMap = InHasHeightMap;};
+	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMapPreset> MapPreset;
@@ -70,4 +74,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RiverGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGRiverGenerateComponent> RiverGenerateComponent;
+
+	UPROPERTY()
+	bool bHasHeightMap = false;
 };

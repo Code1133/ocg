@@ -80,34 +80,8 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 		}
 	}
 
-	bool bHasHeightMap = false;
-	if (!MapPreset->HeightmapFilePath.FilePath.IsEmpty())
-	{
-		FIntPoint TextureResolution;
-		if (OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, TextureResolution, MapPreset->HeightmapFilePath.FilePath))
-		{
-			bHasHeightMap = true;
-		}
-		else
-		{
-			const FText DialogTitle = FText::FromString(TEXT("Error"));
-			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
-
-			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-			return;
-		}
-		if (TextureResolution != MapPreset->MapResolution)
-		{
-			bHasHeightMap = false;
-			const FText DialogTitle = FText::FromString(TEXT("Error"));
-			const FText DialogText = FText::FromString(TEXT("Height Map resolution does not match map resolution."));
-
-			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-			return;
-		}
-		
-	}
-
+	FlushPersistentDebugLines(GetWorld());
+	
 	if (MapGenerateComponent)
 	{
 		if (!bHasHeightMap)
@@ -295,5 +269,46 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 	
 	InWaterBody->GetWaterBodyComponent()->UpdateAll(Params); 
 	InWaterBody->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
+}
+
+void AOCGLevelGenerator::DrawDebugLandscape(TArray<uint16>& HeightMapData)
+{
+	FlushPersistentDebugLines(GetWorld());
+	int32 Width = MapPreset->MapResolution.X;
+	int32 Height = MapPreset->MapResolution.Y;
+
+	const int32 Step = static_cast<int32>(MapPreset->Landscape_QuadsPerSection);
+	
+	const float ScaleXY = MapPreset->LandscapeScale * 100.f;
+	const float ScaleZ = (MapPreset->MaxHeight - MapPreset->MinHeight) * 0.001953125f;
+
+	float AbsMaxHeight = FMath::Abs(MapPreset->MaxHeight);
+	float AbsMinHeight = FMath::Abs(MapPreset->MinHeight);
+	float AbsOffset = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
+
+	float ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+
+	const FVector DebugLandscapeLocation = {(-Width / 2.f) * ScaleXY, (-Height / 2.f) * ScaleXY, ZOffset};
+
+	for (int32 y = 0; y < Height; y+=Step)
+	{
+		for (int32 x = 0; x < Width; x+=Step)
+		{
+			float CurrentZ = (HeightMapData[y * Width + x] - 32768.f) * ScaleZ / 128.f;
+			FVector CurrentPoint = FVector(x * ScaleXY, y * ScaleXY, CurrentZ) + DebugLandscapeLocation;
+			if (x + Step < Width)
+			{
+				float RightZ = (HeightMapData[y * Width + (x + Step)] - 32768.f) * ScaleZ / 128.f;
+				FVector RightPoint = FVector((x + Step) * ScaleXY, y * ScaleXY, RightZ) + DebugLandscapeLocation;
+				DrawDebugLine(GetWorld(), CurrentPoint, RightPoint, FColor::Green, true, -1, 0, ScaleXY);
+			}
+			if (y + Step < Height)
+			{
+				float DownZ = (HeightMapData[(y + Step) * Width + x] - 32768.f) * ScaleZ / 128.f;
+				FVector DownPoint = FVector(x * ScaleXY, (y + Step) * ScaleXY, DownZ) + DebugLandscapeLocation;
+				DrawDebugLine(GetWorld(), CurrentPoint, DownPoint, FColor::Green, true, -1, 0, ScaleXY);
+			}
+		}
+	}
 }
 

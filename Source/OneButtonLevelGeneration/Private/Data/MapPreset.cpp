@@ -6,11 +6,8 @@
 #include "OCGLog.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
-#include "ToolContextInterfaces.h"
 #include "Component/OCGMapGenerateComponent.h"
-#include "Component/OCGRiverGeneratorComponent.h"
 #include "Data/MapData.h"
-#include "Editor/SOCGWidget.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGUtils.h"
@@ -128,6 +125,8 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
+			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HeightmapFilePath))
@@ -145,15 +144,33 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			{
 				Landscape_ComponentCount = NewComponentCount;
 			}
+			if (LandscapeGenerator.IsValid() && OCGMapDataUtils::ImportMap(HeightMapData, MapResolution, HeightmapFilePath.FilePath))
+			{
+				LandscapeGenerator->SetHasHeightMap(true);
+			}
+			else
+			{
+				const FText DialogTitle = FText::FromString(TEXT("Error"));
+				const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
+
+				FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+				if (LandscapeGenerator.IsValid())
+					LandscapeGenerator->SetHasHeightMap(false);
+				return;
+			}
 		}
 
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+
+		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
+			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 
 	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
 	{
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
-		int i=0;
+		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
+			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 	
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
@@ -326,6 +343,7 @@ void UMapPreset::PreviewMaps()
 	if (LandscapeGenerator.IsValid())
 	{
 		LandscapeGenerator->GetMapGenerateComponent()->GenerateMaps();
+		LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 	bExportMapTextures = bOriginalExportSetting;
 }
