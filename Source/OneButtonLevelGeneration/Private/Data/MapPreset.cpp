@@ -131,6 +131,12 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HeightmapFilePath))
 	{
+		if (HeightmapFilePath.FilePath.IsEmpty())
+		{
+			if (LandscapeGenerator.IsValid())
+				LandscapeGenerator->SetHasHeightMap(false);
+			return;
+		}
 		FIntPoint HeightmapResolution;
 		if (OCGMapDataUtils::GetImageResolution(HeightmapResolution, HeightmapFilePath.FilePath))
 		{
@@ -159,6 +165,16 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 				return;
 			}
 		}
+		else
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			if (LandscapeGenerator.IsValid())
+				LandscapeGenerator->SetHasHeightMap(false);
+			return;
+		}
 
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
 
@@ -169,6 +185,12 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
 	{
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
+			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
+	}
+
+	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, MaxHeight) || PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, MinHeight))
+	{
 		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
 			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
