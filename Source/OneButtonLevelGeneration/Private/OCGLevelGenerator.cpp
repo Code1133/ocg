@@ -235,8 +235,11 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
 		}
 
-		FVector Extent = GetLandscape()->GetLoadedBounds().GetExtent();
-		WaterZone->SetZoneExtent(FVector2D(Extent.X * 2, Extent.Y * 2));
+		if (GetLandscape())
+		{
+			FVector Extent = GetLandscape()->GetLoadedBounds().GetExtent();
+			WaterZone->SetZoneExtent(FVector2D(Extent.X * 2, Extent.Y * 2));
+		}
 	}
 
 	AWaterBodyOcean* WaterBodyOcean = Cast<AWaterBodyOcean>(InWaterBody);
@@ -310,5 +313,10 @@ void AOCGLevelGenerator::DrawDebugLandscape(TArray<uint16>& HeightMapData)
 			}
 		}
 	}
+}
+
+void AOCGLevelGenerator::RegenerateOcean()
+{
+	AddWaterPlane(GetWorld());
 }
 

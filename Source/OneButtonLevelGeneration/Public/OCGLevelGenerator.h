@@ -55,6 +55,10 @@ public:
 	void DrawDebugLandscape(TArray<uint16>& HeightMapData);
 
 	void SetHasHeightMap(bool InHasHeightMap) {bHasHeightMap = InHasHeightMap;};
+
+public:
+	UFUNCTION(CallInEditor)
+	void RegenerateOcean();
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelGenerator", meta = (AllowPrivateAccess = "true"))

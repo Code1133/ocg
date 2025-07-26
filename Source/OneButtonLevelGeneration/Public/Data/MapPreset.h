@@ -328,23 +328,23 @@ public:
 	// --- Noise Settings ---
 	// Decides the difference between different noises (larger value gives more randomness)
 	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0")
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0")
 	)
 	float StandardNoiseOffset = 10000.f;
 
 	// Decides how much the noise is spread out
 	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0")
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "10.0")
 	)
 	float RedistributionFactor = 2.5f;
 
 	// Larger Octaves gives more detail to the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1", ClampMax = "10"))
 	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
 
 	// Larger Lancunarity gives more tight detail
 	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0")
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "5.0")
 	)
 	float Lacunarity = 2.0f; // 주파수 변화율 (클수록 더 작고 촘촘한 노이즈 추가)
 
@@ -363,14 +363,14 @@ public:
 	// More Iteration gives more erosion details
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "1")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "1", ClampMax = "1000000")
 	)
 	int32 NumErosionIterations = 100000;
 
 	// Decides the size of erosion
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "3")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "2",ClampMax = "8")
 	)
 	int32 ErosionRadius = 3;
 
@@ -384,14 +384,14 @@ public:
 	// Decides the capacity of sediment one droplet can have
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "100.0")
 	)
 	float SedimentCapacityFactor = 10.0f; // 흙 운반 용량 계수
 
 	// Decides the minimum capacity of sediment one droplet can have
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
 	)
 	float MinSedimentCapacity = 0.01f; // 최소 운반 용량
 
@@ -419,28 +419,28 @@ public:
 	// Decides the gravity effect on droplets
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "100.0")
 	)
 	float Gravity = 9.8f;
 
 	// Decides the maximum lifetime of droplets
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "512")
 	)
 	int32 MaxDropletLifetime = 50;
 
 	// Decides the initial water volume of droplets
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "10.0")
 	)
 	float InitialWaterVolume = 0.5f;
 
 	// Decides the initial speed of droplets
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0")
+		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "20.0")
 	)
 	float InitialSpeed = 2.0f;
 	//~ End UPROPERTY World Settings | Advanced | Erosion
