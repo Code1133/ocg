@@ -167,7 +167,10 @@ FVector AOCGLevelGenerator::GetVolumeOrigin() const
 void AOCGLevelGenerator::SetMapPreset(UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;
-	MapPreset->LandscapeGenerator = this;
+	if (MapPreset)
+	{
+		MapPreset->LandscapeGenerator = this;
+	}
 }
 
 void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
