@@ -40,7 +40,7 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
         .AutoHeight().Padding(5)
         [
             SNew(SButton)
-            .Text(FText::FromString(TEXT("PrevieMap")))
+            .Text(FText::FromString(TEXT("PreviewMap")))
             .OnClicked(this, &SOCGWidget::OnPreviewMapClicked)
             .IsEnabled(this, &SOCGWidget::IsPreviewMapEnabled)
         ]
