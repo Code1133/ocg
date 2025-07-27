@@ -21,6 +21,7 @@ public:
 private:
 	// Button click event handler
 	FReply OnCreateLevelGeneratorClicked();
+	FReply OnPreviewMapClicked();
 	FReply OnGenerateLevelClicked();
 	FReply OnCreateNewMapPresetClicked();
 	void OnMapChanged(uint32 _);
@@ -31,6 +32,7 @@ private:
 	void OnActorSelectionChanged(UObject* NewSelection);
 	void OnLevelActorDeleted(AActor* InActor);
 
+	bool IsPreviewMapEnabled() const;
 	bool IsGenerateEnabled() const;
 
 	void UpdateSelectedActor();

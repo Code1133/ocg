@@ -68,6 +68,7 @@ private:
 	
 private:
 	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
+	FReply OnPreviewMapClicked();
 	FReply OnGenerateClicked();
 	FReply OnExportToLevelClicked();
 	FReply OnRegenerateRiverClicked();

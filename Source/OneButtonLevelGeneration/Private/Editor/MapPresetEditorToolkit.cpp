@@ -286,6 +286,23 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 	[
 		SNew(SSpacer)
 	];
+
+	CustomToolbarBox->AddSlot()
+	.AutoWidth()
+	.HAlign(HAlign_Right)
+	.Padding(2.0f)
+	[
+		SNew(SButton)
+		.ButtonStyle(GenerateButtonStyle)
+		.HAlign(HAlign_Center)
+		.OnClicked(FOnClicked::CreateSP(this, &FMapPresetEditorToolkit::OnPreviewMapClicked))
+		.ToolTipText(FMapPresetEditorCommands::Get().PreviewMapAction->GetDescription())
+		[
+			SNew(STextBlock)
+			.Text(FMapPresetEditorCommands::Get().PreviewMapAction->GetLabel())
+			.Justification(ETextJustify::Center)
+		]
+	];
 	
 	// Create buttons for Generate and Export to Level actions
 	CustomToolbarBox->AddSlot()
@@ -357,6 +374,16 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 	];
 
 	ToolbarBuilder.AddWidget(CustomToolbarBox);
+}
+
+FReply FMapPresetEditorToolkit::OnPreviewMapClicked()
+{
+	if (EditingPreset.IsValid())
+	{
+		EditingPreset->PreviewMaps();
+	}
+	
+	return FReply::Handled();
 }
 
 FReply FMapPresetEditorToolkit::OnGenerateClicked()

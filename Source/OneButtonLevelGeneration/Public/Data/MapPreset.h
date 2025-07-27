@@ -613,7 +613,7 @@ public:
 	int32 Seed = 1337;
 
 	// Generate maps without generating landscape
-	UFUNCTION(CallInEditor, Category = "OCG")
+	UFUNCTION(Category = "OCG")
 	void PreviewMaps();
 
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder

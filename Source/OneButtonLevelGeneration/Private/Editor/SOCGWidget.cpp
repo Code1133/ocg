@@ -34,6 +34,16 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             .OnClicked(this, &SOCGWidget::OnGeneratorButtonClicked)
             .IsEnabled(this, &SOCGWidget::IsGeneratorButtonEnabled)
         ]
+
+        // Create LevelGenerator Button
+        + SVerticalBox::Slot()
+        .AutoHeight().Padding(5)
+        [
+            SNew(SButton)
+            .Text(FText::FromString(TEXT("PrevieMap")))
+            .OnClicked(this, &SOCGWidget::OnPreviewMapClicked)
+            .IsEnabled(this, &SOCGWidget::IsPreviewMapEnabled)
+        ]
         
         // Generate Level Button
         + SVerticalBox::Slot()
@@ -148,6 +158,15 @@ FReply SOCGWidget::OnCreateLevelGeneratorClicked()
     return FReply::Handled();
 }
 
+FReply SOCGWidget::OnPreviewMapClicked()
+{
+    if (MapPreset.IsValid())
+    {
+        MapPreset->PreviewMaps();
+    }
+    return FReply::Handled();
+}
+
 FReply SOCGWidget::OnGenerateLevelClicked()
 {
     if (LevelGeneratorActor.IsValid() && LevelGeneratorActor->GetMapPreset())
@@ -213,6 +232,11 @@ void SOCGWidget::OnLevelActorDeleted(AActor* InActor)
         ClearUI();
         CheckForExistingLevelGenerator();
     }
+}
+
+bool SOCGWidget::IsPreviewMapEnabled() const
+{
+    return MapPreset.IsValid();
 }
 
 bool SOCGWidget::IsGenerateEnabled() const

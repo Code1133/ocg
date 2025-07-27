@@ -14,6 +14,7 @@ public:
 	virtual void RegisterCommands() override;
 
 public:
+	TSharedPtr<FUICommandInfo> PreviewMapAction;
 	TSharedPtr<FUICommandInfo> GenerateAction;
 	TSharedPtr<FUICommandInfo> ExportToLevelAction;
 	TSharedPtr<FUICommandInfo> RegenerateRiverAction;
