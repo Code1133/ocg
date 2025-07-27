@@ -161,6 +161,10 @@ void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
 {
     Stream.Initialize(MapPreset->Seed);
 
+    NoiseScale = 1;
+    if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
+        NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
+    
     InitializeNoiseOffsets(MapPreset);
 
     if (MapPreset->bContainWater)
@@ -171,10 +175,10 @@ void UOCGMapGenerateComponent::Initialize(const UMapPreset* MapPreset)
     {
         PlainHeight = 0.f;
     }
-    
-    NoiseScale = 1;
-    if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
-        NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
+    //
+    // NoiseScale = 1;
+    // if (MapPreset->ApplyScaleToNoise && MapPreset->LandscapeScale > 1)
+    //     NoiseScale = FMath::LogX(50.f, MapPreset->LandscapeScale) + 1;
 
     LandscapeZScale = (MapPreset->MaxHeight - MapPreset->MinHeight) * 0.001953125f;
 
