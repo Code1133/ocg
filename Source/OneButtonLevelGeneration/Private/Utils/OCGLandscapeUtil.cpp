@@ -239,18 +239,7 @@ void OCGLandscapeUtil::ApplyMaskedWeightMap(ALandscape* InLandscape, ULandscapeL
 	
 	if (InLandscape)
 	{
-		FGuid CurrentLayerGuid = FGuid();
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 5
-		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
-		{
-			CurrentLayerGuid = BaseLayer->GetGuid();
-		}
-#else
-		if (const FLandscapeLayer* BaseLayer = InLandscape->GetLayerConst(FName(TEXT("Layer"))))
-		{
-			CurrentLayerGuid = BaseLayer->Guid;
-		}
-#endif
+		FGuid CurrentLayerGuid = GetLandscapeLayerGuid(InLandscape, FName(TEXT("Layer")));
 		
 		ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 		if (!LandscapeInfo) return;

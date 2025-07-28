@@ -388,18 +388,7 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap(const uint16 MinD
 		const ULandscapeInfo* Info = TargetLandscape->GetLandscapeInfo();
 		if (!Info) return;
 
-		FGuid CurrentLayerGuid = FGuid();
-#if ENGINE_MINOR_VERSION > 5
-		if (const FLandscapeLayer* BaseLayer = InLandscape->GetEditLayerConst(FName(TEXT("Layer"))))
-		{
-			CurrentLayerGuid = BaseLayer->GetGuid();
-		}
-#else
-		if (const FLandscapeLayer* BaseLayer = TargetLandscape->GetLayerConst(FName(TEXT("Layer"))))
-		{
-			CurrentLayerGuid = BaseLayer->Guid;
-		}
-#endif
+		FGuid CurrentLayerGuid = OCGLandscapeUtil::GetLandscapeLayerGuid(TargetLandscape, FName(TEXT("Layer")));
 		
 		TArray<uint16> BlendedHeightData;
 		int32 SizeX, SizeY;

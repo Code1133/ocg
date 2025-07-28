@@ -67,6 +67,8 @@ public:
 	static void RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator);
 
 	static void ForceGeneratePCG(UWorld* World);
+	
+	static FGuid GetLandscapeLayerGuid(const ALandscape* Landscape, FName LayerName);
 private:
 	static FString LayerInfoSavePath;
 
@@ -97,5 +99,4 @@ private:
 
 	static ULandscapeLayerInfoObject* CreateLayerInfo(const FString& InPackagePath, const FString& InAssetName, const ULandscapeLayerInfoObject* InTemplate = nullptr);
 
-	static FGuid GetLandscapeLayerGuid(const ALandscape* Landscape, FName LayerName);
 };
