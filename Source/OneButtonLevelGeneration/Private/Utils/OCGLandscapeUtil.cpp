@@ -508,8 +508,11 @@ void OCGLandscapeUtil::UpdateTargetLayers(ALandscape* InLandscape,
 		const FName LayerName = ImportInfo.LayerName;
 		if (!LayerInfoObj)
 		{
-			// TODO: CreateLayerInfo API 변경필요 (5.6에서 UE::Landscape::CreateTargetLayerInfo을 대신 사용)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 5
+			LayerInfoObj = UE::Landscape::CreateTargetLayerInfo(*LayerName.ToString(), UE::Landscape::GetSharedAssetsPath(InLandscape->GetLevel()));
+#else
 			LayerInfoObj = InLandscape->CreateLayerInfo(*LayerName.ToString(), DefaultLayerInfo);
+#endif
 			if (LayerInfoObj)
 			{
 				LayerInfoObj->LayerUsageDebugColor = LayerInfoObj->GenerateLayerUsageDebugColor();
@@ -551,6 +554,27 @@ void OCGLandscapeUtil::UpdateTargetLayers(ALandscape* InLandscape,
 			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings());
 		}
 	}
+
+	{
+		const FName LayerName = TEXT("ErasePCG_Layer");
+		ULandscapeLayerInfoObject* LayerInfoObject = OCGLandscapeUtil::CreateLayerInfo(OCGLandscapeUtil::LayerInfoSavePath, LayerName.ToString(), DefaultLayerInfo);
+		if (LayerInfoObject)
+		{
+			LayerInfoObject->bNoWeightBlend = true;
+			(void)LayerInfoObject->MarkPackageDirty();
+			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObject));
+			if (LandscapeInfo)
+			{
+				const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+				if (Index != INDEX_NONE)
+				{
+					FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+					LayerSettings.LayerInfoObj = LayerInfoObject;
+				}
+			}
+		}
+	}
+	
 #endif
 }
 
@@ -576,8 +600,11 @@ void OCGLandscapeUtil::AddTargetLayers(ALandscape* InLandscape,
 		const FName LayerName = ImportInfo.LayerName;
 		if (!LayerInfoObj)
 		{
-			// TODO: CreateLayerInfo API 변경필요 (5.6에서 UE::Landscape::CreateTargetLayerInfo을 대신 사용)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION > 5
+			LayerInfoObj = UE::Landscape::CreateTargetLayerInfo(*LayerName.ToString(), UE::Landscape::GetSharedAssetsPath(InLandscape->GetLevel()));
+#else
 			LayerInfoObj = InLandscape->CreateLayerInfo(*LayerName.ToString(), DefaultLayerInfo);
+#endif
 			if (LayerInfoObj)
 			{
 				LayerInfoObj->LayerUsageDebugColor = LayerInfoObj->GenerateLayerUsageDebugColor();
@@ -602,6 +629,26 @@ void OCGLandscapeUtil::AddTargetLayers(ALandscape* InLandscape,
 		{
 			// Add a target layer with no layer info asset
 			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings());
+		}
+	}
+
+	{
+		const FName LayerName = TEXT("ErasePCG_Layer");
+		ULandscapeLayerInfoObject* LayerInfoObject = OCGLandscapeUtil::CreateLayerInfo(OCGLandscapeUtil::LayerInfoSavePath, LayerName.ToString(), DefaultLayerInfo);
+		if (LayerInfoObject)
+		{
+			LayerInfoObject->bNoWeightBlend = true;
+			(void)LayerInfoObject->MarkPackageDirty();
+			InLandscape->AddTargetLayer(LayerName, FLandscapeTargetLayerSettings(LayerInfoObject));
+			if (LandscapeInfo)
+			{
+				const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerName);
+				if (Index != INDEX_NONE)
+				{
+					FLandscapeInfoLayerSettings& LayerSettings = LandscapeInfo->Layers[Index];
+					LayerSettings.LayerInfoObj = LayerInfoObject;
+				}
+			}
 		}
 	}
 #endif
