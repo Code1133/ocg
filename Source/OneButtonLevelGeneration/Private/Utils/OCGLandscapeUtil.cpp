@@ -713,20 +713,20 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 	#if WITH_EDITOR
 	if (World == nullptr)
 		return;
-
+	
 	if (InLandscape == nullptr)
 		return;
-
+	
 	if (ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo())
 	{
 		FIntRect LandscapeExtent;
 		LandscapeInfo->GetLandscapeExtent(LandscapeExtent);
-
+	
 		LandscapeExtent.Max.X += 1;
 		LandscapeExtent.Max.Y += 1;
-
+	
 		FIntRect ImportRegion = LandscapeExtent;
-
+	
 		FGuid CurrentLayerGuid = GetLandscapeLayerGuid(InLandscape, TEXT("Layer"));
 		constexpr ELandscapeLayerPaintingRestriction PaintRestriction = ELandscapeLayerPaintingRestriction::None;
 		const bool bIsWorldPartition = World->GetSubsystem<ULandscapeSubsystem>()->IsGridBased();
@@ -742,19 +742,19 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 					LandscapeRegions.Add(Cast<ALocationVolume>(Child));
 				}
 			}
-
+	
 			int32 NumRegions = LandscapeRegions.Num();
-
+	
 			FScopedSlowTask Progress(static_cast<float>(NumRegions), NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "Importing Landscape Regions", "Importing Landscape Regions"));
 			Progress.MakeDialog(/*bShowCancelButton = */ false);
-
+	
 			auto RegionImporter = [&ImportHeightMap, &ImportLayers, &Progress, LandscapeInfo, CurrentLayerGuid, PaintRestriction](const FBox& RegionBounds, const TArray<ALandscapeProxy*>& Proxies)
 			{
 				FIntRect LandscapeLoadedExtent;
 				LandscapeInfo->GetLandscapeExtent(LandscapeLoadedExtent);
 				LandscapeLoadedExtent.Max.X += 1;
 				LandscapeLoadedExtent.Max.Y += 1;
-
+	
 				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "Importing Landscape Regions", "Importing Landscape Regions"));
 				{
 					ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
@@ -762,7 +762,7 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 					FHeightmapAccessor<false> HeightmapAccessor(LandscapeInfo);
 					HeightmapAccessor.SetData(LandscapeLoadedExtent.Min.X, LandscapeLoadedExtent.Min.Y, LandscapeLoadedExtent.Max.X - 1, LandscapeLoadedExtent.Max.Y - 1, ImportHeightMap.GetData());
 				}
-
+	
 				for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
 				{
 					ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
@@ -770,17 +770,17 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 					FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
 					AlphamapAccessor.SetData(LandscapeLoadedExtent.Min.X, LandscapeLoadedExtent.Min.Y, LandscapeLoadedExtent.Max.X - 1, LandscapeLoadedExtent.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
 				}
-
+	
 				return !Progress.ShouldCancel();
 			};
-
+	
 			ForEachRegion_LoadProcessUnload(LandscapeInfo, ImportRegion, World, RegionImporter);
 		}
 		else
 		{
 			FScopedSlowTask Progress(static_cast<float>(1 + ImportLayers.Num()), NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscape", "Importing Landscape"));
 			Progress.MakeDialog(/*bShowCancelButton = */ false);
-
+	
 			{
 				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeHeight", "Importing Landscape Height"));
 				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
@@ -788,21 +788,21 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 				FHeightmapAccessor<false> HeightmapAccessor(LandscapeInfo);
 				HeightmapAccessor.SetData(ImportRegion.Min.X, ImportRegion.Min.Y, ImportRegion.Max.X - 1, ImportRegion.Max.Y - 1, ImportHeightMap.GetData());
 			}
-
+	
 			for (const FLandscapeImportLayerInfo& ImportLayer : ImportLayers)
 			{
 				Progress.EnterProgressFrame(1.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ImportingLandscapeWeight", "Importing Landscape Weight"));
-
+	
 				ALandscape* Landscape = LandscapeInfo->LandscapeActor.Get();
 				FScopedSetLandscapeEditingLayer Scope(Landscape, CurrentLayerGuid, [&] { check(Landscape); Landscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Weightmap_All); });
 				FAlphamapAccessor<false, false> AlphamapAccessor(LandscapeInfo, ImportLayer.LayerInfo);
 				AlphamapAccessor.SetData(ImportRegion.Min.X, ImportRegion.Min.Y, ImportRegion.Max.X - 1, ImportRegion.Max.Y - 1, ImportLayer.LayerData.GetData(), PaintRestriction);
 			}
-
+	
 			LandscapeInfo->ForceLayersFullUpdate();
 		}
 	}
-#endif
+	#endif
 }
 
 bool OCGLandscapeUtil::ChangeGridSize(const UWorld* InWorld, ULandscapeInfo* InLandscapeInfo,

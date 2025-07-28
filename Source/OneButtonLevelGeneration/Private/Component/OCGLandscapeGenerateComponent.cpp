@@ -214,6 +214,65 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		}
 		IsCreateNewLandscape = true;
 	}
+	else
+	{
+		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
+		FIntRect LandscapeExtent;
+		LandscapeInfo->GetLandscapeExtent(LandscapeExtent);
+	
+		LandscapeExtent.Max.X += 1;
+		LandscapeExtent.Max.Y += 1;
+		int32 LandscapeResolution = LandscapeExtent.Max.X * LandscapeExtent.Max.Y;
+		if (LandscapeResolution != MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
+		{
+			TArray<ALandscapeStreamingProxy*> ProxiesToDelete;
+			for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
+			{
+				ALandscapeStreamingProxy* Proxy = *It;
+				if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape)
+				{ 
+					ProxiesToDelete.Add(Proxy);
+				}
+			}
+
+			// 2. Proxy 삭제
+			for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
+			{
+				if (Proxy)
+				{
+					Proxy->Destroy();
+				}
+			}
+
+			// 3. Landscape 삭제
+			if (TargetLandscape)
+			{
+				for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape))
+				{
+					Volume->Destroy();
+				}
+			
+				TargetLandscape->Destroy();
+			}
+
+			Modify();
+			if (AActor* Owner = GetOwner())
+			{
+				Owner->Modify();
+				(void)Owner->MarkPackageDirty();
+			}
+			
+			TargetLandscape = World->SpawnActor<ALandscape>();
+			TargetLandscape->Modify();
+			TargetLandscapeAsset = TargetLandscape;
+			if (!TargetLandscape)
+			{
+				UE_LOG(LogOCGModule, Error, TEXT("Failed to spawn ALandscape actor."));
+				return;
+			}
+			IsCreateNewLandscape = true;
+		}
+	}
 	
     TargetLandscape->bCanHaveLayersContent = true;
 	if (TargetLandscape->LandscapeMaterial != MapPreset->LandscapeMaterial)
