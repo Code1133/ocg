@@ -100,6 +100,8 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 	{
 		TerrainGenerateComponent->GenerateTerrain(InWorld);
 	}
+	
+	AddWaterPlane(InWorld);
 
 	if (RiverGenerateComponent && MapGenerateComponent && LandscapeGenerateComponent && MapPreset)
 	{
@@ -112,8 +114,6 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
 	}
-	
-	AddWaterPlane(InWorld);
 }
 
 const TArray<uint16>& AOCGLevelGenerator::GetHeightMapData() const
