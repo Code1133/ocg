@@ -71,7 +71,14 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
                 }
                 return OnGenerateLevelClicked();
             })
-            .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
+            .IsEnabled_Lambda([this]()-> bool
+            {
+                if (MapPreset.Get())
+                {
+                    return MapPreset->HeightmapFilePath.FilePath.IsEmpty();
+                }
+                return false;
+            })
         ]
 
         //Force Generate PCG Button

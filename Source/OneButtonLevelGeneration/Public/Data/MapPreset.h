@@ -64,12 +64,12 @@ public:
 	)
 	int32 WorldPartitionRegionSize = 16;
 
-	// Horizontal size of your Landscape (Changes Landscape Actor Scale)
+	// Horizontal size of your Landscape in Km (Changes Landscape Actor Scale)
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
 		meta = (ClampMin = 0.00001f)
 	)
-	float LandscapeSize = 1.009;
+	float LandscapeSize = 1.009f;
 
 	UPROPERTY()
 	float LandscapeScale = 1;
@@ -129,11 +129,11 @@ public:
 	//~ End UPROPERTY World Settings | Basics | Landscape Settings
 
 	//~ Begin UPROPERTY World Settings | Basics | Height
-	// Landscapes Minimum Height
+	// Landscapes Minimum Height (in cm)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MinHeight = -15000.0f;
 
-	// Landscapes Maximum Height
+	// Landscapes Maximum Height (in cm)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
 	float MaxHeight = 20000.0f;
 
