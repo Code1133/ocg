@@ -363,7 +363,20 @@ void AOCGLevelGenerator::PreviewMaps()
 	if (!bOriginalExportSetting)
 		MapPreset->bExportMapTextures = true;
 
-	GetMapGenerateComponent()->GenerateMaps();
+	if (MapPreset->HeightmapFilePath.FilePath.IsEmpty())
+		GetMapGenerateComponent()->GenerateMaps();
+	else
+	{
+		if (!OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+		GetMapGenerateComponent()->GenerateMapsWithHeightMap();
+	}
 	DrawDebugLandscape(MapPreset->HeightMapData);
 	
 	MapPreset->bExportMapTextures = bOriginalExportSetting;
