@@ -54,7 +54,7 @@ public:
 	
 	void DrawDebugLandscape(TArray<uint16>& HeightMapData);
 
-	void SetHasHeightMap(bool InHasHeightMap) {bHasHeightMap = InHasHeightMap;};
+	void PreviewMaps();
 
 public:
 	UFUNCTION(CallInEditor)
@@ -78,7 +78,4 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RiverGenerator", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UOCGRiverGenerateComponent> RiverGenerateComponent;
-
-	UPROPERTY()
-	bool bHasHeightMap = false;
 };

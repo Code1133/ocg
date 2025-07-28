@@ -15,6 +15,7 @@
 #include "Framework/Docking/TabManager.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
+#include "Component/OCGMapGenerateComponent.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ModelComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
@@ -26,6 +27,7 @@
 #include "Engine/SkyLight.h"
 #include "Factories/WorldFactory.h"
 #include "Utils/OCGLandscapeUtil.h"
+#include "WorldPartition/DataLayer/DataLayerType.h"
 
 class ADirectionalLight;
 
@@ -378,9 +380,9 @@ void FMapPresetEditorToolkit::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 
 FReply FMapPresetEditorToolkit::OnPreviewMapClicked()
 {
-	if (EditingPreset.IsValid())
+	if (LevelGenerator.IsValid())
 	{
-		EditingPreset->PreviewMaps();
+		LevelGenerator->PreviewMaps();
 	}
 	
 	return FReply::Handled();

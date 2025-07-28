@@ -81,6 +81,19 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 	}
 
 	FlushPersistentDebugLines(GetWorld());
+	bool bHasHeightMap = false;
+	if (!MapPreset->HeightmapFilePath.FilePath.IsEmpty())
+	{
+		if (!OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+		bHasHeightMap = true;
+	}
 	
 	if (MapGenerateComponent)
 	{
@@ -279,11 +292,13 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 
 void AOCGLevelGenerator::DrawDebugLandscape(TArray<uint16>& HeightMapData)
 {
+	if (!MapPreset)
+		return;
 	FlushPersistentDebugLines(GetWorld());
 	int32 Width = MapPreset->MapResolution.X;
 	int32 Height = MapPreset->MapResolution.Y;
 
-	const int32 Step = static_cast<int32>(MapPreset->Landscape_QuadsPerSection);
+	const int32 Step = MapPreset->DebugGridSpacing;
 	
 	const float ScaleXY = MapPreset->LandscapeScale * 100.f;
 	const float ScaleZ = (MapPreset->MaxHeight - MapPreset->MinHeight) * 0.001953125f;
@@ -316,6 +331,42 @@ void AOCGLevelGenerator::DrawDebugLandscape(TArray<uint16>& HeightMapData)
 			}
 		}
 	}
+}
+
+void AOCGLevelGenerator::PreviewMaps()
+{
+	if (!MapPreset)
+		return;
+	if (MapPreset->Biomes.IsEmpty())
+	{
+		// Error message
+		const FText DialogTitle = FText::FromString(TEXT("Error"));
+		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
+
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+
+		return;
+	}
+	
+	for (const auto& Biome : MapPreset->Biomes)
+	{
+		if (Biome.BiomeName == NAME_None)
+		{
+			const FText DialogTitle = FText::FromString(TEXT("Error"));
+			const FText DialogText = FText::FromString(TEXT("Invalid Biome Name. Please set a valid name for each biome."));
+
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
+			return;
+		}
+	}
+	bool bOriginalExportSetting = MapPreset->bExportMapTextures;
+	if (!bOriginalExportSetting)
+		MapPreset->bExportMapTextures = true;
+
+	GetMapGenerateComponent()->GenerateMaps();
+	DrawDebugLandscape(MapPreset->HeightMapData);
+	
+	MapPreset->bExportMapTextures = bOriginalExportSetting;
 }
 
 void AOCGLevelGenerator::RegenerateOcean()

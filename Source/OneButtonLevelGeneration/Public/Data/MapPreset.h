@@ -78,6 +78,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
 	bool ApplyScaleToNoise = true;
 
+	// Decides the grid spacing of debug landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1))
+	int32 DebugGridSpacing = 16;
+	
 	// Decides the Blend radius(pixel) between different biomes
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
@@ -611,10 +615,6 @@ public:
 	//~ Begin UPROPERTY OCG
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
-
-	// Generate maps without generating landscape
-	UFUNCTION(Category = "OCG")
-	void PreviewMaps();
 
 	// If checked height, temperature, humidity, biome maps will be saved as PNG in Maps folder
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")

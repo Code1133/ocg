@@ -11,6 +11,7 @@
 #include "IDetailsView.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
+#include "Component/OCGMapGenerateComponent.h"
 #include "Utils/OCGLandscapeUtil.h"
 #include "Utils/OCGUtils.h"
 #include "Widgets/Layout/SBox.h"
@@ -35,12 +36,12 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             .IsEnabled(this, &SOCGWidget::IsGeneratorButtonEnabled)
         ]
 
-        // Create LevelGenerator Button
+        // Create PreviewMap Button
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
         [
             SNew(SButton)
-            .Text(FText::FromString(TEXT("PreviewMap")))
+            .Text(FText::FromString(TEXT("Preview Maps")))
             .OnClicked(this, &SOCGWidget::OnPreviewMapClicked)
             .IsEnabled(this, &SOCGWidget::IsPreviewMapEnabled)
         ]
@@ -160,9 +161,9 @@ FReply SOCGWidget::OnCreateLevelGeneratorClicked()
 
 FReply SOCGWidget::OnPreviewMapClicked()
 {
-    if (MapPreset.IsValid())
+    if (LevelGeneratorActor.IsValid() && MapPreset.IsValid())
     {
-        MapPreset->PreviewMaps();
+        LevelGeneratorActor->PreviewMaps();
     }
     return FReply::Handled();
 }

@@ -16,7 +16,7 @@ FMapPresetEditorCommands::FMapPresetEditorCommands()
 
 void FMapPresetEditorCommands::RegisterCommands()
 {
-	UI_COMMAND(PreviewMapAction, "Preview Map", "Previewing current HeightMap in viewport.",
+	UI_COMMAND(PreviewMapAction, "Preview Maps", "Previewing current maps in viewport.",
 		EUserInterfaceActionType::Button, FInputChord());
 	
 	UI_COMMAND(GenerateAction, "Generate", "Generate a new level based on the preset settings.",

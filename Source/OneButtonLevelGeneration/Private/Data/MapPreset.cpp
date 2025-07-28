@@ -125,18 +125,15 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
-		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
-			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
+
+		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
+			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
 	}
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, HeightmapFilePath))
 	{
 		if (HeightmapFilePath.FilePath.IsEmpty())
-		{
-			if (LandscapeGenerator.IsValid())
-				LandscapeGenerator->SetHasHeightMap(false);
 			return;
-		}
 		FIntPoint HeightmapResolution;
 		if (OCGMapDataUtils::GetImageResolution(HeightmapResolution, HeightmapFilePath.FilePath))
 		{
@@ -150,20 +147,6 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			{
 				Landscape_ComponentCount = NewComponentCount;
 			}
-			if (LandscapeGenerator.IsValid() && OCGMapDataUtils::ImportMap(HeightMapData, MapResolution, HeightmapFilePath.FilePath))
-			{
-				LandscapeGenerator->SetHasHeightMap(true);
-			}
-			else
-			{
-				const FText DialogTitle = FText::FromString(TEXT("Error"));
-				const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
-
-				FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-				if (LandscapeGenerator.IsValid())
-					LandscapeGenerator->SetHasHeightMap(false);
-				return;
-			}
 		}
 		else
 		{
@@ -171,28 +154,21 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
 
 			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-			if (LandscapeGenerator.IsValid())
-				LandscapeGenerator->SetHasHeightMap(false);
 			return;
 		}
 
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
-
-		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
-			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 
 	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
 	{
 		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
-		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
-			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
 	}
 
-	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, MaxHeight) || PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, MinHeight))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, DebugGridSpacing))
 	{
-		if (LandscapeGenerator.IsValid() && !HeightmapFilePath.FilePath.IsEmpty())
-			LandscapeGenerator->DrawDebugLandscape(HeightMapData);
+		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
+			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
 	}
 	
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
@@ -333,39 +309,4 @@ UWorld* UMapPreset::GetWorld() const
 #else
 	return nullptr;
 #endif
-}
-
-void UMapPreset::PreviewMaps()
-{
-	if (Biomes.IsEmpty())
-	{
-		// Error message
-		const FText DialogTitle = FText::FromString(TEXT("Error"));
-		const FText DialogText = FText::FromString(TEXT("At Least one biome must be defined in the preset before generating the level."));
-
-		FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-
-		return;
-	}
-	
-	for (const auto& Biome : Biomes)
-	{
-		if (Biome.BiomeName == NAME_None)
-		{
-			const FText DialogTitle = FText::FromString(TEXT("Error"));
-			const FText DialogText = FText::FromString(TEXT("Invalid Biome Name. Please set a valid name for each biome."));
-
-			FMessageDialog::Open(EAppMsgType::Ok, DialogText, DialogTitle);
-			return;
-		}
-	}
-	bool bOriginalExportSetting = bExportMapTextures;
-	if (!bOriginalExportSetting)
-		bExportMapTextures = true;
-	if (LandscapeGenerator.IsValid())
-	{
-		LandscapeGenerator->GetMapGenerateComponent()->GenerateMaps();
-		LandscapeGenerator->DrawDebugLandscape(HeightMapData);
-	}
-	bExportMapTextures = bOriginalExportSetting;
 }
