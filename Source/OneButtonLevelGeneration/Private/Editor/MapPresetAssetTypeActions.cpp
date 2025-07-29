@@ -64,7 +64,7 @@ void FMapPresetAssetTypeActions::OpenAssetEditor(const TArray<UObject*>& InObjec
     {
         FText Title = FText::FromString(TEXT("Editor Open Failed"));
         FText Message = FText::FromString(TEXT("MapPreset Editor is already open. Please close the existing editor before opening a new one."));
-        FMessageDialog::Open(EAppMsgType::Ok, Message, Title); // [3]
+        FMessageDialog::Open(EAppMsgType::Ok, Message, Title);
         return;
     }
     

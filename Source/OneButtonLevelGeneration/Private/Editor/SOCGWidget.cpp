@@ -11,7 +11,6 @@
 #include "IDetailsView.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
-#include "Component/OCGMapGenerateComponent.h"
 #include "Utils/OCGLandscapeUtil.h"
 #include "Utils/OCGUtils.h"
 #include "Widgets/Layout/SBox.h"
@@ -75,7 +74,7 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
             {
                 if (MapPreset.Get())
                 {
-                    return MapPreset->HeightmapFilePath.FilePath.IsEmpty();
+                    return IsGenerateEnabled() && MapPreset->HeightmapFilePath.FilePath.IsEmpty();
                 }
                 return false;
             })
