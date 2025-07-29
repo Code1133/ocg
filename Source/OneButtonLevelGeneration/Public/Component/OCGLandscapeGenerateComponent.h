@@ -53,8 +53,7 @@ struct FLandscapeSetting
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
 	int32 SizeY = 0;
-
-	// == 연산자 오버로드
+	
 	bool operator==(FLandscapeSetting const& Other) const
 	{
 		return WorldPartitionGridSize		 == Other.WorldPartitionGridSize

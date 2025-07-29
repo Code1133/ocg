@@ -3,10 +3,8 @@
 #include "Component/OCGLandscapeGenerateComponent.h"
 #include "EngineUtils.h"
 
-#include "ObjectTools.h"
 #include "OCGLevelGenerator.h"
 #include "OCGLog.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "Data/MapPreset.h"
 
 #include "VT/RuntimeVirtualTexture.h"
@@ -24,18 +22,10 @@
 #if ENGINE_MINOR_VERSION > 5
 #include "LandscapeEditLayer.h"
 #endif
-#include "LandscapeSubsystem.h"
-#include "Utils/OCGFileUtils.h"
-#include "Utils/OCGMaterialEditTool.h"
 
 #include "LandscapeProxy.h"
 #include "LocationVolume.h"
-#include "Builders/CubeBuilder.h"
 #include "LandscapeStreamingProxy.h"
-#include "ActorFactories/ActorFactory.h"
-#include "WorldPartition/WorldPartition.h"
-
-#include "LandscapeConfigHelper.h"
 #include "LandscapeEdit.h"
 
 #endif
@@ -158,7 +148,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	if (MapPreset == nullptr)
 		return;
 
-    if (!World || World->IsGameWorld()) // 에디터에서만 실행되도록 확인
+    if (!World || World->IsGameWorld())
     {
         UE_LOG(LogOCGModule, Error, TEXT("유효한 에디터 월드가 아닙니다."));
         return;
@@ -177,7 +167,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			}
 		}
 
-		// 2. Proxy 삭제
+		// 2. Delete Proxies
 		for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
 		{
 			if (Proxy)
@@ -186,7 +176,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			}
 		}
 
-		// 3. Landscape 삭제
+		// 3. Delete Landscape
 		if (TargetLandscape)
 		{
 			for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape))
@@ -235,7 +225,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 				}
 			}
 
-			// 2. Proxy 삭제
+			// 2. Delete Proxies
 			for (ALandscapeStreamingProxy* Proxy : ProxiesToDelete)
 			{
 				if (Proxy)
@@ -244,7 +234,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 				}
 			}
 
-			// 3. Landscape 삭제
+			// 3. Delete Landscape
 			if (TargetLandscape)
 			{
 				for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape))
@@ -278,22 +268,22 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 	if (TargetLandscape->LandscapeMaterial != MapPreset->LandscapeMaterial)
 	{
 		FScopedSlowTask SlowTask(5.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ChangingMaterial", "Change Landscape Material"));
-		SlowTask.MakeDialog(); // 로딩 창 표시
+		SlowTask.MakeDialog();
 		
 		FProperty* MaterialProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "LandscapeMaterial");
-		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+		SlowTask.EnterProgressFrame(1.0f);
 		
 		TargetLandscape->PreEditChange(MaterialProperty);
-		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+		SlowTask.EnterProgressFrame(1.0f);
 		
 		TargetLandscape->LandscapeMaterial = MapPreset->LandscapeMaterial;
-		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+		SlowTask.EnterProgressFrame(1.0f);
 		
 		FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
-		SlowTask.EnterProgressFrame(1.0f); // 진행도 갱신
+		SlowTask.EnterProgressFrame(1.0f);
 		
 		TargetLandscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
-		SlowTask.EnterProgressFrame(); // 진행도 갱신
+		SlowTask.EnterProgressFrame();
 	}
 	
 	FIntPoint MapResolution = MapPreset->MapResolution;
@@ -308,18 +298,16 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
 	}
 	
-    // Import 함수에 전달할 하이트맵 데이터를 TMap 형태로 포장
-    // 키(Key)는 레이어의 고유 ID(GUID)이고, 값(Value)은 해당 레이어의 하이트맵 데이터입니다.
-    // 우리는 기본 레이어 하나만 있으므로, 하나만 만들어줍니다.
+	// Package the heightmap data to be passed to the Import function as a TMap
+	// The key is the unique ID (GUID) of the layer, and the value is the heightmap data for that layer.
     
     TMap<FGuid, TArray<uint16>> HeightmapDataPerLayer;
     FGuid LayerGuid = FGuid();
     HeightmapDataPerLayer.Add(LayerGuid, LevelGenerator->GetHeightMapData());
-
-    // 레이어 데이터 준비
+	
     const TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer = OCGLandscapeUtil::PrepareLandscapeLayerData(TargetLandscape, LevelGenerator, MapPreset);
 	
-    //랜드스케이프의 기본 속성 설정
+// Set the basic properties of the landscape// Set the basic properties of the landscape
     float OffsetX = (-MapPreset->MapResolution.X / 2.f) * 100.f * MapPreset->LandscapeScale;
     float OffsetY = (-MapPreset->MapResolution.Y / 2.f) * 100.f * MapPreset->LandscapeScale;
     TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, LandscapeZOffset));
@@ -327,7 +315,6 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 
 	if (IsCreateNewLandscape)
 	{
-		// //Import 함수 호출 (변경된 시그니처에 맞춰서)
 		TargetLandscape->Import(
 			FGuid::NewGuid(),
 			0, 0,
@@ -338,7 +325,7 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 			nullptr,
 			MaterialLayerDataPerLayer,
 			ELandscapeImportAlphamapType::Additive,
-			TArrayView<const FLandscapeLayer>() // 빈 TArray로부터 TArrayView 생성하여 전달
+			TArrayView<const FLandscapeLayer>()
 		);
 
 		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
@@ -350,12 +337,9 @@ void UOCGLandscapeGenerateComponent::GenerateLandscape(UWorld* World)
 		OCGLandscapeUtil::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 	
 		OCGLandscapeUtil::ManageLandscapeRegions(World, TargetLandscape, MapPreset, LandscapeSetting);
-	
-		// 액터 등록 및 뷰포트 업데이트
+		
 		TargetLandscape->RegisterAllComponents();
 		GEditor->RedrawAllViewports();
-	
-		//TargetLandscape->ForceUpdateLayersContent(true);
 		
 		FProperty* RuntimeVirtualTexturesProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "RuntimeVirtualTextures");
 
@@ -460,7 +444,7 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
 	{
 		if (UBoxComponent* VolumeBox = CachedRuntimeVirtualTextureVolumes[0]->Box)
 		{
-			// 월드 스케일이 반영된 반경(half-extent)을 가져와서
+			// Get the radius (half-extent) that reflects the world scale.
 			VolumeExtent = VolumeBox->GetScaledBoxExtent();
 			VolumeOrigin = VolumeBox->GetComponentLocation();
 		}
@@ -472,7 +456,7 @@ bool UOCGLandscapeGenerateComponent::CreateRuntimeVirtualTextureVolume(ALandscap
 
 bool UOCGLandscapeGenerateComponent::ShouldCreateNewLandscape(const UWorld* World)
 {
-	const FLandscapeSetting PrevSetting = LandscapeSetting; // 이전 세팅 저장값
+	const FLandscapeSetting PrevSetting = LandscapeSetting;
 	InitializeLandscapeSetting(World);
 
 	if (IsLandscapeSettingChanged(PrevSetting, LandscapeSetting))
@@ -582,7 +566,6 @@ void UOCGLandscapeGenerateComponent::OnRegister()
 #if WITH_EDITOR
 	if (GetWorld() && GetWorld()->IsEditorWorld() && !TargetLandscapeAsset.IsValid())
 	{
-		// 명시적 확인
 		if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
 		{
 			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());

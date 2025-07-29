@@ -1112,15 +1112,15 @@ ULandscapeLayerInfoObject* OCGLandscapeUtil::CreateLayerInfo(ALandscape* InLands
 		return nullptr;
 	}
 
-	// 위에서 정의한 함수를 사용하여 지정된 경로에 LayerInfo 애셋을 생성합니다.
+	// Create a LayerInfo asset at the specified path.
 	ULandscapeLayerInfoObject* LayerInfo = CreateLayerInfo(InPackagePath, InAssetName, InTemplate);
 
 	if (LayerInfo)
 	{
 		if (ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo())
 		{
-			// 랜드스케이프 정보에 새로 생성된 LayerInfo를 추가하거나 업데이트합니다.
-			// 이 과정은 랜드스케이프가 해당 레이어를 인식하게 만듭니다.
+			// Add or update the newly created LayerInfo in the landscape information.
+			// This process allows the landscape to recognize the layer.
 			const int32 Index = LandscapeInfo->GetLayerInfoIndex(LayerInfo->LayerName, InLandscape);
 			if (Index == INDEX_NONE)
 			{
@@ -1246,7 +1246,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
     TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
     if (!InTargetLandscape || !InLevelGenerator || !InMapPreset)
     {
-        return MaterialLayerDataPerLayer; // 유효하지 않은 입력이면 빈 맵 반환
+        return MaterialLayerDataPerLayer;
     }
 
     ULandscapeInfo* LandscapeInfo = InTargetLandscape->GetLandscapeInfo();
@@ -1255,7 +1255,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
     const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
     ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
 
-    // 1. 웨이트맵 데이터와 머티리얼에서 레이어 이름 가져오기
+    // 1. Get the layer name from the weightmap data and the material.
     TMap<FName, TArray<uint8>> WeightLayers = InLevelGenerator->GetWeightLayers();
     TArray<FName> LayerNames;
     if (InMapPreset->LandscapeMaterial && InMapPreset->LandscapeMaterial->Parent)
@@ -1263,12 +1263,12 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
         LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeMaterial->Parent));
     }
 
-    // 2. 각 레이어를 순회하며 LayerInfoObject를 찾거나 생성
+    // 2. Iterate through each layer and find or create the LayerInfoObject.
     for (int32 Index = 0; Index < WeightLayers.Num(); ++Index)
     {
         FLandscapeImportLayerInfo LayerInfo;
 
-        // 임시 이름 생성 (머티리얼에서 이름을 못 찾을 경우 대비)
+    	// Generate a temporary name (in case the name cannot be found in the material)
         FString TempLayerNameStr = FString::Printf(TEXT("Layer%d"), Index);
         FName TempLayerName(TempLayerNameStr);
 
@@ -1293,8 +1293,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
         if (LayerInfoObject == nullptr)
         {
             UE_LOG(LogOCGModule, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
-
-            // LayerInfoSavePath는 멤버 변수로 가정합니다. 필요시 파라미터로 전달할 수 있습니다.
+        	
             LayerInfoObject = OCGLandscapeUtil::CreateLayerInfo(InTargetLandscape, OCGLandscapeUtil::LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
         }
         else
@@ -1312,9 +1311,8 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
             UE_LOG(LogOCGModule, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
         }
     }
-
-    // 3. 최종 데이터 구조에 추가하여 반환
-    FGuid LayerGuid = FGuid(); // 기본 레이어 세트의 GUID
+	
+    FGuid LayerGuid = FGuid();
     MaterialLayerDataPerLayer.Add(LayerGuid, MoveTemp(ImportLayerDataPerLayer));
     
     return MaterialLayerDataPerLayer;
@@ -1354,15 +1352,14 @@ ULandscapeLayerInfoObject* OCGLandscapeUtil::CreateLayerInfo(const FString& InPa
                                                              const ULandscapeLayerInfoObject* InTemplate)
 {
 	#if WITH_EDITOR
-    // 1. 경로 유효성 검사
+	// 1. Validate the path
     if (!InPackagePath.StartsWith(TEXT("/Game/")))
     {
         UE_LOG(LogOCGModule, Error, TEXT("PackagePath must start with /Game/. Path was: %s"), *InPackagePath);
         return nullptr;
     }
     
-    // 2. 가장 먼저, 입력된 애셋 이름을 안전한 이름으로 변환합니다.
-    // 이 정리된 이름이 앞으로 모든 작업의 기준이 됩니다.
+	// 2. Convert the input asset name into a safe name.
     const FString SanitizedAssetName = ObjectTools::SanitizeObjectName(InAssetName);
     if (SanitizedAssetName.IsEmpty())
     {
@@ -1370,29 +1367,27 @@ ULandscapeLayerInfoObject* OCGLandscapeUtil::CreateLayerInfo(const FString& InPa
         return nullptr;
     }
 
-    // 3. 안전한 이름을 사용하여 전체 패키지 경로와 오브젝트 경로를 구성합니다.
+	// 3. Using the safe name, construct the full package path and object path.
     const FString FullPackageName = FPaths::Combine(InPackagePath, SanitizedAssetName);
     const FString ObjectPathToLoad = FullPackageName + TEXT(".") + SanitizedAssetName;
 
-    // 4. 안전한 경로를 사용하여 애셋이 이미 존재하는지 로드를 시도합니다.
+	// 4. Using the safe path, attempt to load the asset to see if it already exists.
     ULandscapeLayerInfoObject* FoundLayerInfo = LoadObject<ULandscapeLayerInfoObject>(nullptr, *ObjectPathToLoad);
-    
-    // 5. 애셋을 찾았다면, 즉시 반환합니다.
+	
     if (FoundLayerInfo)
     {
         UE_LOG(LogOCGModule, Log, TEXT("Found and reused existing LayerInfo: %s"), *ObjectPathToLoad);
         return FoundLayerInfo;
     }
 
-    // 애셋을 찾지 못했으므로, 새로 생성하기 전에 디렉토리 존재를 확인하고 필요시 생성합니다.
-    // InPackagePath는 "/Game/MyFolder/MySubFolder" 형태일 것으로 예상됩니다.
+    // Since the asset was not found, check for the existence of the directory before creating it, and create it if necessary.
     if (!FOCGFileUtils::EnsureContentDirectoryExists(FullPackageName))
     {
         UE_LOG(LogOCGModule, Error, TEXT("Failed to ensure directory exists for package path: %s"), *InPackagePath);
         return nullptr;
     }
 
-    // 6. 애셋을 찾지 못했으므로, 새로 생성하는 로직을 실행합니다.
+    // 6. Since the asset was not found, execute the logic to create it anew.
     UE_LOG(LogOCGModule, Log, TEXT("LayerInfo not found at '%s'. Creating a new one."), *ObjectPathToLoad);
 
     const FName AssetFName(*SanitizedAssetName);
@@ -1419,8 +1414,7 @@ ULandscapeLayerInfoObject* OCGLandscapeUtil::CreateLayerInfo(const FString& InPa
         UE_LOG(LogOCGModule, Error, TEXT("Failed to create ULandscapeLayerInfoObject in package: %s"), *FullPackageName);
         return nullptr;
     }
-    
-    // LayerName 프로퍼티에도 안전한 이름을 할당합니다.
+	
     NewLayerInfo->LayerName = AssetFName;
     
     FAssetRegistryModule::AssetCreated(NewLayerInfo);

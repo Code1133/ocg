@@ -195,19 +195,16 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			{
 				if (AWaterZone* WaterZone = Cast<AWaterZone>(Actor))
 				{
-					// 2. WaterZone의 ZoneExtent 프로퍼티를 랜드스케이프의 X, Y 크기로 설정합니다.
+					// 2. Set the ZoneExtent property of the WaterZone to the landscape's X and Y size.
 					WaterZone->SetZoneExtent(FVector2D(LandscapeSize.X, LandscapeSize.Y));
 				}
 			}
 			SetDefaultRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
 			AddRiverProperties(WaterBodyRiver, SimplifiedRiverPath);
-
-			// 에디터 전용으로만 실행
+			
 			if (GetWorld()->IsEditorWorld())
 			{
-				// 1) 컴포넌트 자신을 트랜잭션에 기록
 				Modify();
-				// 2) 소유 액터도 기록하고 레벨에 더티 플래그 세우기
 				if (AActor* Owner = GetOwner())
 				{
 					Owner->Modify();
@@ -250,7 +247,6 @@ void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, U
 
 void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath)
 {
-    // 필수 컴포넌트 및 프리셋 유효성 검사
     if (!InRiverActor || !MapPreset)
     {
         return;
@@ -259,13 +255,11 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
     UWaterSplineComponent* SplineComp = InRiverActor->GetWaterSpline();
     UWaterBodyRiverComponent* RiverComp = Cast<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
     UWaterSplineMetadata* SplineMetadata = RiverComp ? RiverComp->GetWaterSplineMetadata() : nullptr;
-
-    // [변경점 1] 커브 에셋을 가져옵니다. 없으면 nullptr이 됩니다.
+	
     UCurveFloat* RiverWidthCurve = MapPreset->RiverWidthCurve;
     UCurveFloat* RiverDepthCurve = MapPreset->RiverDepthCurve;
     UCurveFloat* RiverVelocityCurve = MapPreset->RiverVelocityCurve;
-
-    // 커브를 제외한 필수 데이터가 유효한지 확인합니다.
+	
     if (!SplineComp || !RiverComp || !SplineMetadata)
     {
         return;
@@ -277,7 +271,7 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         return;
     }
 
-    // 각 커브가 유효할 경우에만 최소/최대 값을 계산합니다.
+	// Calculate the minimum and maximum values only if each curve is valid.
     float MinWidth = 0.f, MaxWidth = 1.f;
     if (RiverWidthCurve)
     {
@@ -296,58 +290,57 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         RiverVelocityCurve->GetValueRange(MinVelocity, MaxVelocity);
     }
     
-    // 0으로 나누는 것을 방지하기 위해 Range를 계산합니다.
+	// Calculate the Range to prevent division by zero.
     const float WidthRange = MaxWidth - MinWidth;
     const float DepthRange = MaxDepth - MinDepth;
     const float VelocityRange = MaxVelocity - MinVelocity;
 
     for (int32 i = 0; i < NumPoints; ++i)
     {
-        // 스플라인의 시작부터 끝까지 0.0 ~ 1.0 범위의 정규화된 거리를 계산합니다.
+    	// Calculate the normalized distance ranging from 0.0 to 1.0 from the start to the end of the spline.
         const float NormalizedDistance = (NumPoints > 1) ? static_cast<float>(i) / (NumPoints - 1) : 0.0f;
 
-        // --- 1. 너비(Width) 배율 계산 ---
+        // 1. Calculate the width (Width) scale
         float WidthMultiplier;
-        if (RiverWidthCurve) // [변경점 2] 너비 커브가 유효한 경우
+        if (RiverWidthCurve)
         {
             const float RawWidth = RiverWidthCurve->GetFloatValue(NormalizedDistance);
             WidthMultiplier = !FMath::IsNearlyZero(WidthRange) ? (RawWidth - MinWidth) / WidthRange : 1.0f;
         }
-        else // [변경점 3] 너비 커브가 없는 경우 (선형 증가)
+        else // If there is no width curve (linear increase)
         {
             WidthMultiplier = NormalizedDistance;
         }
 
-        // --- 2. 깊이(Depth) 배율 계산 ---
+    	// --- 2. Calculate the depth (Depth) scale ---
         float DepthMultiplier;
-        if (RiverDepthCurve) // [변경점 2] 깊이 커브가 유효한 경우
+        if (RiverDepthCurve)
         {
             const float RawDepth = RiverDepthCurve->GetFloatValue(NormalizedDistance);
             DepthMultiplier = !FMath::IsNearlyZero(DepthRange) ? (RawDepth - MinDepth) / DepthRange : 1.0f;
         }
-        else // [변경점 3] 깊이 커브가 없는 경우 (선형 증가)
+        else // If there is no depth curve (linear increase)
         {
             DepthMultiplier = NormalizedDistance;
         }
 
-        // --- 3. 유속(Velocity) 배율 계산 ---
+        // 3. Calculate the velocity (Velocity) scale
         float VelocityMultiplier;
-        if (RiverVelocityCurve) // [변경점 2] 유속 커브가 유효한 경우
+        if (RiverVelocityCurve)
         {
             const float RawVelocity = RiverVelocityCurve->GetFloatValue(NormalizedDistance);
             VelocityMultiplier = !FMath::IsNearlyZero(VelocityRange) ? (RawVelocity - MinVelocity) / VelocityRange : 1.0f;
         }
-        else // [변경점 3] 유속 커브가 없는 경우 (선형 증가)
+        else // If there is no velocity curve (linear increase)
         {
             VelocityMultiplier = NormalizedDistance;
         }
 
-        // 최종 값 계산: (기본값 * 배율) + 최소값
+    	// Calculate the final value: (base value * scale) + minimum value
         const float DesiredWidth = ((MapPreset->RiverWidthBaseValue * WidthMultiplier) + MapPreset->RiverWidthMin) * MapPreset->LandscapeScale;
         const float DesiredDepth = (MapPreset->RiverDepthBaseValue * DepthMultiplier) + MapPreset->RiverDepthMin;
         const float DesiredVelocity = (MapPreset->RiverVelocityBaseValue * VelocityMultiplier) + MapPreset->RiverVelocityMin;
-
-        // 계산된 값들을 Metadata에 적용
+    	
         if (SplineMetadata->RiverWidth.Points.IsValidIndex(i))
         {
             SplineMetadata->RiverWidth.Points[i].OutVal = DesiredWidth;
@@ -362,7 +355,7 @@ void UOCGRiverGenerateComponent::AddRiverProperties(AWaterBodyRiver* InRiverActo
         }
     }
 
-    // 스플라인 및 Water Body 컴포넌트 업데이트
+	// Update the spline and Water Body components
     SplineComp->UpdateSpline();
     
     FOnWaterBodyChangedParams Params;
@@ -415,7 +408,7 @@ void UOCGRiverGenerateComponent::ExportWaterEditLayerHeightMap(const uint16 MinD
 			}
 		}
 		
-		// 2. PNG로 익스포트
+		// Export to .png File
 		const FIntPoint Resolution = FIntPoint(SizeX, SizeY);
 
 		const UMapPreset* CurMapPreset = GetLevelGenerator()->GetMapPreset();
@@ -496,7 +489,6 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 #if WITH_EDITOR
 	if (GetWorld()->IsEditorWorld())
 	{
-		// 컴포넌트와 소유 액터를 수정 표시
 		Modify();
 		if (AActor* Owner = GetOwner())
 		{
@@ -506,12 +498,11 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 	}
 #endif
 
-	// 1) 이미 로드된 GeneratedRivers 파괴
+	// 1) Destroy the already loaded GeneratedRivers
 	for (AWaterBodyRiver* River : GeneratedRivers)
 	{
 		if (!River) continue;
 #if WITH_EDITOR
-		// 에디터에서는 EditorDestroyActor 사용
 		GEditor->GetEditorWorldContext().World()->EditorDestroyActor(River, /*bShouldModifyLevel=*/true);
 #else
 		River->Destroy();
@@ -519,14 +510,14 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 	}
 	GeneratedRivers.Empty();
 
-	// 2) CachedRivers 의 SoftObjectPtr 통해 로드되지 않은 인스턴스까지 파괴
+	// 2) Destroy even the instances that are not loaded through the SoftObjectPtr of CachedRivers
 	for (TSoftObjectPtr<AWaterBodyRiver>& RiverPtr : CachedRivers)
 	{
-		// 2-1) 유효한 경로인지 확인
+		// 2-1) Check if the path is valid
 		const FSoftObjectPath& Path = RiverPtr.ToSoftObjectPath();
 		if (!Path.IsValid()) continue;
 
-		// 2-2) 이미 로드된 인스턴스가 있으면 Get(), 없으면 LoadSynchronous()
+		// 2-2) If there is an already loaded instance, use Get(); otherwise, use LoadSynchronous()
 		AWaterBodyRiver* RiverInst = RiverPtr.IsValid()
 			? RiverPtr.Get()
 			: Cast<AWaterBodyRiver>(RiverPtr.LoadSynchronous());
