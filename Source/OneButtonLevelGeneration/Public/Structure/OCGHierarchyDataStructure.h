@@ -59,6 +59,26 @@ struct FSlopeLimitInfo
 };
 
 /**
+ * A structure that defines height limit parameters for mesh generation.
+ */
+USTRUCT(BlueprintType)
+struct FHeightLimitInfo
+{
+	GENERATED_BODY()
+	/** Minimum height value for mesh placement */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	float MinHeight = 0.0f;
+
+	/** Maximum height value for mesh placement */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	float MaxHeight = 45.0f;
+
+	/** If true, places meshes outside the height range instead of inside */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
+	bool bInvert = false;
+};
+
+/**
  * A structure that defines transform (offset, rotation, scale) information for a point.
  */
 USTRUCT(BlueprintType)
@@ -150,12 +170,20 @@ struct FLandscapeHierarchyData
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f))
 	float PointSteepness = 0.5f;
 
+	/** Whether to generate Mesh on height. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (InlineEditConditionToggle))
+	bool bHeightLimit = false;
+
+	/** Height limit information used when generating Mesh on height. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bHeightLimit"))
+	FHeightLimitInfo HeightLimits;
+
 	/** Whether to generate Mesh on slopes. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (InlineEditConditionToggle))
 	bool bSlopeLimit = false;
 
 	/** Slope limit information used when generating Mesh on slopes. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (ClampMin = 0.0f, ClampMax = 1.0f, UIMin = 0.0f, UIMax = 1.0f, EditCondition = "bSlopeLimit"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG", meta = (EditCondition = "bSlopeLimit"))
 	FSlopeLimitInfo SlopeLimits;
 
 	/** Whether to override the transform point settings. */
