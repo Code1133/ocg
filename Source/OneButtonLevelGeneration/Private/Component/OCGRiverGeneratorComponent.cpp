@@ -431,8 +431,12 @@ void UOCGRiverGenerateComponent::ApplyWaterWeight()
 	
 	if (TargetLandscape)
 	{
-		UMaterial* CurrentLandscapeMaterial = Cast<UMaterial>(GetLevelGenerator()->GetMapPreset()->LandscapeMaterial->Parent);
-
+		UMaterial* CurrentLandscapeMaterial = nullptr;
+		if (GetLevelGenerator() && GetLevelGenerator()->GetMapPreset() && GetLevelGenerator()->GetMapPreset()->LandscapeMaterial)
+		{
+			CurrentLandscapeMaterial = Cast<UMaterial>(GetLevelGenerator()->GetMapPreset()->LandscapeMaterial->Parent);
+		}
+		
 		TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(CurrentLandscapeMaterial);
 
 		const ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
