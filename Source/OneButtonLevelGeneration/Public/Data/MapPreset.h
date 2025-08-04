@@ -196,7 +196,7 @@ public:
 	float CurMaxHeight = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bSmoothHeight = false;
+	bool bSmoothHeight = true;
 
 	// Larger Radius gives softer smoothing effect
 	UPROPERTY(
