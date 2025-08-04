@@ -397,6 +397,27 @@ void UOCGMapGenerateComponent::ErosionPass(const UMapPreset* MapPreset, TArray<u
             
             // calculate sediment capacity
             float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * MapPreset->SedimentCapacityFactor, MapPreset->MinSedimentCapacity);
+
+            // ========================[ DEBUG LOG START ]========================
+            if (i == 0 && Lifetime < 10) // 첫 번째 물방울의 처음 10 프레임만 로그 출력
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Lifetime: %d | Pos: (%.2f, %.2f)"), Lifetime, PosX, PosY);
+                UE_LOG(LogTemp, Warning, TEXT("  Height: Current=%.4f, New=%.4f, Diff=%.4f"), CurrentHeight, NewHeight, HeightDifference);
+                UE_LOG(LogTemp, Warning, TEXT("  Speed=%.4f, Water=%.4f, Sediment=%.4f"), Speed, Water, Sediment);
+                UE_LOG(LogTemp, Warning, TEXT("  SedimentCapacity=%.4f"), SedimentCapacity);
+
+                if (Sediment > SedimentCapacity || HeightDifference > 0)
+                {
+                    float AmountToDeposit = (HeightDifference > 0) ? FMath::Min(Sediment, HeightDifference) : (Sediment - SedimentCapacity) * MapPreset->DepositSpeed;
+                    UE_LOG(LogTemp, Warning, TEXT("  Action: DEPOSIT, Amount=%.6f"), AmountToDeposit);
+                }
+                else
+                {
+                    float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * MapPreset->ErodeSpeed;
+                    UE_LOG(LogTemp, Warning, TEXT("  Action: ERODE, Amount=%.6f"), AmountToErode);
+                }
+                UE_LOG(LogTemp, Warning, TEXT("--------------------------------------------------"));
+            }
             
             // apply sediment or erosion
             if (Sediment > SedimentCapacity || HeightDifference > 0)
@@ -530,8 +551,8 @@ float UOCGMapGenerateComponent::CalculateHeightAndGradient(const UMapPreset* Map
     float Height_11 = HeightMap[Index_11];
 
     // Calculate Gradient
-    OutGradient.X = ((Height_10 - Height_00) * (1 - y) + (Height_11 - Height_01)) * y / LandscapeScale;
-    OutGradient.Y = ((Height_01 - Height_00) * (1 - x) + (Height_11 - Height_10)) * x / LandscapeScale;
+    OutGradient.X = ((Height_10 - Height_00) * (1 - y) + (Height_11 - Height_01)) / LandscapeScale;
+    OutGradient.Y = ((Height_01 - Height_00) * (1 - x) + (Height_11 - Height_10)) / LandscapeScale;
 
     // Calculate and return Height
     return Height_00 * (1 - x) * (1 - y) + Height_10 * x * (1 - y) + Height_01 * (1 - x) * y + Height_11 * x * y;
