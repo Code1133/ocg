@@ -642,9 +642,10 @@ FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint()
 		return FIntPoint(0, 0);
 	}
 
+	FRandomStream Stream(MapPreset->RiverSeed);
 	// Select a random high point or default to the center of the map
 	FIntPoint StartPoint = CachedRiverStartPoints.Num() > 0 ?
-		CachedRiverStartPoints[FMath::RandRange(0, CachedRiverStartPoints.Num() - 1)] :
+		CachedRiverStartPoints[Stream.RandRange(0, CachedRiverStartPoints.Num() - 1)] :
 		FIntPoint(MapPreset->MapResolution.X / 2, MapPreset->MapResolution.Y - 1);
 
 	return StartPoint;

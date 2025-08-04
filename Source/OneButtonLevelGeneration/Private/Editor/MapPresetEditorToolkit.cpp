@@ -427,7 +427,9 @@ FReply FMapPresetEditorToolkit::OnRegenerateRiverClicked()
 	if (LevelGenerator.IsValid())
 	{
 		if (LevelGenerator->GetLandscape())
-			OCGLandscapeUtil::RegenerateRiver(MapPresetEditorWorld, LevelGenerator.Get());
+		{
+			OCGLandscapeUtil::RegenerateRiver(MapPresetEditorWorld, LevelGenerator.Get(), LevelGenerator->GetMapPreset());
+		}
 	}
 	return FReply::Handled();
 }

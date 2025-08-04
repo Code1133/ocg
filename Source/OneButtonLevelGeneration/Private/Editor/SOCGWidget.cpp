@@ -412,9 +412,9 @@ bool SOCGWidget::IsGeneratorButtonEnabled() const
 
 FReply SOCGWidget::OnRegenerateRiverClicked()
 {
-    if (LevelGeneratorActor.IsValid())
+    if (MapPreset.IsValid() && LevelGeneratorActor.IsValid())
     {
-        OCGLandscapeUtil::RegenerateRiver(GEditor->GetEditorWorldContext().World(), LevelGeneratorActor.Get());
+        OCGLandscapeUtil::RegenerateRiver(GEditor->GetEditorWorldContext().World(), LevelGeneratorActor.Get(), MapPreset.Get());
     }
     return FReply::Handled();
 }

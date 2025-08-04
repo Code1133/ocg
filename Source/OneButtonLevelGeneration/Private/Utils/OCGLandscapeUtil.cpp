@@ -1441,11 +1441,14 @@ FGuid OCGLandscapeUtil::GetLandscapeLayerGuid(const ALandscape* Landscape, FName
 	return {};
 }
 
-void OCGLandscapeUtil::RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator)
+void OCGLandscapeUtil::RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator, UMapPreset* MapPreset)
 {
 #if WITH_EDITOR
-	if (World && LevelGenerator)
+	if (World && LevelGenerator && MapPreset)
+	{
 		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
+		
+	}
 #endif
 }
 

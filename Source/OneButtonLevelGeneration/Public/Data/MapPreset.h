@@ -486,6 +486,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings")
 	bool bGenerateRiver = false;
 
+	// Seed for the River
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings",
+		meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	int32 RiverSeed = 0;
+
 	// Count of rivers to generate.
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
