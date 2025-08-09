@@ -48,7 +48,7 @@ private:
 	
 	void SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath);
 	// helper functions
-	FIntPoint GetRandomStartPoint();
+	FIntPoint GetRandomStartPoint(int RiverIndex);
 
 	void SimplifyPathRDP(const TArray<FVector>& InPoints, TArray<FVector>& OutPoints, float Epsilon);
 

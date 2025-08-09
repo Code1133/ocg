@@ -106,7 +106,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	for (int RiverCount = 0; RiverCount < MapPreset->RiverCount; RiverCount++)
 	{
 		FIntPoint MapResolution = MapPreset->MapResolution;
-		FIntPoint StartPoint = GetRandomStartPoint();
+		FIntPoint StartPoint = GetRandomStartPoint(RiverCount);
 
 		TSet<FIntPoint> VisitedNodes;
 		TMap<FIntPoint, FIntPoint> CameFrom;
@@ -632,21 +632,28 @@ void UOCGRiverGenerateComponent::SetDefaultRiverProperties(AWaterBodyRiver* InRi
 	InRiverActor->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 
-FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint()
+FIntPoint UOCGRiverGenerateComponent::GetRandomStartPoint(int RiverIndex)
 {
 	AOCGLevelGenerator* LevelGenerator = Cast<AOCGLevelGenerator>(GetOwner());
-	
+    
 	if (!MapPreset || !LevelGenerator)
 	{
 		UE_LOG(LogOCGModule, Error, TEXT("MapPreset is not set. Cannot generate random start point for river."));
 		return FIntPoint(0, 0);
 	}
 
-	FRandomStream Stream(MapPreset->RiverSeed);
-	// Select a random high point or default to the center of the map
-	FIntPoint StartPoint = CachedRiverStartPoints.Num() > 0 ?
-		CachedRiverStartPoints[Stream.RandRange(0, CachedRiverStartPoints.Num() - 1)] :
-		FIntPoint(MapPreset->MapResolution.X / 2, MapPreset->MapResolution.Y - 1);
+	// 강마다 시드 고유화(재현성 보장)
+	FRandomStream Stream(MapPreset->RiverSeed + RiverIndex * 9973); // 9973은 큰 소수
+    
+	FIntPoint StartPoint;
+	if (CachedRiverStartPoints.Num() > 0)
+	{
+		StartPoint = CachedRiverStartPoints[Stream.RandRange(0, CachedRiverStartPoints.Num() - 1)];
+	}
+	else
+	{
+		StartPoint = FIntPoint(MapPreset->MapResolution.X / 2, MapPreset->MapResolution.Y - 1);
+	}
 
 	return StartPoint;
 }
