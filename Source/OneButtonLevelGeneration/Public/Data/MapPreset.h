@@ -494,7 +494,7 @@ public:
 	// Count of rivers to generate.
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0", ClampMax = "10", UIMin = "0",
+		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "1", ClampMax = "10", UIMin = "1",
 			UIMax = "10")
 	)
 	int32 RiverCount = 1;

@@ -28,6 +28,7 @@
 
 UOCGRiverGenerateComponent::UOCGRiverGenerateComponent()
 {
+
 }
 
 void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLandscape, bool bForceCleanUpPrevWaterWeightMap)
@@ -53,8 +54,26 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	{
 		return;		
 	}
+
+	if (!InWorld || !TargetLandscape || !MapPreset)
+	{
+		UE_LOG(LogOCGModule, Warning, TEXT("River generation failed: Invalid world or landscape or map preset."));
+		return;
+	}
+
+	if (!MapPreset->bGenerateRiver)
+	{
+		bIsRiverExists = false;
+		return;
+	}
+	
+	if (MapPreset && bIsRiverExists && CurrentRiverSeed == MapPreset->RiverSeed)
+	{
+		return;
+	}
 	
 	MapPreset = GetLevelGenerator()->GetMapPreset();
+
 	
 	ClearAllRivers();
 	if (bForceCleanUpPrevWaterWeightMap)
@@ -79,17 +98,8 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			}
 		}
 	}
-	
-	if (!InWorld || !TargetLandscape || !MapPreset)
-	{
-		UE_LOG(LogOCGModule, Warning, TEXT("River generation failed: Invalid world or landscape or map preset."));
-		return;
-	}
 
-	if (!MapPreset->bGenerateRiver)
-	{
-		return;
-	}
+	CurrentRiverSeed = MapPreset ? MapPreset->RiverSeed : 0;
 
 	const TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
 	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
@@ -185,6 +195,8 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 			// Generate AWaterBodyRiver Actor
 			FVector WaterBodyPos = GetLandscapePointWorldPosition(StartPoint, LandscapeOrigin, LandscapeExtent);
 			FTransform WaterBodyTransform = FTransform(WaterBodyPos);
+
+			// Spawn Water Body Actor
 			AWaterBodyRiver* WaterBodyRiver = InWorld->SpawnActor<AWaterBodyRiver>(AWaterBodyRiver::StaticClass(), WaterBodyTransform);
 
 			TArray<AActor*> FoundActors;
@@ -237,6 +249,8 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 	}
 
 	ApplyWaterWeight();
+
+	bIsRiverExists = true;
 #endif
 }
 
@@ -534,6 +548,14 @@ void UOCGRiverGenerateComponent::ClearAllRivers()
 #endif
 	}
 	CachedRivers.Empty();
+
+	
+	FGuid WaterLayerGuid = OCGLandscapeUtil::GetLandscapeLayerGuid(TargetLandscape, FName(TEXT("Water")));
+	if (TargetLandscape)
+	{
+		TargetLandscape->ClearLayer(WaterLayerGuid);
+		TargetLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All);
+	}
 }
 
 FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const FVector& LandscapeOrigin, const FVector& LandscapeExtent) const

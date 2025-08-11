@@ -49,37 +49,42 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
         [
-            SNew(SButton)
-            .Text(FText::FromString(TEXT("Generate")))
-            .OnClicked(this, &SOCGWidget::OnGenerateLevelClicked)
-            .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)
-        ]
-        // Generate Level With Random Seed Button
-        + SVerticalBox::Slot()
-        .AutoHeight().Padding(5)
-        [
-            SNew(SButton)
-            .Text(FText::FromString(TEXT("Generate With Random Seed")))
-            .OnClicked_Lambda([this]()-> FReply
-            {
-                if (MapPreset.Get())
-                {
-                    const int32 Seed = FMath::Rand();
-                    UE_LOG(LogTemp, Display, TEXT("Seed: %i"), Seed);
-                    MapPreset->Seed = Seed;
-                }
-                return OnGenerateLevelClicked();
-            })
-            .IsEnabled_Lambda([this]()-> bool
-            {
-                if (MapPreset.Get())
-                {
-                    return IsGenerateEnabled() && MapPreset->HeightmapFilePath.FilePath.IsEmpty();
-                }
-                return false;
-            })
-        ]
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .FillWidth(1.0f) 
+            [
+                SNew(SButton)
+                .Text(FText::FromString(TEXT("Generate")))
+                .OnClicked(this, &SOCGWidget::OnGenerateLevelClicked)
+                .IsEnabled(this, &SOCGWidget::IsGenerateEnabled)         
+            ]
 
+            +SHorizontalBox::Slot()
+            .FillWidth(1.0f) 
+            [
+                SNew(SButton)
+                .Text(FText::FromString(TEXT("Generate With Random Seed")))
+                .OnClicked_Lambda([this]()-> FReply
+                {
+                    if (MapPreset.Get())
+                    {
+                        const int32 Seed = FMath::Rand();
+                        UE_LOG(LogTemp, Display, TEXT("Seed: %i"), Seed);
+                        MapPreset->Seed = Seed;
+                    }
+                    return OnGenerateLevelClicked();
+                })
+                .IsEnabled_Lambda([this]()-> bool
+                {
+                    if (MapPreset.Get())
+                    {
+                        return IsGenerateEnabled() && MapPreset->HeightmapFilePath.FilePath.IsEmpty();
+                    }
+                    return false;
+                })
+            ]
+        ]
+        
         //Force Generate PCG Button
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
@@ -94,10 +99,40 @@ void SOCGWidget::Construct([[maybe_unused]] const FArguments& InArgs)
         + SVerticalBox::Slot()
         .AutoHeight().Padding(5)
         [
-            SNew(SButton)
-            .Text(FText::FromString(TEXT("Regenerate River")))
-            .OnClicked(this, &SOCGWidget::OnRegenerateRiverClicked)
-            .IsEnabled(this, &SOCGWidget::IsRegenerateRiverButtonEnabled)
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .FillWidth(1.0f) 
+            [
+                SNew(SButton)
+                .Text(FText::FromString(TEXT("Regenerate River")))
+                .OnClicked(this, &SOCGWidget::OnRegenerateRiverClicked)
+                .IsEnabled(this, &SOCGWidget::IsRegenerateRiverButtonEnabled)
+            ]
+
+            + SHorizontalBox::Slot()
+            .FillWidth(1.0f) 
+            [
+                SNew(SButton)
+                .Text(FText::FromString(TEXT("Regenerate River With Random Seed")))
+                .OnClicked_Lambda([this]()-> FReply
+               {
+                   if (MapPreset.Get())
+                   {
+                       const int32 RiverSeed = FMath::Rand();
+                       UE_LOG(LogTemp, Display, TEXT("River Seed: %i"), RiverSeed);
+                       MapPreset->RiverSeed = RiverSeed;
+                   }
+                   return OnRegenerateRiverClicked();
+               })
+               .IsEnabled_Lambda([this]()-> bool
+               {
+                   if (MapPreset.Get())
+                   {
+                       return IsRegenerateRiverButtonEnabled();
+                   }
+                   return false;
+               })
+            ]
         ]
         
         // MapPreset Asset Selection and Creation UI

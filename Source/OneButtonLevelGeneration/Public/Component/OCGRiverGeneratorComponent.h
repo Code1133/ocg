@@ -82,6 +82,12 @@ private:
 
 	uint16 RiverHeightMapWidth;
 	uint16 RiverHeightMapHeight;
+
+	UPROPERTY()
+	bool bIsRiverExists = false;
+
+	UPROPERTY()
+	int32 CurrentRiverSeed = 0;
 };
 
 
