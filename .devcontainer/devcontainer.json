@@ -1,0 +1,33 @@
+{
+  "name": "Jekyll",
+  "image": "mcr.microsoft.com/devcontainers/jekyll:2-bullseye",
+  "onCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "forwardPorts": [
+    // Jekyll server
+    4000,
+    // Live reload server
+    35729
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "killalau.vscode-liquid-snippets",
+        "Shopify.theme-check-vscode",
+        "timonwong.shellcheck",
+        "mkhl.shfmt",
+        "EditorConfig.EditorConfig",
+        "esbenp.prettier-vscode",
+        "stylelint.vscode-stylelint",
+        "yzhang.markdown-all-in-one",
+        "mhutchie.git-graph",
+        "Gruntfuggly.todo-tree",
+        "GitHub.vscode-pull-request-github",
+        "shd101wyy.markdown-preview-enhanced"
+      ]
+    }
+  }
+}

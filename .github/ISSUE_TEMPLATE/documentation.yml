@@ -1,0 +1,52 @@
+name: Documentation Issue
+description: Report an issue with documentation
+title: "[Docs]: "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Found an issue with our documentation? Let us know!
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What's the problem?
+      options:
+        - Missing Information
+        - Incorrect Information
+        - Unclear Instructions
+        - Broken Link
+        - Typo/Grammar
+        - Outdated Content
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: page-url
+    attributes:
+      label: Page URL (Optional)
+      description: Which page is this about?
+      placeholder: https://code1133.github.io/ocg/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue or suggestion
+      placeholder: What's wrong and how can we improve it?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked the current documentation thoroughly
+          required: true

@@ -1,0 +1,60 @@
+name: Bug Report
+description: Report a bug to help us improve the OCG project
+title: "[Bug]: "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the fields below.
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen
+      placeholder: |
+        Bug description: ...
+        Expected behavior: ...
+        Actual behavior: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: How to reproduce
+      description: Steps to reproduce the issue
+      placeholder: |
+        1. Step 1
+        2. Step 2
+        3. Bug occurs
+    validations:
+      required: true
+
+  - type: input
+    id: version-info
+    attributes:
+      label: Version Info
+      description: OCG version and Unreal Engine version
+      placeholder: OCG v1.0.0, UE 5.5
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Info (Optional)
+      description: Screenshots, logs, or other helpful information
+      placeholder: Add any screenshots, error messages, or additional context here
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to avoid duplicates
+          required: true
