@@ -4,8 +4,8 @@ description: Documentation for the One-Click Level Generator (OCG) project, prov
 favicon_ico: "/assets/favicons/favicon.ico"
 
 url: https://code1133.github.io
-baseurl: /ocg-docs
-repository: https://github.com/Code1133/ocg-docs/
+baseurl: /ocg
+repository: https://github.com/Code1133/ocg/
 
 theme: just-the-docs
 color_scheme: dark
@@ -28,8 +28,8 @@ footer_content: "Copyright &copy; 2025 Code1133 | All rights reserved."
 
 # Auxiliary links configuration
 aux_links:
-  Docs Repository: https://github.com/Code1133/ocg-docs/
-  Issues: https://github.com/Code1133/ocg-docs/issues
+  Docs Repository: https://github.com/Code1133/ocg/
+  Issues: https://github.com/Code1133/ocg/issues
 aux_links_new_tab: true
 
 # Callouts configuration

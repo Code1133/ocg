@@ -19,4 +19,4 @@ While the One-Click Level Generator aims for easy and fast level creation, it ha
 
 If you encounter any bugs or issues, please report them on [GitHub Issues].
 
-[GitHub Issues]: https://github.com/Code1133/ocg-docs/issues
+[GitHub Issues]: https://github.com/Code1133/ocg/issues
