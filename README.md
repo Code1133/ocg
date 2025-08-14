@@ -1,6 +1,6 @@
-# One-Button Level Generator
+# One-Click Level Generator
 
-One Button Level Generator is a user-friendly tool that allows you to create levels simply.
+One Click Level Generator is a user-friendly tool that allows you to create levels simply.
 You can create a level by setting characteristics for each biome.
 
 ## Dependencies
