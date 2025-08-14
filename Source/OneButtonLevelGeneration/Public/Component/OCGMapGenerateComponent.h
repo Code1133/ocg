@@ -1,0 +1,115 @@
+// Copyright (c) 2025 Code1133. All rights reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "OCGMapGenerateComponent.generated.h"
+
+class UMapPreset;
+class AOCGLevelGenerator;
+struct FOCGBiomeSettings;
+struct FLandscapeImportLayerInfo;
+class ALandscape;
+
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+class ONEBUTTONLEVELGENERATION_API UOCGMapGenerateComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	// Sets default values for this component's properties
+	UOCGMapGenerateComponent();
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+public:
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
+	AOCGLevelGenerator* GetLevelGenerator() const;
+	
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivateAccess="true"))
+	// TMap<FName, FOCGBiomeSettings> Biomes;
+
+	// NOTE : Moved to MapPreset
+	// TArray<uint16> HeightMapData;
+	// TArray<uint16> TemperatureMapData;
+	// TArray<uint16> HumidityMapData;
+	TMap<FName, TArray<uint8>> WeightLayers;
+	TArray<FColor> BiomeColorMap;
+
+	float LandscapeZScale;
+	float ZOffset;
+public:
+	// NOTE : Moved to MapPreset
+	// FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
+	// FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
+	// FORCEINLINE const TArray<uint16>& GetHumidityMapData() { return HumidityMapData; }
+	FORCEINLINE const TMap<FName, TArray<uint8>>& GetWeightLayers() { return WeightLayers; }
+	FORCEINLINE const TArray<FColor>& GetBiomeColorMap() { return BiomeColorMap; }
+	// FORCEINLINE const float GetMaxHeight() const { return MapPreset->; }
+	// FORCEINLINE const float GetMinHeight() const { return MinHeight; }
+	FORCEINLINE float GetZScale() const { return LandscapeZScale; }
+	FORCEINLINE float GetZOffset() const { return ZOffset; }
+
+private:
+	UPROPERTY()
+	FVector2D PlainNoiseOffset;
+	FVector2D MountainNoiseOffset;
+	FVector2D BlendNoiseOffset;
+	FVector2D DetailNoiseOffset;
+	FVector2D IslandNoiseOffset;
+	float NoiseScale;
+	float PlainHeight;
+	FRandomStream Stream;
+	TArray<FName> BiomeNameMap;
+	//침식 관련 변수
+	TArray<TArray<int32>> ErosionBrushIndices;
+	TArray<TArray<float>> ErosionBrushWeights;
+	int32 CurrentErosionRadius = 0;
+
+public:
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateMaps();
+	void GenerateMapsWithHeightMap();
+
+private:
+	static FIntPoint FixToNearestValidResolution(FIntPoint InResolution);
+	float HeightMapToWorldHeight(uint16 Height);
+	uint16 WorldHeightToHeightMap(float Height);
+
+	void Initialize(const UMapPreset* MapPreset);
+	void InitializeNoiseOffsets(const UMapPreset* MapPreset);
+	void GenerateHeightMap(const UMapPreset* MapPreset, const FIntPoint CurMapResolution, TArray<uint16>& OutHeightMap);
+	float CalculateHeightForCoordinate(const UMapPreset* MapPreset, const int32 InX, const int32 InY) const;
+	void GenerateTempMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, TArray<uint16>& OutTempMap);
+	void GenerateHumidityMap(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, TArray<uint16>& OutHumidityMap);
+	void DecideBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap, bool bExportMap = false);
+	void BlendBiome(const UMapPreset* MapPreset);
+	void ExportMap(const UMapPreset* MapPreset, const TArray<uint16>& InMap, const FString& FileName) const;
+	void ExportMap(const UMapPreset* MapPreset, const TArray<FColor>& InMap, const FString& FileName) const;
+	void ErosionPass(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void InitializeErosionBrush();
+	float CalculateHeightAndGradient(const UMapPreset* MapPreset, const TArray<float>& HeightMap, const float LandscapeScale, float PosX, float PosY, FVector2D& OutGradient);
+	void ModifyLandscapeWithBiome(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
+	void CalculateBiomeMinHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutMinHeights, const UMapPreset* MapPreset);
+	void BlurBiomeMinHeights(TArray<float>& OutMinHeights, const TArray<float>& InMinHeights, const UMapPreset* MapPreset);
+	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
+	void GetMaxMinHeight(UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
+	void SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, TArray<uint16>& OutBlurredMap);
+	void ApplySpikeSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	void ProcessPlane(const UMapPreset* MapPreset, int32 x, int32 y, const FIntPoint MapSize, const int32 KernelRadius, const int32 KernelSize, const float MaxAllowedSlope, int32& SmoothedRegion, TArray<uint16>& InOriginalHeightMap, TArray<uint16>& OutHeightMap);
+	void FinalizeBiome(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap, const TArray<uint16>& InTempMap, const TArray<uint16>& InHumidityMap, TArray<const FOCGBiomeSettings*>& OutBiomeMap);
+	void MedianSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
+	
+private:
+	float CachedGlobalMinTemp;
+	float CachedGlobalMaxTemp;
+	float CachedGlobalMinHumidity;
+	float CachedGlobalMaxHumidity;
+};

@@ -1,0 +1,71 @@
+// Copyright (c) 2025 Code1133. All rights reserved.
+
+using UnrealBuildTool;
+
+public class OneButtonLevelGeneration : ModuleRules
+{
+	public OneButtonLevelGeneration(ReadOnlyTargetRules Target) : base(Target)
+	{
+		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		
+		PublicIncludePaths.AddRange(
+			new string[] {
+				// ... add public include paths required here ...
+			}
+			);
+				
+		
+		PrivateIncludePaths.AddRange(
+			new string[] {
+				// ... add other private include paths required here ...
+			}
+			);
+			
+		
+		PublicDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"Core",
+				"CoreUObject",
+				"PCG",
+				"PCGGeometryScriptInterop",
+				"PCGWaterInterop",
+			}
+			);
+			
+		
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"AssetTools",
+				"EditorStyle",
+				"Engine",
+				"Landscape",
+				"LandscapeEditor",
+				"PCGEditor",
+				"PropertyEditor",
+				"Slate",
+				"SlateCore",
+				"UnrealEd",
+				"WorkspaceMenuStructure",
+				"MaterialEditor",
+				"InputCore",
+				"DeveloperSettings", 
+				"VirtualTexturingEditor",
+				"Projects", 
+				"Water", 
+				"WaterEditor",
+				"ToolMenus",
+				"Foliage",
+			}  
+			);
+		
+		
+		DynamicallyLoadedModuleNames.AddRange(
+			new string[]
+			{
+				// ... add any modules that your module loads dynamically here ...
+			}
+			);
+	}
+}

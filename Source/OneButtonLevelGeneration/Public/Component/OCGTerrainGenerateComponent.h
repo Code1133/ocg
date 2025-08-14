@@ -1,0 +1,34 @@
+// Copyright (c) 2025 Code1133. All rights reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "OCGTerrainGenerateComponent.generated.h"
+
+class AOCGLandscapeVolume;
+class AOCGLevelGenerator;
+
+
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+class ONEBUTTONLEVELGENERATION_API UOCGTerrainGenerateComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:
+	// Sets default values for this component's properties
+	UOCGTerrainGenerateComponent();
+
+public:
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateTerrainInEditor();
+
+	UFUNCTION(CallInEditor, Category = "Actions")
+	void GenerateTerrain(UWorld* World);
+
+private:
+	AOCGLevelGenerator* GetLevelGenerator() const;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Cache")
+	TSoftObjectPtr<AOCGLandscapeVolume> OCGVolumeAssetSoftObjectPtr;
+};
