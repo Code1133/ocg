@@ -1,0 +1,51 @@
+name: Question
+description: Ask a question about using OCG
+title: "[Question]: "
+labels: ["question"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help!
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: Ask your question here...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What is your question about?
+      options:
+        - Installation/Setup
+        - Level Generation
+        - Configuration
+        - Performance
+        - Troubleshooting
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context (Optional)
+      description: Any relevant details, code, or screenshots
+      placeholder: What are you trying to achieve? What have you tried?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked the documentation first
+          required: true

@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "killalau.vscode-liquid-snippets",
+    "Shopify.theme-check-vscode",
+    "timonwong.shellcheck",
+    "mkhl.shfmt",
+    "EditorConfig.EditorConfig",
+    "esbenp.prettier-vscode",
+    "stylelint.vscode-stylelint",
+    "yzhang.markdown-all-in-one",
+    "mhutchie.git-graph",
+    "Gruntfuggly.todo-tree",
+    "GitHub.vscode-pull-request-github",
+    "shd101wyy.markdown-preview-enhanced"
+  ]
+}

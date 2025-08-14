@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://code1133.github.io/ocg/
+    about: Check our comprehensive documentation before opening an issue
+  - name: 💬 Discussions
+    url: https://github.com/Code1133/ocg/discussions
+    about: Join the community discussions for general questions and ideas
+  - name: 🐛 Security Issues
+    url: mailto:techlab.code1133@gmail.com
+    about: Please report security vulnerabilities privately via email

@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new feature for OCG
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for a new feature? Let us know!
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: What feature would you like to see?
+      placeholder: Describe the feature you want...
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-needed
+    attributes:
+      label: Why is this needed?
+      description: What problem would this solve?
+      placeholder: This would help because...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this to you?
+      options:
+        - Nice to have
+        - Would be helpful
+        - Important
+        - Critical
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Info (Optional)
+      description: Examples, mockups, or other details
+      placeholder: Any additional context, examples, or mockups...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues to avoid duplicates
+          required: true
