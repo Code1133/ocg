@@ -2,7 +2,10 @@
 #include "Tests/Regression/OCGGoldenTestCommon.h"
 
 #include "Component/OCGMapGenerateComponent.h"
+#include "Data/MapPreset.h"
 #include "Misc/AutomationTest.h"
+#include "OCGLevelGenerator.h"
+#include "Tests/Benchmark/FOCGBenchmarkRunner.h"
 
 /**
  * 값을 0으로 설정하면 레코드(기록) 모드로 동작합니다.
