@@ -1,0 +1,30 @@
+// Copyright (c) 2025-2026 Code1133. All rights reserved.
+#pragma once
+
+#include "CoreMinimal.h"
+
+/**
+ * 맵 생성 파이프라인의 중간 결과물을 담는 런타임 전용 컨테이너입니다.
+ * Subsystem 간 데이터 전달용으로만 사용하며, 직렬화(저장)되지 않습니다.
+ *
+ * v2 이전에는 이 데이터들이 UMapPreset에 혼재되어 있었으나,
+ * 런타임 상태 데이터와 에셋 설정값을 명확히 분리하기 위해 도입되었습니다.
+ */
+struct ONEBUTTONLEVELGENERATION_API FOCGWorldDataContainer
+{
+	/** 생성된 높이맵 데이터 (uint16, MapResolution.X * MapResolution.Y 크기) */
+	TArray<uint16> HeightMapData;
+
+	/** 생성된 온도맵 데이터 */
+	TArray<uint16> TemperatureMapData;
+
+	/** 생성된 습도맵 데이터 */
+	TArray<uint16> HumidityMapData;
+
+	/** 바이옴별 Landscape 레이어 가중치 데이터 (레이어 이름 -> 가중치 배열) */
+	TMap<FName, TArray<uint8>> WeightLayers;
+
+public:
+	/** 모든 데이터 배열을 비우고 초기 상태로 되돌립니다. */
+	void Reset();
+};
