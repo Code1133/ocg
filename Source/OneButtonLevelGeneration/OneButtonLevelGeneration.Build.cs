@@ -8,77 +8,55 @@ public class OneButtonLevelGeneration : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicIncludePaths.AddRange(
-			new string[]
-			{
-				// ... add public include paths required here ...
-			}
-		);
+		// 공개 헤더에서 타입을 직접 노출하는 모듈
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"PCG",
+			"PCGGeometryScriptInterop",
+			"PCGWaterInterop",
+		});
 
+		// 내부에서 필요한 구현 전용 모듈
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"DeveloperSettings",
+			"Foliage",
+			"Landscape",
+			"Projects",
+			"Water",
+		});
 
-		PrivateIncludePaths.AddRange(
-			new string[]
-			{
-				// ... add other private include paths required here ...
-			}
-		);
+        // 에디터 전용 모듈
+		if (Target.Type == TargetType.Editor)
+		{
+            PublicDependencyModuleNames.AddRange(new string[]
+            {
+                "EditorSubsystem",
+            });
 
-
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				"CoreUObject",
-				"PCG",
-				"PCGGeometryScriptInterop",
-				"PCGWaterInterop",
-			}
-		);
-
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
+			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"AssetTools",
+				"AutomationController",
 				"EditorStyle",
-				"Engine",
-				"Landscape",
+				"FunctionalTesting",
+				"InputCore",
 				"LandscapeEditor",
+				"LevelEditor",
+				"MaterialEditor",
 				"PCGEditor",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
-				"UnrealEd",
-				"WorkspaceMenuStructure",
-				"MaterialEditor",
-				"InputCore",
-				"DeveloperSettings",
-				"VirtualTexturingEditor",
-				"Projects",
-				"Water",
-				"WaterEditor",
 				"ToolMenus",
-				"Foliage",
-			}
-		);
-
-		if (Target.Type == TargetType.Editor)
-		{
-			PrivateDependencyModuleNames.AddRange(
-				new string[]
-				{
-					"AutomationController",
-					"FunctionalTesting",
-					"LevelEditor",
-				}
-			);
+				"UnrealEd",
+				"VirtualTexturingEditor",
+				"WaterEditor",
+				"WorkspaceMenuStructure",
+			});
 		}
-
-
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-		);
 	}
 }
