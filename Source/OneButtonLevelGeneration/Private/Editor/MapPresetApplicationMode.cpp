@@ -31,9 +31,17 @@ void FMapPresetApplicationMode::RegisterTabFactories(TSharedPtr<FTabManager> InT
 	// Validate the toolkit pointer before proceeding
 	if (const TSharedPtr<FMapPresetEditorToolkit> Toolkit = MyToolkit.Pin())
 	{
-		// Register the tab spawners with the toolkit
-		Toolkit->RegisterTabSpawners(InTabManager.ToSharedRef());
-	}
-	FApplicationMode::RegisterTabFactories(InTabManager);
-}
+		const TSharedRef<FTabManager> TabManagerRef = InTabManager.ToSharedRef();
 
+		// Register the tab spawners with the toolkit
+		Toolkit->RegisterTabSpawners(TabManagerRef);
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 8
+		RegisterTabFactoriesWithAppAndManager(Toolkit.Get(), TabManagerRef);
+#endif
+	}
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 8
+	FApplicationMode::RegisterTabFactories(InTabManager);
+#endif
+}
