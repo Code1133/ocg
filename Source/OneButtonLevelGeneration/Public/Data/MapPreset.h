@@ -635,13 +635,16 @@ public:
 	//~ End UPROPERTY OCG
 
 public:
-	UPROPERTY()
+	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
+	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
 	TArray<uint16> HeightMapData;
 
-	UPROPERTY()
+	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
+	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
 	TArray<uint16> TemperatureMapData;
 
-	UPROPERTY()
+	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
+	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
 	TArray<uint16> HumidityMapData;
 
 #if WITH_EDITOR
