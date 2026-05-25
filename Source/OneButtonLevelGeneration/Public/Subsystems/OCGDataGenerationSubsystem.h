@@ -8,6 +8,7 @@
 
 class UMapPreset;
 class UOCGHeightmapStrategyBase;
+class UOCGTemperatureStrategyBase;
 
 /**
  * 높이맵, 온도맵, 습도맵 생성과 바이옴 배정, 평탄화(Smoothing) 및 침식 데이터 처리를 담당하는 에디터 서브시스템
@@ -31,10 +32,14 @@ public:
 	FORCEINLINE const FOCGWorldDataContainer& GetDataContainer() const { return DataContainer; }
 
 private:
-	/** 생성 파이프라인의 중간 결과물을 보관하는 런타임 전용 컨테이너. */
+	/** 생성 파이프라인의 중간 결과물을 보관하는 런타임 전용 컨테이너 */
 	FOCGWorldDataContainer DataContainer;
 
-	/** 높이맵 생성 전략 구현체. GC 대상이 되지 않도록 UPROPERTY로 소유합니다. */
+	/** 높이맵 생성 전략 구현체 */
 	UPROPERTY()
 	TObjectPtr<UOCGHeightmapStrategyBase> HeightmapStrategy;
+
+	/** 온도맵 생성 전략 구현체 */
+	UPROPERTY()
+	TObjectPtr<UOCGTemperatureStrategyBase> TemperatureStrategy;
 };
