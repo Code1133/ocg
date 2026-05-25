@@ -12,6 +12,7 @@ class UOCGTemperatureStrategyBase;
 class UOCGHumidityStrategyBase;
 class UOCGBiomeStrategyBase;
 class UOCGErosionStrategyBase;
+class UOCGSmoothingStrategyBase;
 
 /**
  * 높이맵, 온도맵, 습도맵 생성과 바이옴 배정, 평탄화(Smoothing) 및 침식 데이터 처리를 담당하는 에디터 서브시스템
@@ -57,4 +58,8 @@ private:
 	/** 수력 침식 시뮬레이션 전략 구현체 */
 	UPROPERTY()
 	TObjectPtr<UOCGErosionStrategyBase> ErosionStrategy;
+
+	/** 높이맵 평탄화 전략 구현체 */
+	UPROPERTY()
+	TObjectPtr<UOCGSmoothingStrategyBase> SmoothingStrategy;
 };
