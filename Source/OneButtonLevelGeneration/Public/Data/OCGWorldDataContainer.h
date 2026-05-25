@@ -24,6 +24,20 @@ struct ONEBUTTONLEVELGENERATION_API FOCGWorldDataContainer
 	/** 바이옴별 Landscape 레이어 가중치 데이터 (레이어 이름 -> 가중치 배열) */
 	TMap<FName, TArray<uint8>> WeightLayers;
 
+	/**
+	 * 온도맵 생성 후 계산된 전역 최솟값/최댓값 (실제 온도 단위, °C)
+	 * TemperatureMapData의 uint16 값을 실제 온도로 역산할 때 사용하며, Biome 전략이 참조합니다.
+	 */
+	float MinTemp = 0.0f;
+	float MaxTemp = 0.0f;
+
+	/**
+	 * 습도맵 생성 후 계산된 전역 최솟값/최댓값 (0~1 정규화 값)
+	 * HumidityMapData의 uint16 값을 실제 습도로 역산할 때 사용하며, Biome 전략이 참조합니다.
+	 */
+	float MinHumidity = 0.0f;
+	float MaxHumidity = 0.0f;
+
 public:
 	/** 모든 데이터 배열을 비우고 초기 상태로 되돌립니다. */
 	void Reset();

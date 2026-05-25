@@ -3,12 +3,14 @@
 
 #include "Data/MapPreset.h"
 #include "Strategies/OCGDefaultHeightmapStrategy.h"
+#include "Strategies/OCGDefaultTemperatureStrategy.h"
 
 void UOCGDataGenerationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	HeightmapStrategy = NewObject<UOCGDefaultHeightmapStrategy>(this);
+	HeightmapStrategy   = NewObject<UOCGDefaultHeightmapStrategy>(this);
+	TemperatureStrategy = NewObject<UOCGDefaultTemperatureStrategy>(this);
 }
 
 void UOCGDataGenerationSubsystem::Deinitialize()
@@ -25,4 +27,5 @@ void UOCGDataGenerationSubsystem::GenerateData(const UMapPreset* Preset)
 
 	DataContainer.Reset();
 	HeightmapStrategy->GenerateHeightMap(Preset, DataContainer);
+	TemperatureStrategy->GenerateTemperatureMap(Preset, DataContainer);
 }
