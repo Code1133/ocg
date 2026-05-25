@@ -6,6 +6,7 @@
 #include "Strategies/OCGDefaultTemperatureStrategy.h"
 #include "Strategies/OCGDefaultHumidityStrategy.h"
 #include "Strategies/OCGDefaultBiomeStrategy.h"
+#include "Strategies/OCGDefaultErosionStrategy.h"
 
 void UOCGDataGenerationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -15,6 +16,7 @@ void UOCGDataGenerationSubsystem::Initialize(FSubsystemCollectionBase& Collectio
 	TemperatureStrategy = NewObject<UOCGDefaultTemperatureStrategy>(this);
 	HumidityStrategy    = NewObject<UOCGDefaultHumidityStrategy>(this);
 	BiomeStrategy       = NewObject<UOCGDefaultBiomeStrategy>(this);
+	ErosionStrategy     = NewObject<UOCGDefaultErosionStrategy>(this);
 }
 
 void UOCGDataGenerationSubsystem::Deinitialize()
@@ -34,4 +36,5 @@ void UOCGDataGenerationSubsystem::GenerateData(const UMapPreset* Preset)
 	TemperatureStrategy->GenerateTemperatureMap(Preset, DataContainer);
 	HumidityStrategy->GenerateHumidityMap(Preset, DataContainer);
 	BiomeStrategy->DecideAndBlendBiomes(Preset, DataContainer);
+	ErosionStrategy->ApplyErosion(Preset, DataContainer);
 }
