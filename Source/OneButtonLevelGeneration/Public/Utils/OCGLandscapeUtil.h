@@ -64,6 +64,8 @@ public:
 
 	static TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset);
 
+	static TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, const TMap<FName, TArray<uint8>>& InWeightLayers, const UMapPreset* InMapPreset);
+
 	static void RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator, UMapPreset* MapPreset);
 
 	static void ForceGeneratePCG(UWorld* World);
