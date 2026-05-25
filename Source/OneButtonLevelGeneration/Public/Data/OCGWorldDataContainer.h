@@ -46,6 +46,13 @@ struct ONEBUTTONLEVELGENERATION_API FOCGWorldDataContainer
 	float MinHumidity = 0.0f;
 	float MaxHumidity = 0.0f;
 
+	/**
+	 * 전체 생성 파이프라인 완료 후 계산된 실제 높이맵의 최솟값/최댓값 (월드 높이, cm 단위)
+	 * LandscapeGen, Hydrology등 하위 서브시스템이 참조합니다.
+	 */
+	float CurMinHeight = 0.0f;
+	float CurMaxHeight = 0.0f;
+
 public:
 	/** 모든 데이터 배열을 비우고 초기 상태로 되돌립니다. */
 	void Reset();

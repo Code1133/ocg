@@ -36,6 +36,13 @@ public:
 	FORCEINLINE const FOCGWorldDataContainer& GetDataContainer() const { return DataContainer; }
 
 private:
+	/**
+	 * 전체 파이프라인 완료 후 HeightMapData를 순회하여 CurMinHeight / CurMaxHeight를 계산합니다.
+	 * 기존 UOCGMapGenerateComponent::GetMaxMinHeight()에 해당합니다.
+	 */
+	void ComputeHeightRange(const UMapPreset* Preset);
+
+private:
 	/** 생성 파이프라인의 중간 결과물을 보관하는 런타임 전용 컨테이너 */
 	FOCGWorldDataContainer DataContainer;
 
