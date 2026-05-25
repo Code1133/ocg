@@ -1392,6 +1392,82 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
 #endif
 }
 
+TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscapeLayerData(
+	ALandscape* InTargetLandscape,
+	const TMap<FName, TArray<uint8>>& InWeightLayers,
+	const UMapPreset* InMapPreset
+)
+{
+#if WITH_EDITOR
+	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
+	if (!InTargetLandscape || !InMapPreset)
+	{
+		return MaterialLayerDataPerLayer;
+	}
+
+	ULandscapeInfo* LandscapeInfo = InTargetLandscape->GetLandscapeInfo();
+	TArray<FLandscapeImportLayerInfo> ImportLayerDataPerLayer;
+
+	const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
+	ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
+
+	TArray<FName> LayerNames;
+	if (InMapPreset->LandscapeMaterial && InMapPreset->LandscapeMaterial->Parent)
+	{
+		LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeMaterial->Parent));
+	}
+
+	for (int32 Index = 0; Index < InWeightLayers.Num(); ++Index)
+	{
+		FLandscapeImportLayerInfo LayerInfo;
+
+		const FName TempLayerName(FString::Printf(TEXT("Layer%d"), Index));
+		LayerInfo.LayerData = InWeightLayers.FindChecked(TempLayerName);
+
+		if (LayerNames.IsValidIndex(Index))
+		{
+			LayerInfo.LayerName = LayerNames[Index];
+		}
+		else
+		{
+			LayerInfo.LayerName = TempLayerName;
+			UE_LOG(LogOCGModule, Warning, TEXT("Layer %d not found in Material Names, using default name: %s"), Index, *TempLayerName.ToString());
+		}
+
+		ULandscapeLayerInfoObject* LayerInfoObject = nullptr;
+		if (LandscapeInfo)
+		{
+			LayerInfoObject = LandscapeInfo->GetLayerInfoByName(LayerInfo.LayerName);
+		}
+
+		if (!LayerInfoObject)
+		{
+			UE_LOG(LogOCGModule, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
+			LayerInfoObject = CreateLayerInfo(InTargetLandscape, LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
+		}
+		else
+		{
+			UE_LOG(LogOCGModule, Log, TEXT("Found and reused existing LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
+		}
+
+		if (LayerInfoObject)
+		{
+			LayerInfo.LayerInfo = LayerInfoObject;
+			ImportLayerDataPerLayer.Add(LayerInfo);
+		}
+		else
+		{
+			UE_LOG(LogOCGModule, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
+		}
+	}
+
+	MaterialLayerDataPerLayer.Add(FGuid(), MoveTemp(ImportLayerDataPerLayer));
+	return MaterialLayerDataPerLayer;
+#else
+	return {};
+#endif
+}
+
 ALandscapeProxy* OCGLandscapeUtil::FindOrAddLandscapeStreamingProxy(UActorPartitionSubsystem* InActorPartitionSubsystem,
                                                                     const ULandscapeInfo* InLandscapeInfo, const UActorPartitionSubsystem::FCellCoord& InCellCoord)
 {
