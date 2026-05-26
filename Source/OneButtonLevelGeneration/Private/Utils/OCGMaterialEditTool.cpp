@@ -2,6 +2,7 @@
 
 #include "Utils/OCGMaterialEditTool.h"
 
+#include "OCGLog.h"
 #include "FileHelpers.h"
 
 #if WITH_EDITOR
@@ -173,17 +174,17 @@ UMaterialExpression* OCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UM
 
 		if (ResultNode)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Material Attributes에 연결된 노드를 찾았습니다: %s"), *ResultNode->GetName());
+			UE_LOG(LogOCGModule, Log, TEXT("Found node connected to Material Attributes: %s"), *ResultNode->GetName());
 			return ResultNode;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Material Attributes 핀에 연결된 노드가 없습니다."));
+			UE_LOG(LogOCGModule, Warning, TEXT("No node is connected to the Material Attributes pin."));
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("이 머티리얼은 Material Attributes 모드를 사용하지 않습니다."));
+		UE_LOG(LogOCGModule, Warning, TEXT("This material does not use Material Attributes mode."));
 	}
 
 	return nullptr;

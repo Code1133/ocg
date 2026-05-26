@@ -3,22 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MapData.generated.h"
-
-USTRUCT(BlueprintType)
-struct FMapData
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TArray<uint16> HeightMap;
-
-	UPROPERTY()
-	TArray<float> TemperatureMap;
-
-	UPROPERTY()
-	TArray<float> HumidityMap;
-};
 
 namespace OCGMapDataUtils
 {

@@ -5,21 +5,6 @@
 #include "OCGBiomeSettings.generated.h"
 
 USTRUCT(BlueprintType)
-struct FOCGBiomeStaticMesh
-{
-    GENERATED_BODY()
-	
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-    UStaticMesh* StaticMesh = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-    int Weight = 1;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome")
-    FVector Scale = FVector(1.0f);
-};
-
-USTRUCT(BlueprintType)
 struct FOCGBiomeSettings
 {
     GENERATED_BODY()

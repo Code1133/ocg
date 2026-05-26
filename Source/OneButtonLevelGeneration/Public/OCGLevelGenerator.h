@@ -36,8 +36,6 @@ public:
 	UOCGRiverGenerateComponent* GetRiverGenerateComponent() { return RiverGenerateComponent; }
 
 	const TArray<uint16>& GetHeightMapData() const;
-	const TArray<uint16>& GetTemperatureMapData() const;
-	const TArray<uint16>& GetHumidityMapData() const;
 	const TMap<FName, TArray<uint8>>& GetWeightLayers() const;
 	const ALandscape* GetLandscape() const;
 	ALandscape* GetLandscape();
