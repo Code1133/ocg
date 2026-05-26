@@ -24,4 +24,13 @@ public:
 	 * @param DataContainer 온도, 습도맵 데이터를 읽어오고, 계산된 바이옴 결과를 다시 기록할 데이터 컨테이너
 	 */
 	virtual void DecideAndBlendBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) PURE_VIRTUAL(UOCGBiomeStrategyBase::DecideAndBlendBiomes);
+
+	/**
+	 * Smoothing/Erosion 이후 높이맵 변화로 달라진 픽셀의 바이옴을 재분류하고 가중치 레이어를 재블렌딩합니다.
+	 * bContainWater가 false이면 무시합니다.
+	 *
+	 * @param Preset 바이옴 설정 데이터가 포함된 UMapPreset 에셋 설정 데이터
+	 * @param DataContainer 갱신된 높이맵과 기존 바이옴 레이어가 담긴 컨테이너
+	 */
+	virtual void FinalizeBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) PURE_VIRTUAL(UOCGBiomeStrategyBase::FinalizeBiomes);
 };

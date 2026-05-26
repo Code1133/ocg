@@ -226,8 +226,8 @@ bool UOCGEditorSubsystem::ValidatePreset(const UMapPreset* Preset) const
 	{
 		FMessageDialog::Open(
 			EAppMsgType::Ok,
-			FText::FromString(TEXT("At least one biome must be defined in the preset before generating the level.")),
-			FText::FromString(TEXT("Error"))
+			NSLOCTEXT("OCG.Errors", "EmptyBiomes", "At least one biome must be defined in the preset before generating the level."),
+			NSLOCTEXT("OCG", "ErrorTitle", "Error")
 		);
 		return false;
 	}
@@ -238,8 +238,8 @@ bool UOCGEditorSubsystem::ValidatePreset(const UMapPreset* Preset) const
 		{
 			FMessageDialog::Open(
 				EAppMsgType::Ok,
-				FText::FromString(TEXT("Invalid Biome Name. Please set a valid name for each biome.")),
-				FText::FromString(TEXT("Error"))
+				NSLOCTEXT("OCG.Errors", "InvalidBiomeName", "Invalid Biome Name. Please set a valid name for each biome."),
+				NSLOCTEXT("OCG", "ErrorTitle", "Error")
 			);
 			return false;
 		}

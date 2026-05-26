@@ -22,7 +22,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 
 	// Initialize per-pixel maps
 	BiomeNameMap.SetNumUninitialized(PixelCount);
-	DataContainer.BiomeMap.SetNumUninitialized(PixelCount);
+	DataContainer.BiomeLayerMap.SetNumUninitialized(PixelCount);
 
 	// Initialize weight layers: Layer0 = Water, Layer1..N = Biomes
 	DataContainer.WeightLayers.Reset();
@@ -92,7 +92,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 
 					DataContainer.WeightLayers[LayerName][Index] = 255;
 					BiomeNameMap[Index] = LayerName;
-					DataContainer.BiomeMap[Index] = CurrentBiome;
+					DataContainer.BiomeLayerMap[Index] = static_cast<int32>(CurrentBiomeIndex);
 				}
 				else
 				{
@@ -225,4 +225,76 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 			}
 		}
 	}
+}
+
+void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
+{
+	if (!Preset->bContainWater)
+	{
+		return;
+	}
+
+	float TotalWeight = 0.0f;
+	for (const auto& Biome : Preset->Biomes)
+	{
+		TotalWeight += Biome.Weight;
+	}
+
+	const FIntPoint CurResolution = Preset->MapResolution;
+	const uint16 SeaLevelHeight = static_cast<uint16>(65535 * Preset->SeaLevel);
+
+	for (int32 Y = 0; Y < CurResolution.Y; ++Y)
+	{
+		for (int32 X = 0; X < CurResolution.X; ++X)
+		{
+			const int32 Index = Y * CurResolution.X + X;
+			const float Height = DataContainer.HeightMapData[Index];
+
+			const float NormalizedTemp = static_cast<float>(DataContainer.TemperatureMapData[Index]) / 65535.0f;
+			const float Temp = FMath::Lerp(DataContainer.MinTemp, DataContainer.MaxTemp, NormalizedTemp);
+
+			const float NormalizedHumidity = static_cast<float>(DataContainer.HumidityMapData[Index]) / 65535.0f;
+			const float Humidity = FMath::Lerp(DataContainer.MinHumidity, DataContainer.MaxHumidity, NormalizedHumidity);
+
+			const FOCGBiomeSettings* CurrentBiome = nullptr;
+			const FOCGBiomeSettings* WaterBiome = &Preset->WaterBiome;
+			uint32 CurrentBiomeIndex = INDEX_NONE;
+
+			if (WaterBiome && Height < SeaLevelHeight)
+			{
+				CurrentBiome = WaterBiome;
+				CurrentBiomeIndex = 0;
+			}
+			else
+			{
+				float MinDist = TNumericLimits<float>::Max();
+				const float TempRange = Preset->MaxTemp - Preset->MinTemp;
+
+				for (int32 BiomeIndex = 1; BiomeIndex <= Preset->Biomes.Num(); ++BiomeIndex)
+				{
+					const FOCGBiomeSettings* BiomeSettings = &Preset->Biomes[BiomeIndex - 1];
+					const float TempDiff     = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
+					const float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
+					const float Weight       = 1.0f - BiomeSettings->Weight / TotalWeight;
+					const float Dist         = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
+
+					if (Dist < MinDist)
+					{
+						MinDist = Dist;
+						CurrentBiome = BiomeSettings;
+						CurrentBiomeIndex = BiomeIndex;
+					}
+				}
+			}
+
+			if (CurrentBiome && CurrentBiomeIndex != INDEX_NONE)
+			{
+				const FName LayerName = *FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
+				BiomeNameMap[Index] = LayerName;
+				DataContainer.BiomeLayerMap[Index] = static_cast<int32>(CurrentBiomeIndex);
+			}
+		}
+	}
+
+	BlendBiomes(Preset, DataContainer);
 }
