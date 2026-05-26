@@ -7,7 +7,7 @@ void FOCGWorldDataContainer::Reset()
 	TemperatureMapData.Reset();
 	HumidityMapData.Reset();
 	WeightLayers.Reset();
-	BiomeMap.Reset();
+	BiomeLayerMap.Reset();
 	MinTemp = MaxTemp = 0.0f;
 	MinHumidity = MaxHumidity = 0.0f;
 	CurMinHeight = CurMaxHeight = 0.0f;

@@ -56,11 +56,14 @@ void UOCGPopulationSubsystem::ApplyPopulation(const UMapPreset* Preset)
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(World, AOCGLandscapeVolume::StaticClass(), FoundActors);
 
+	bool bChanged = false;
 	for (AActor* Actor : FoundActors)
 	{
 		if (Actor != VolumeInstance)
 		{
+			Actor->Modify();
 			World->EditorDestroyActor(Actor, true);
+			bChanged = true;
 		}
 	}
 
@@ -75,6 +78,7 @@ void UOCGPopulationSubsystem::ApplyPopulation(const UMapPreset* Preset)
 		}
 		VolumeInstance->SetIsSpatiallyLoaded(false);
 		VolumeInstance->Modify();
+		bChanged = true;
 	}
 
 	CachedVolumeAsset = TSoftObjectPtr<AOCGLandscapeVolume>(VolumeInstance);
@@ -93,5 +97,10 @@ void UOCGPopulationSubsystem::ApplyPopulation(const UMapPreset* Preset)
 				PCGComponent->Generate(true);
 			}
 		}
+	}
+
+	if (bChanged && World->GetCurrentLevel())
+	{
+		(void)World->GetCurrentLevel()->MarkPackageDirty();
 	}
 }

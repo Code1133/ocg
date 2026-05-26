@@ -11,6 +11,7 @@ class UOCGHeightmapStrategyBase;
 class UOCGTemperatureStrategyBase;
 class UOCGHumidityStrategyBase;
 class UOCGBiomeStrategyBase;
+class UOCGTerrainModifierStrategyBase;
 class UOCGErosionStrategyBase;
 class UOCGSmoothingStrategyBase;
 
@@ -64,6 +65,10 @@ private:
 	/** 바이옴 결정 및 블렌딩 전략 구현체 */
 	UPROPERTY()
 	TObjectPtr<UOCGBiomeStrategyBase> BiomeStrategy;
+
+	/** 바이옴 기반 지형 수정 전략 구현체 */
+	UPROPERTY()
+	TObjectPtr<UOCGTerrainModifierStrategyBase> TerrainModifierStrategy;
 
 	/** 수력 침식 시뮬레이션 전략 구현체 */
 	UPROPERTY()

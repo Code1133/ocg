@@ -2,7 +2,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Data/OCGBiomeSettings.h"
 
 /**
  * 맵 생성 파이프라인의 중간 결과물을 담는 런타임 전용 컨테이너입니다.
@@ -26,11 +25,10 @@ struct ONEBUTTONLEVELGENERATION_API FOCGWorldDataContainer
 	TMap<FName, TArray<uint8>> WeightLayers;
 
 	/**
-	 * 픽셀별 배정된 바이옴 설정 포인터 (MapResolution.X * MapResolution.Y 크기)
-	 * 포인터는 UMapPreset::Biomes / WaterBiome 내부를 가리키며, Preset이 살아있는 동안 유효합니다.
-	 * ModifyLandscapeWithBiome 전략이 참조합니다.
+	 * 픽셀별 배정된 바이옴 레이어 인덱스 (MapResolution.X * MapResolution.Y 크기)
+	 * 0 = Water, 1..N = Preset->Biomes[N-1]. TerrainModifier/FinalizeBiomes가 참조합니다.
 	 */
-	TArray<const FOCGBiomeSettings*> BiomeMap;
+	TArray<int32> BiomeLayerMap;
 
 	/**
 	 * 온도맵 생성 후 계산된 전역 최솟값/최댓값 (실제 온도 단위, °C)

@@ -17,9 +17,15 @@ class ONEBUTTONLEVELGENERATION_API UOCGDefaultBiomeStrategy : public UOCGBiomeSt
 public:
 	/**
 	 * 온도/습도 맵을 참조하여 픽셀별 바이옴을 결정(Decide)하고, 분리형 박스 블러로 가중치 레이어를 블렌딩합니다.
-	 * 결과는 DataContainer.WeightLayers(블렌딩된 가중치)와 DataContainer.BiomeMap(픽셀별 바이옴 포인터)에 기록됩니다.
+	 * 결과는 DataContainer.WeightLayers(블렌딩된 가중치)와 DataContainer.BiomeLayerMap(픽셀별 레이어 인덱스)에 기록됩니다.
 	 */
 	virtual void DecideAndBlendBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) override;
+
+	/**
+	 * Smoothing/Erosion 이후 해수면 기준으로 변화한 픽셀의 바이옴을 재분류하고 가중치 레이어를 재블렌딩합니다.
+	 * bContainWater가 false이면 즉시 반환합니다.
+	 */
+	virtual void FinalizeBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) override;
 
 private:
 	/**
