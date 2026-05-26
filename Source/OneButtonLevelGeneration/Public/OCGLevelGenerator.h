@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Replaced by UOCGEditorSubsystem + 4 WorldSubsystems. Scheduled for removal.
 
 #pragma once
 
@@ -24,9 +25,11 @@ public:
 	// Sets default values for this actor's properties
 	AOCGLevelGenerator();
 	
+	UE_DEPRECATED(5.7, "Use UOCGEditorSubsystem::ExecuteGeneration() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void Generate();
-	
+
+	UE_DEPRECATED(5.7, "Use UOCGEditorSubsystem::ExecuteGeneration() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void OnClickGenerate(UWorld* InWorld);
 	
@@ -47,7 +50,10 @@ public:
 	const UMapPreset* GetMapPreset() const { return MapPreset; }
 	UMapPreset* GetMapPreset() { return MapPreset; }
 
+	UE_DEPRECATED(5.7, "Use UOCGHydrologySubsystem::ApplyHydrology() instead.")
 	void AddWaterPlane(UWorld* InWorld);
+
+	UE_DEPRECATED(5.7, "Use UOCGHydrologySubsystem::ApplyHydrology() instead.")
 	void SetDefaultWaterProperties(class AWaterBody* InWaterBody);
 	
 	void DrawDebugLandscape(TArray<uint16>& HeightMapData);
@@ -55,6 +61,7 @@ public:
 	void PreviewMaps();
 
 public:
+	UE_DEPRECATED(5.7, "Use UOCGHydrologySubsystem::RegenerateOcean() instead.")
 	UFUNCTION(CallInEditor)
 	void RegenerateOcean();
 	

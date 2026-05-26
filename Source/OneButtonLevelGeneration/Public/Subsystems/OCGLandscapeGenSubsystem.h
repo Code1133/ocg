@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
-#include "Component/OCGLandscapeGenerateComponent.h"
+#include "Data/OCGLandscapeTypes.h"
 #include "OCGLandscapeGenSubsystem.generated.h"
 
 class UMapPreset;

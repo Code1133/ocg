@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Replaced by UOCGPopulationSubsystem. Scheduled for removal.
 
 #pragma once
 
@@ -20,9 +21,11 @@ public:
 	UOCGTerrainGenerateComponent();
 
 public:
+	UE_DEPRECATED(5.7, "Use UOCGPopulationSubsystem::ApplyPopulation() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateTerrainInEditor();
 
+	UE_DEPRECATED(5.7, "Use UOCGPopulationSubsystem::ApplyPopulation() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateTerrain(UWorld* World);
 

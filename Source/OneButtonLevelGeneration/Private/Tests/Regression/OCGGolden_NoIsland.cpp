@@ -14,14 +14,14 @@
 static constexpr uint32 GExpectedCRC = 0;
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FOCGGolden_Island,
-	"OCG.Regression.Island",
+	FOCGGolden_NoIsland,
+	"OCG.Regression.NoIsland",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FOCGGolden_Island::RunTest(const FString& Parameters)
+bool FOCGGolden_NoIsland::RunTest(const FString& Parameters)
 {
-	UMapPreset* Preset = TryLoadPreset(this, TEXT("/OneButtonLevelGeneration/Test/MP_Golden_Island.MP_Golden_Island"));
+	UMapPreset* Preset = TryLoadPreset(this, TEXT("/OneButtonLevelGeneration/Test/MP_Golden_NoIsland.MP_Golden_NoIsland"));
 	if (!Preset)
 	{
 		return true; // skip - asset not created yet

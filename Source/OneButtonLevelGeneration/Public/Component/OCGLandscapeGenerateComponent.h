@@ -2,10 +2,12 @@
 
 #pragma once
 
+// [DEPRECATED v2] Replaced by UOCGLandscapeGenSubsystem. Scheduled for removal.
 #include "CoreMinimal.h"
 #include "FileHelpers.h"
 #include "ActorPartition/ActorPartitionSubsystem.h"
 #include "Components/ActorComponent.h"
+#include "Data/OCGLandscapeTypes.h"
 #include "OCGLandscapeGenerateComponent.generated.h"
 
 class ARuntimeVirtualTextureVolume;
@@ -21,57 +23,6 @@ class URuntimeVirtualTexture;
 class ALocationVolume;
 class ULandscapeSubsystem;
 class ULandscapeInfo;
-
-USTRUCT(BlueprintType)
-struct FLandscapeSetting
-{
-	GENERATED_BODY()
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 WorldPartitionGridSize = 2;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 WorldPartitionRegionSize = 16;
-	
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	uint32 QuadsPerSection = 0;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	FIntPoint TotalLandscapeComponentSize = FIntPoint::ZeroValue;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 ComponentCountX = 0;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 ComponentCountY = 0;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 QuadsPerComponent = 0;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 SizeX = 0;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache", meta = (AllowPrivateAccess = "true"))
-	int32 SizeY = 0;
-	
-	bool operator==(FLandscapeSetting const& Other) const
-	{
-		return WorldPartitionGridSize		 == Other.WorldPartitionGridSize
-			&& WorldPartitionRegionSize		 == Other.WorldPartitionRegionSize
-			&& QuadsPerSection               == Other.QuadsPerSection
-			&& TotalLandscapeComponentSize   == Other.TotalLandscapeComponentSize
-			&& ComponentCountX               == Other.ComponentCountX
-			&& ComponentCountY               == Other.ComponentCountY
-			&& QuadsPerComponent             == Other.QuadsPerComponent
-			&& SizeX                         == Other.SizeX
-			&& SizeY                         == Other.SizeY;
-	}
-
-	bool operator!=(FLandscapeSetting const& Other) const
-	{
-		return !(*this == Other);
-	}
-};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ONEBUTTONLEVELGENERATION_API UOCGLandscapeGenerateComponent : public UActorComponent
@@ -116,8 +67,11 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category = "Landscape|Cache")
 	TArray<TSoftObjectPtr<ARuntimeVirtualTextureVolume>> CachedRuntimeVirtualTextureVolumeAssets;
 public:
+	UE_DEPRECATED(5.7, "Use UOCGLandscapeGenSubsystem::ApplyLandscape() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscapeInEditor();
+
+	UE_DEPRECATED(5.7, "Use UOCGLandscapeGenSubsystem::ApplyLandscape() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateLandscape(UWorld* World);
 private:
