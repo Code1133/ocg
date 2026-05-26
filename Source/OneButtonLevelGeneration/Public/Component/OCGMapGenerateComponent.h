@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Replaced by UOCGDataGenerationSubsystem. Scheduled for removal.
 
 #pragma once
 
@@ -73,8 +74,11 @@ private:
 	int32 CurrentErosionRadius = 0;
 
 public:
+	UE_DEPRECATED(5.7, "Use UOCGDataGenerationSubsystem::GenerateData() instead.")
 	UFUNCTION(CallInEditor, Category = "Actions")
 	void GenerateMaps();
+
+	UE_DEPRECATED(5.7, "Use UOCGDataGenerationSubsystem::GenerateData() instead.")
 	void GenerateMapsWithHeightMap();
 
 private:

@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Empty base component. Scheduled for removal.
 
 #pragma once
 

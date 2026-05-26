@@ -1,4 +1,5 @@
-// Copyright (c) 2025 Code1133. All rights reserved.
+﻿// Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Custom MapPreset editor. Replaced by default property editor. Scheduled for removal.
 
 #pragma once
 
@@ -82,3 +83,4 @@ private:
 
 	TWeakObjectPtr<UWorld> World = nullptr;
 };
+

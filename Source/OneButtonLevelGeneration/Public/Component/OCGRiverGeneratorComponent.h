@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
+// [DEPRECATED v2] Replaced by UOCGHydrologySubsystem. Scheduled for removal.
 
 #pragma once
 
@@ -28,6 +29,7 @@ class ONEBUTTONLEVELGENERATION_API UOCGRiverGenerateComponent : public UActorCom
 public:	
 	UOCGRiverGenerateComponent();
 
+	UE_DEPRECATED(5.7, "Use UOCGHydrologySubsystem::ApplyHydrology() instead.")
 	UFUNCTION(CallInEditor, Category = "River Generation")
 	void GenerateRiver(UWorld* InWorld, class ALandscape* InLandscape, bool bForceCleanUpPrevWaterWeightMap = true);
 
