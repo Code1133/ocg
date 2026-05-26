@@ -5,24 +5,6 @@
 #include "Misc/AutomationTest.h"
 
 class UMapPreset;
-class AOCGLevelGenerator;
-
-/**
- * 골든 테스트(Golden Test)를 위한 임시 월드 및 AOCGLevelGenerator 테스트 픽스처입니다.
- *
- * 생성 시 GamePreview 유형의 UWorld를 생성하고 AOCGLevelGenerator를 스폰하며,
- * 소멸 시 생성된 월드와 액터를 모두 파괴합니다.
- */
-struct FOCGGoldenFixture
-{
-	UWorld* World;
-	AOCGLevelGenerator* Generator;
-
-	FOCGGoldenFixture();
-	~FOCGGoldenFixture();
-
-	bool IsValid() const;
-};
 
 /**
  * 콘텐츠 패키지 경로에서 UMapPreset 에셋을 로드합니다.

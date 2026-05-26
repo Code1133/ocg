@@ -53,10 +53,6 @@ void UOCGMapGenerateComponent::GenerateMaps()
 
     const FIntPoint CurMapResolution = MapPreset->MapResolution;
 
-    TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
-    TArray<uint16>& TemperatureMapData = MapPreset->TemperatureMapData;
-    TArray<uint16>& HumidityMapData = MapPreset->HumidityMapData;
-    
     // Fill Height Map
     SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Height Map"))); //Update progress bar
     GenerateHeightMap(MapPreset, CurMapResolution, HeightMapData);
@@ -108,10 +104,6 @@ void UOCGMapGenerateComponent::GenerateMapsWithHeightMap()
 
     Initialize(MapPreset);
 
-    TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
-    TArray<uint16>& TemperatureMapData = MapPreset->TemperatureMapData;
-    TArray<uint16>& HumidityMapData = MapPreset->HumidityMapData;
-    
     // Generate Temperature Map
     SlowTask.EnterProgressFrame(1.0f, FText::FromString(TEXT("Generating Temperature Map")));
     GenerateTempMap(MapPreset, HeightMapData, TemperatureMapData);
@@ -760,7 +752,7 @@ void UOCGMapGenerateComponent::GetBiomeStats(FIntPoint MapSize, int32 x, int32 y
     }
 }
 
-void UOCGMapGenerateComponent::GetMaxMinHeight(UMapPreset* MapPreset, const TArray<uint16>& InHeightMap)
+void UOCGMapGenerateComponent::GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap)
 {
     TArray<float> HeightMapFloat;
     int32 TotalPixel = MapPreset->MapResolution.X * MapPreset->MapResolution.Y;
@@ -775,8 +767,8 @@ void UOCGMapGenerateComponent::GetMaxMinHeight(UMapPreset* MapPreset, const TArr
         if (HeightMapFloat[i] < Min)
             Min = HeightMapFloat[i];
     }
-    MapPreset->CurMaxHeight = Max;
-    MapPreset->CurMinHeight = Min;
+    CurMaxHeight = Max;
+    CurMinHeight = Min;
 }
 
 void UOCGMapGenerateComponent::SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap)

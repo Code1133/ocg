@@ -484,14 +484,5 @@ bool SOCGWidget::IsForceGeneratePCGButtonEnabled() const
 FReply SOCGWidget::OnFocusReceived(const FGeometry& MyGeometry, const FFocusEvent& InFocusEvent)
 {
     SCompoundWidget::OnFocusReceived(MyGeometry, InFocusEvent);
-
-    if (GEditor)
-    {
-        if (MapPreset.IsValid())
-        {
-            MapPreset->LandscapeGenerator = LevelGeneratorActor.Get();
-        }
-    }
-    
     return FReply::Handled();
 }

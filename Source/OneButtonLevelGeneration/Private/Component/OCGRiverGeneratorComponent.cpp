@@ -111,7 +111,6 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 
 	CurrentRiverSeed = MapPreset ? MapPreset->RiverSeed : 0;
 
-	const TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
 	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
 	{
 		UE_LOG(LogOCGModule, Warning, TEXT("River generation failed: HeightMapData is not set or has insufficient data."));
@@ -266,6 +265,7 @@ void UOCGRiverGenerateComponent::GenerateRiver(UWorld* InWorld, ALandscape* InLa
 
 void UOCGRiverGenerateComponent::SetMapData(const TArray<uint16>& InHeightMap, UMapPreset* InMapPreset, float InMinHeight, float InMaxHeight)
 {
+	HeightMapData = InHeightMap;
 	MapPreset = InMapPreset;
 }
 
@@ -574,8 +574,6 @@ FVector UOCGRiverGenerateComponent::GetLandscapePointWorldPosition(const FIntPoi
 	{
 		return FVector::ZeroVector;
 	}
-
-	TArray<uint16>& HeightMapData = MapPreset->HeightMapData;
 
 	if (HeightMapData.Num() < MapPreset->MapResolution.X * MapPreset->MapResolution.Y)
 	{

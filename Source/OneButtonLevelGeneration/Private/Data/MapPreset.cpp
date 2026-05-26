@@ -2,7 +2,6 @@
 
 #include "Data/MapPreset.h"
 
-#include "OCGLevelGenerator.h"
 #include "OCGLog.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
@@ -28,15 +27,6 @@ UMapPreset::UMapPreset()
 void UMapPreset::PostLoad()
 {
 	Super::PostLoad();
-
-	// 이전 에셋에 직렬화된 런타임 전용 데이터 제거 (v2 마이그레이션)
-	if (HeightMapData.Num() > 0 || TemperatureMapData.Num() > 0 || HumidityMapData.Num() > 0)
-	{
-		HeightMapData.Empty();
-		TemperatureMapData.Empty();
-		HumidityMapData.Empty();
-		(void)MarkPackageDirty();
-	}
 
 	UpdateInternalMeshFilterNames();
 	UpdateInternalLandscapeFilterNames();
@@ -310,10 +300,6 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 UWorld* UMapPreset::GetWorld() const
 {
 #if WITH_EDITOR
-	if (LandscapeGenerator.IsValid())
-	{
-		return LandscapeGenerator->GetWorld();
-	}
 	return GEditor->GetEditorWorldContext().World();
 #else
 	return nullptr;

@@ -56,7 +56,7 @@ public:
 	UE_DEPRECATED(5.7, "Use UOCGHydrologySubsystem::ApplyHydrology() instead.")
 	void SetDefaultWaterProperties(class AWaterBody* InWaterBody);
 	
-	void DrawDebugLandscape(TArray<uint16>& HeightMapData);
+	void DrawDebugLandscape(const TArray<uint16>& HeightMapData);
 
 	void PreviewMaps();
 

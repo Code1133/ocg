@@ -22,7 +22,6 @@ public:
 	// Sets default values for this component's properties
 	UOCGMapGenerateComponent();
 
-protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -30,26 +29,27 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+public:
+	TArray<uint16> HeightMapData;
+	TArray<uint16> TemperatureMapData;
+	TArray<uint16> HumidityMapData;
+
+	FORCEINLINE const TArray<uint16>& GetHeightMapData() const { return HeightMapData; }
+	FORCEINLINE float GetCurMinHeight() const { return CurMinHeight; }
+	FORCEINLINE float GetCurMaxHeight() const { return CurMaxHeight; }
+
 private:
 	AOCGLevelGenerator* GetLevelGenerator() const;
-	
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Biome", meta = (AllowPrivateAccess="true"))
-	// TMap<FName, FOCGBiomeSettings> Biomes;
 
-	// NOTE : Moved to MapPreset
-	// TArray<uint16> HeightMapData;
-	// TArray<uint16> TemperatureMapData;
-	// TArray<uint16> HumidityMapData;
+	float CurMinHeight = 0.0f;
+	float CurMaxHeight = 0.0f;
 	TMap<FName, TArray<uint8>> WeightLayers;
 	TArray<FColor> BiomeColorMap;
 
 	float LandscapeZScale;
 	float ZOffset;
+
 public:
-	// NOTE : Moved to MapPreset
-	// FORCEINLINE const TArray<uint16>& GetHeightMapData() { return HeightMapData; }
-	// FORCEINLINE const TArray<uint16>& GetTemperatureMapData() { return TemperatureMapData; }
-	// FORCEINLINE const TArray<uint16>& GetHumidityMapData() { return HumidityMapData; }
 	FORCEINLINE const TMap<FName, TArray<uint8>>& GetWeightLayers() { return WeightLayers; }
 	FORCEINLINE const TArray<FColor>& GetBiomeColorMap() { return BiomeColorMap; }
 	// FORCEINLINE const float GetMaxHeight() const { return MapPreset->; }
@@ -103,7 +103,7 @@ private:
 	void CalculateBiomeMinHeights(const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap, TArray<float>& OutMinHeights, const UMapPreset* MapPreset);
 	void BlurBiomeMinHeights(TArray<float>& OutMinHeights, const TArray<float>& InMinHeights, const UMapPreset* MapPreset);
 	void GetBiomeStats(FIntPoint MapSize, int32 x, int32 y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<const FOCGBiomeSettings*>& InBiomeMap);
-	void GetMaxMinHeight(UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
+	void GetMaxMinHeight(const UMapPreset* MapPreset, const TArray<uint16>& InHeightMap);
 	void SmoothHeightMap(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);
 	void ApplyGaussianBlur(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap, TArray<uint16>& OutBlurredMap);
 	void ApplySpikeSmooth(const UMapPreset* MapPreset, TArray<uint16>& InOutHeightMap);

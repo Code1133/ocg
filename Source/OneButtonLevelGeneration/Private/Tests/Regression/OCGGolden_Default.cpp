@@ -1,17 +1,17 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Tests/Regression/OCGGoldenTestCommon.h"
 
-#include "Component/OCGMapGenerateComponent.h"
 #include "Data/MapPreset.h"
+#include "Editor.h"
 #include "Misc/AutomationTest.h"
-#include "OCGLevelGenerator.h"
+#include "Subsystems/OCGDataGenerationSubsystem.h"
 #include "Tests/Benchmark/FOCGBenchmarkRunner.h"
 
 /**
  * 값을 0으로 설정하면 레코드(기록) 모드로 동작합니다.
  * 최초 1회 실행 후, 테스트 출력 로그에 찍힌 CRC 값을 복사하여 여기에 붙여넣으세요.
  */
-static constexpr uint32 GExpectedCRC = 0;
+static constexpr uint32 GExpectedCRC = 0xEAC56CA2;
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FOCGGolden_Default,
@@ -27,20 +27,18 @@ bool FOCGGolden_Default::RunTest(const FString& Parameters)
 		return true; // skip - asset not created yet
 	}
 
-	FOCGGoldenFixture Fixture;
-	if (!Fixture.IsValid())
+	UOCGDataGenerationSubsystem* DataGen = GEditor->GetEditorSubsystem<UOCGDataGenerationSubsystem>();
+	if (!DataGen)
 	{
-		AddError(TEXT("Failed to spawn AOCGLevelGenerator"));
+		AddError(TEXT("UOCGDataGenerationSubsystem not available"));
 		return false;
 	}
 
-	Fixture.Generator->SetMapPreset(Preset);
-
 	const FOCGBenchmarkEntry Entry = FOCGBenchmarkRunner::Run(FName(TEXT("Default")), [&]
 	{
-		Fixture.Generator->GetMapGenerateComponent()->GenerateMaps();
+		DataGen->GenerateData(Preset);
 	});
 	FOCGBenchmarkRunner::AppendToCSV(Entry);
 
-	return CheckHeightMapCRC(this, Preset->HeightMapData, GExpectedCRC, TEXT("Default"));
+	return CheckHeightMapCRC(this, DataGen->GetDataContainer().HeightMapData, GExpectedCRC, TEXT("Default"));
 }

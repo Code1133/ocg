@@ -2,35 +2,7 @@
 #include "Tests/Regression/OCGGoldenTestCommon.h"
 
 #include "Data/MapPreset.h"
-#include "Engine/World.h"
 #include "Misc/AutomationTest.h"
-#include "OCGLevelGenerator.h"
-
-FOCGGoldenFixture::FOCGGoldenFixture()
-	: World(nullptr)
-	, Generator(nullptr)
-{
-	World = UWorld::CreateWorld(EWorldType::GamePreview, false);
-	FWorldContext& Ctx = GEngine->CreateNewWorldContext(EWorldType::GamePreview);
-	Ctx.SetCurrentWorld(World);
-	World->InitializeActorsForPlay(FURL());
-	Generator = World->SpawnActor<AOCGLevelGenerator>();
-}
-
-FOCGGoldenFixture::~FOCGGoldenFixture()
-{
-	if (Generator)
-	{
-		Generator->Destroy();
-	}
-	GEngine->DestroyWorldContext(World);
-	World->DestroyWorld(false);
-}
-
-bool FOCGGoldenFixture::IsValid() const
-{
-	return Generator != nullptr;
-}
 
 UMapPreset* TryLoadPreset(FAutomationTestBase* Test, const TCHAR* AssetPath)
 {
