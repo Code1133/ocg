@@ -74,6 +74,7 @@ private:
 	TSet<FIntPoint> UsedRiverStartPoints;
 	TArray<FIntPoint> CachedRiverStartPoints;
 
+	TArray<uint16> HeightMapData;
 	TArray<uint16> CachedRiverHeightMap;
 
 	UPROPERTY()

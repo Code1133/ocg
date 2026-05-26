@@ -84,7 +84,7 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 	bool bHasHeightMap = false;
 	if (!MapPreset->HeightmapFilePath.FilePath.IsEmpty())
 	{
-		if (!OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
+		if (!OCGMapDataUtils::ImportMap(MapGenerateComponent->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
 		{
 			const FText DialogTitle = FText::FromString(TEXT("Error"));
 			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
@@ -119,10 +119,10 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 	if (RiverGenerateComponent && MapGenerateComponent && LandscapeGenerateComponent && MapPreset)
 	{
 		RiverGenerateComponent->SetMapData(
-			MapPreset->HeightMapData,
-			MapPreset, 
-			MapPreset->CurMinHeight,
-			MapPreset->CurMaxHeight
+			MapGenerateComponent->GetHeightMapData(),
+			MapPreset,
+			MapGenerateComponent->GetCurMinHeight(),
+			MapGenerateComponent->GetCurMaxHeight()
 		);
 
 		RiverGenerateComponent->GenerateRiver(InWorld, LandscapeGenerateComponent->GetLandscape());
@@ -131,7 +131,7 @@ void AOCGLevelGenerator::OnClickGenerate(UWorld* InWorld)
 
 const TArray<uint16>& AOCGLevelGenerator::GetHeightMapData() const
 {
-	return MapPreset->HeightMapData;
+	return MapGenerateComponent->GetHeightMapData();
 }
 
 const TMap<FName, TArray<uint8>>& AOCGLevelGenerator::GetWeightLayers() const
@@ -170,10 +170,6 @@ FVector AOCGLevelGenerator::GetVolumeOrigin() const
 void AOCGLevelGenerator::SetMapPreset(UMapPreset* InMapPreset)
 {
 	MapPreset = InMapPreset;
-	if (MapPreset)
-	{
-		MapPreset->LandscapeGenerator = this;
-	}
 }
 
 void AOCGLevelGenerator::AddWaterPlane(UWorld* InWorld)
@@ -280,7 +276,7 @@ void AOCGLevelGenerator::SetDefaultWaterProperties(AWaterBody* InWaterBody)
 	InWaterBody->GetWaterBodyComponent()->UpdateWaterBodyRenderData();
 }
 
-void AOCGLevelGenerator::DrawDebugLandscape(TArray<uint16>& HeightMapData)
+void AOCGLevelGenerator::DrawDebugLandscape(const TArray<uint16>& HeightMapData)
 {
 	if (!MapPreset)
 		return;
@@ -357,7 +353,7 @@ void AOCGLevelGenerator::PreviewMaps()
 		GetMapGenerateComponent()->GenerateMaps();
 	else
 	{
-		if (!OCGMapDataUtils::ImportMap(MapPreset->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
+		if (!OCGMapDataUtils::ImportMap(MapGenerateComponent->HeightMapData, MapPreset->MapResolution, MapPreset->HeightmapFilePath.FilePath))
 		{
 			const FText DialogTitle = FText::FromString(TEXT("Error"));
 			const FText DialogText = FText::FromString(TEXT("Failed to read Height Map texture."));
@@ -367,7 +363,7 @@ void AOCGLevelGenerator::PreviewMaps()
 		}
 		GetMapGenerateComponent()->GenerateMapsWithHeightMap();
 	}
-	DrawDebugLandscape(MapPreset->HeightMapData);
+	DrawDebugLandscape(MapGenerateComponent->GetHeightMapData());
 	
 	MapPreset->bExportMapTextures = bOriginalExportSetting;
 }

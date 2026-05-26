@@ -7,11 +7,6 @@
 #include "Structure/OCGHierarchyDataStructure.h"
 #include "MapPreset.generated.h"
 
-/**
- *
- */
-
-class AOCGLevelGenerator;
 class AOCGLandscapeVolume;
 class UPCGGraph;
 
@@ -187,14 +182,6 @@ public:
 
 	//~ Begin UPROPERTY World Settings | Advanced
 	//~ Begin UPROPERTY World Settings | Advanced | Height
-	// Landscapes Minimum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMinHeight = 0.0f;
-
-	// Landscapes Maximum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMaxHeight = 0.0f;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
 	bool bSmoothHeight = true;
 
@@ -633,24 +620,4 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
 	//~ End UPROPERTY OCG
-
-public:
-	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
-	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
-	TArray<uint16> HeightMapData;
-
-	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
-	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
-	TArray<uint16> TemperatureMapData;
-
-	UE_DEPRECATED(5.7, "Use FOCGWorldDataContainer instead.")
-	UPROPERTY(meta = (DeprecatedProperty, DeprecationMessage = "Use FOCGWorldDataContainer instead."))
-	TArray<uint16> HumidityMapData;
-
-#if WITH_EDITOR
-
-public:
-	UPROPERTY(Transient)
-	TWeakObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
-#endif
 };
