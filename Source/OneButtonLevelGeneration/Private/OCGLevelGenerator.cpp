@@ -134,16 +134,6 @@ const TArray<uint16>& AOCGLevelGenerator::GetHeightMapData() const
 	return MapPreset->HeightMapData;
 }
 
-const TArray<uint16>& AOCGLevelGenerator::GetTemperatureMapData() const
-{
-	return MapPreset->TemperatureMapData;
-}
-
-const TArray<uint16>& AOCGLevelGenerator::GetHumidityMapData() const
-{
-	return MapPreset->HumidityMapData;
-}
-
 const TMap<FName, TArray<uint8>>& AOCGLevelGenerator::GetWeightLayers() const
 {
 	return MapGenerateComponent->GetWeightLayers();
