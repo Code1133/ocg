@@ -35,6 +35,9 @@ public:
 	/** 생성된 맵 데이터 컨테이너에 대한 읽기 전용 참조를 반환합니다. */
 	FORCEINLINE const FOCGWorldDataContainer& GetDataContainer() const { return DataContainer; }
 
+	/** 생성된 맵 데이터 컨테이너에 대한 쓰기 가능 참조를 반환합니다. ApplyLandscape 파이프라인에서 in-place 수정 시 사용합니다. */
+	FORCEINLINE FOCGWorldDataContainer& GetDataContainer() { return DataContainer; }
+
 private:
 	/**
 	 * 전체 파이프라인 완료 후 HeightMapData를 순회하여 CurMinHeight / CurMaxHeight를 계산합니다.
