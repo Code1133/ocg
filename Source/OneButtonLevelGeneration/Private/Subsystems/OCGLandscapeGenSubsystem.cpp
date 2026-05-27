@@ -7,6 +7,7 @@
 #include "Utils/OCGLandscapeUtil.h"
 
 #include "Editor.h"
+#include "Engine/Level.h"
 #include "EngineUtils.h"
 
 #include "Landscape.h"
@@ -145,6 +146,10 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 			return;
 		}
 		TargetLandscape->Modify();
+		if (ULevel* CurrentLevel = World->GetCurrentLevel())
+		{
+			CurrentLevel->MarkPackageDirty();
+		}
 	}
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION <= 6
@@ -355,6 +360,10 @@ bool UOCGLandscapeGenSubsystem::CreateRuntimeVirtualTextureVolume(ALandscape* In
 	{
 		ARuntimeVirtualTextureVolume* NewRVTVolume = InLandscape->GetWorld()->SpawnActor<ARuntimeVirtualTextureVolume>();
 		NewRVTVolume->Modify();
+		if (ULevel* Level = NewRVTVolume->GetLevel())
+		{
+			Level->MarkPackageDirty();
+		}
 		CachedRuntimeVirtualTextureVolumeAssets.Add(NewRVTVolume);
 
 		NewRVTVolume->VirtualTextureComponent->SetVirtualTexture(VirtualTexture);
