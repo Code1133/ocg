@@ -20,14 +20,11 @@ AOCGLandscapeVolume::AOCGLandscapeVolume()
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
 	PCGComponent->SetIsPartitioned(true);
 
-#if WITH_EDITOR
 	PCGComponent->bRegenerateInEditor = bEditorAutoGenerate;
 
 	SetIsSpatiallyLoaded(false);
-#endif
 }
 
-#if WITH_EDITOR
 void AOCGLandscapeVolume::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -50,4 +47,3 @@ void AOCGLandscapeVolume::SetEditorAutoGenerate(bool bEnable)
 	bEditorAutoGenerate = bEnable;
 	PCGComponent->bRegenerateInEditor = bEnable;
 }
-#endif
