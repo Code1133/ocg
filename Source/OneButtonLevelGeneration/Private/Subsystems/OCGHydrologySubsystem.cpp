@@ -10,6 +10,7 @@
 
 #include "Editor.h"
 #include "Algo/Reverse.h"
+#include "Engine/Level.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "Landscape.h"
@@ -276,6 +277,10 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		SetDefaultRiverProperties(WaterBodyRiver, SimplifiedPath, Preset);
 		AddRiverProperties(WaterBodyRiver, SimplifiedPath, Preset);
 		WaterBodyRiver->Modify();
+		if (ULevel* Level = WaterBodyRiver->GetLevel())
+		{
+			Level->MarkPackageDirty();
+		}
 
 		GeneratedRivers.Add(WaterBodyRiver);
 		CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
@@ -330,6 +335,11 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 		return;
 	}
 	Ocean->SetIsSpatiallyLoaded(false);
+	Ocean->Modify();
+	if (ULevel* Level = Ocean->GetLevel())
+	{
+		Level->MarkPackageDirty();
+	}
 
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(Ocean)->GetWaterBodyComponent();
 	check(WaterBodyComponent);
@@ -394,6 +404,7 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
 {
 	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	const bool bHadRivers = !GeneratedRivers.IsEmpty() || !CachedRivers.IsEmpty();
 
 	for (AWaterBodyRiver* River : GeneratedRivers)
 	{
@@ -425,6 +436,14 @@ void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
 		const FGuid WaterLayerGuid = OCGLandscapeUtil::GetLandscapeLayerGuid(InLandscape, FName(TEXT("Water")));
 		Compat::ClearEditLayer(InLandscape, WaterLayerGuid);
 		InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All);
+	}
+
+	if (bHadRivers && EditorWorld)
+	{
+		if (ULevel* CurrentLevel = EditorWorld->GetCurrentLevel())
+		{
+			CurrentLevel->MarkPackageDirty();
+		}
 	}
 
 	bIsRiverExists = false;
