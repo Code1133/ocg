@@ -2,15 +2,16 @@
 #include "Subsystems/OCGPopulationSubsystem.h"
 
 #include "OCGLog.h"
+#include "OCGStats.h"
 #include "Data/MapPreset.h"
-#include "Subsystems/OCGLandscapeGenSubsystem.h"
 #include "PCG/OCGLandscapeVolume.h"
+#include "Subsystems/OCGLandscapeGenSubsystem.h"
 
 #include "Editor.h"
-#include "Kismet/GameplayStatics.h"
-#include "Components/BoxComponent.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
+#include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 void UOCGPopulationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -24,6 +25,8 @@ void UOCGPopulationSubsystem::Deinitialize()
 
 void UOCGPopulationSubsystem::ApplyPopulation(const UMapPreset* Preset)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_PopulationFoliage);
+
 	if (!Preset)
 	{
 		UE_LOG(LogOCGModule, Warning, TEXT("ApplyPopulation: Preset is null."));
