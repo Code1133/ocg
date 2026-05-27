@@ -5,11 +5,7 @@
 
 #include <OCGLog.h>
 
-#include "OCGLevelGenerator.h"
 #include "PCGComponent.h"
-#include "Component/OCGLandscapeGenerateComponent.h"
-#include "Component/OCGRiverGeneratorComponent.h"
-#include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGMaterialEditTool.h"
@@ -922,7 +918,7 @@ void OCGLandscapeUtil::ImportMapDatas(UWorld* World, ALandscape* InLandscape, TA
 bool OCGLandscapeUtil::ChangeGridSize(const UWorld* InWorld, ULandscapeInfo* InLandscapeInfo,
                                       uint32 InNewGridSizeInComponents)
 {
-	TRACE_CPUPROFILER_EVENT_SCOPE(UOCGLandscapeGenerateComponent::ChangeGridSize);
+	TRACE_CPUPROFILER_EVENT_SCOPE(OCGLandscapeUtil::ChangeGridSize);
 
 	if (InWorld == nullptr)
 		return false;
@@ -1313,86 +1309,6 @@ void OCGLandscapeUtil::SaveLandscapeProxies(const UWorld* World, const TArrayVie
 }
 
 TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscapeLayerData(
-	ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset)
-{
-	#if WITH_EDITOR
-    TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer;
-    if (!InTargetLandscape || !InLevelGenerator || !InMapPreset)
-    {
-        return MaterialLayerDataPerLayer;
-    }
-
-    ULandscapeInfo* LandscapeInfo = InTargetLandscape->GetLandscapeInfo();
-
-    TArray<FLandscapeImportLayerInfo> ImportLayerDataPerLayer;
-    const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
-    ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
-
-    // 1. Get the layer name from the weightmap data and the material.
-    TMap<FName, TArray<uint8>> WeightLayers = InLevelGenerator->GetWeightLayers();
-    TArray<FName> LayerNames;
-    if (InMapPreset->LandscapeMaterial && InMapPreset->LandscapeMaterial->Parent)
-    {
-        LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeMaterial->Parent));
-    }
-
-    // 2. Iterate through each layer and find or create the LayerInfoObject.
-    for (int32 Index = 0; Index < WeightLayers.Num(); ++Index)
-    {
-        FLandscapeImportLayerInfo LayerInfo;
-
-    	// Generate a temporary name (in case the name cannot be found in the material)
-        FString TempLayerNameStr = FString::Printf(TEXT("Layer%d"), Index);
-        FName TempLayerName(TempLayerNameStr);
-
-        LayerInfo.LayerData = WeightLayers.FindChecked(TempLayerName);
-
-        if (LayerNames.IsValidIndex(Index))
-        {
-            LayerInfo.LayerName = LayerNames[Index];
-        }
-        else
-        {
-            LayerInfo.LayerName = TempLayerName;
-            UE_LOG(LogOCGModule, Warning, TEXT("Layer %d not found in Material Names, using default name: %s"), Index, *TempLayerName.ToString());
-        }
-
-        ULandscapeLayerInfoObject* LayerInfoObject = nullptr;
-        if (LandscapeInfo)
-        {
-            LayerInfoObject = LandscapeInfo->GetLayerInfoByName(LayerInfo.LayerName);
-        }
-
-        if (LayerInfoObject == nullptr)
-        {
-            UE_LOG(LogOCGModule, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
-
-            LayerInfoObject = OCGLandscapeUtil::CreateLayerInfo(InTargetLandscape, OCGLandscapeUtil::LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
-        }
-        else
-        {
-            UE_LOG(LogOCGModule, Log, TEXT("Found and reused existing LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
-        }
-
-        if(LayerInfoObject)
-        {
-            LayerInfo.LayerInfo = LayerInfoObject;
-            ImportLayerDataPerLayer.Add(LayerInfo);
-        }
-        else
-        {
-            UE_LOG(LogOCGModule, Error, TEXT("Failed to find or create LayerInfo for '%s'."), *LayerInfo.LayerName.ToString());
-        }
-    }
-
-    FGuid LayerGuid = FGuid();
-    MaterialLayerDataPerLayer.Add(LayerGuid, MoveTemp(ImportLayerDataPerLayer));
-
-    return MaterialLayerDataPerLayer;
-#endif
-}
-
-TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscapeLayerData(
 	ALandscape* InTargetLandscape,
 	const TMap<FName, TArray<uint8>>& InWeightLayers,
 	const UMapPreset* InMapPreset
@@ -1411,16 +1327,19 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> OCGLandscapeUtil::PrepareLandscap
 	const ULandscapeSettings* Settings = GetDefault<ULandscapeSettings>();
 	ULandscapeLayerInfoObject* DefaultLayerInfo = Settings->GetDefaultLayerInfoObject().LoadSynchronous();
 
+    // 1. Get the layer name from the weightmap data and the material.
 	TArray<FName> LayerNames;
 	if (InMapPreset->LandscapeMaterial && InMapPreset->LandscapeMaterial->Parent)
 	{
 		LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeMaterial->Parent));
 	}
 
+    // 2. Iterate through each layer and find or create the LayerInfoObject.
 	for (int32 Index = 0; Index < InWeightLayers.Num(); ++Index)
 	{
 		FLandscapeImportLayerInfo LayerInfo;
 
+    	// Generate a temporary name (in case the name cannot be found in the material)
 		const FName TempLayerName(FString::Printf(TEXT("Layer%d"), Index));
 		LayerInfo.LayerData = InWeightLayers.FindChecked(TempLayerName);
 
@@ -1592,17 +1511,6 @@ FGuid OCGLandscapeUtil::GetLandscapeLayerGuid(const ALandscape* Landscape, FName
 	}
 #endif
 	return {};
-}
-
-void OCGLandscapeUtil::RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator, UMapPreset* MapPreset)
-{
-#if WITH_EDITOR
-	if (World && LevelGenerator && MapPreset)
-	{
-		LevelGenerator->GetRiverGenerateComponent()->GenerateRiver(World, LevelGenerator->GetLandscape(), false);
-
-	}
-#endif
 }
 
 void OCGLandscapeUtil::ForceGeneratePCG(UWorld* World)
