@@ -9,11 +9,11 @@
 #include "Subsystems/OCGHydrologySubsystem.h"
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
 #include "Subsystems/OCGPopulationSubsystem.h"
+#include "UI/SOCGWindow.h"
 #include "Utils/OCGUtils.h"
 
-#include "ContentBrowserModule.h"
 #include "Editor.h"
-#include "IContentBrowserSingleton.h"
+#include "Framework/Docking/TabManager.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
 #include "ToolMenus.h"
@@ -21,15 +21,16 @@
 #include "HAL/IConsoleManager.h"
 #include "Misc/MessageDialog.h"
 #include "Styling/AppStyle.h"
-#include "Widgets/SWindow.h"
+#include "Widgets/Docking/SDockTab.h"
 
 #define LOCTEXT_NAMESPACE "OCGEditorSubsystem"
 
 static const TCHAR* OCGConfigSection = TEXT("OCG");
 static const TCHAR* OCGLastPresetKey = TEXT("LastUsedPreset");
 
-static const FName OCGToolbarMenuName = TEXT("LevelEditor.LevelEditorToolBar.AssetsToolBar");
+static const FName OCGToolbarMenuName    = TEXT("LevelEditor.LevelEditorToolBar.AssetsToolBar");
 static const FName OCGToolbarSectionName = TEXT("OCG");
+static const FName OCGWindowTabName      = TEXT("OCGWindow");
 
 void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -39,6 +40,15 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	// DataAsset이 직접 월드 액터를 조작하지 않도록 에디터 레이어가 대신 처리합니다.
 	UMapPreset::OnPropertyChanged.AddUObject(this, &UOCGEditorSubsystem::OnMapPresetPropertyChanged);
 
+	// OCG Window 탭 등록
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
+		OCGWindowTabName,
+		FOnSpawnTab::CreateUObject(this, &UOCGEditorSubsystem::SpawnOCGWindowTab)
+	)
+	.SetDisplayName(LOCTEXT("OCGWindowTitle", "OCG"))
+	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Settings"))
+	.SetMenuType(ETabSpawnerMenuType::Hidden);
+
 	RestoreLastUsedPreset();
 	RegisterToolbarEntry();
 	RegisterConsoleCommand();
@@ -47,6 +57,8 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UOCGEditorSubsystem::Deinitialize()
 {
 	UMapPreset::OnPropertyChanged.RemoveAll(this);
+
+	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(OCGWindowTabName);
 
 	UnregisterConsoleCommand();
 	UnregisterToolbarEntry();
@@ -111,6 +123,90 @@ const UMapPreset* UOCGEditorSubsystem::GetLastUsedPreset() const
 	return LastUsedPresetAsset.Get();
 }
 
+void UOCGEditorSubsystem::OpenOCGWindow()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(FTabId(OCGWindowTabName));
+}
+
+void UOCGEditorSubsystem::RegenerateRiverOnly(const UMapPreset* Preset)
+{
+	if (!ValidatePreset(Preset))
+	{
+		return;
+	}
+
+	UOCGDataGenerationSubsystem* DataSub = GEditor->GetEditorSubsystem<UOCGDataGenerationSubsystem>();
+	UOCGHydrologySubsystem* HydrologySub = GEditor->GetEditorSubsystem<UOCGHydrologySubsystem>();
+
+	if (!DataSub || !HydrologySub)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("RegenerateRiverOnly: Required subsystems unavailable."));
+		return;
+	}
+
+	UE_LOG(LogOCGModule, Log, TEXT("RegenerateRiverOnly: Running Hydrology step with preset '%s'."), *Preset->GetName());
+
+	HydrologySub->ApplyHydrology(Preset, DataSub->GetDataContainer());
+
+	PersistLastUsedPreset(Preset);
+	LastUsedPresetAsset = TSoftObjectPtr<UMapPreset>(const_cast<UMapPreset*>(Preset));
+
+	UE_LOG(LogOCGModule, Log, TEXT("RegenerateRiverOnly: Complete."));
+}
+
+void UOCGEditorSubsystem::ForcePCGRegenerate()
+{
+	if (!GEditor)
+	{
+		return;
+	}
+
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	if (!World)
+	{
+		UE_LOG(LogOCGModule, Warning, TEXT("ForcePCGRegenerate: No editor world available."));
+		return;
+	}
+
+	TArray<AOCGLandscapeVolume*> Volumes = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+	int32 TriggeredCount = 0;
+
+	for (AOCGLandscapeVolume* Volume : Volumes)
+	{
+		if (!Volume)
+		{
+			continue;
+		}
+		if (UPCGComponent* PCGComp = Volume->GetPCGComponent())
+		{
+			PCGComp->GenerateLocal(/*bForce=*/ true);
+			++TriggeredCount;
+		}
+	}
+
+	UE_LOG(LogOCGModule, Log, TEXT("ForcePCGRegenerate: Triggered PCG on %d volume(s)."), TriggeredCount);
+}
+
+TSharedRef<SDockTab> UOCGEditorSubsystem::SpawnOCGWindowTab(const FSpawnTabArgs& /*Args*/)
+{
+	TSharedRef<SOCGWindow> WindowWidget = SNew(SOCGWindow);
+
+	// 마지막으로 사용된 Preset이 유효하면 즉시 표시
+	if (UMapPreset* LastPreset = LastUsedPresetAsset.IsValid()
+		? LastUsedPresetAsset.Get()
+		: LastUsedPresetAsset.LoadSynchronous())
+	{
+		WindowWidget->SetPreset(LastPreset);
+	}
+
+	return SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab)
+		.Label(LOCTEXT("OCGWindowTitle", "OCG"))
+		[
+			WindowWidget
+		];
+}
+
 void UOCGEditorSubsystem::RegisterToolbarEntry()
 {
 	if (!UToolMenus::IsToolMenuUIEnabled())
@@ -123,9 +219,9 @@ void UOCGEditorSubsystem::RegisterToolbarEntry()
 	Section.AddEntry(FToolMenuEntry::InitToolBarButton(
 		TEXT("OCGGenerate"),
 		FUIAction(FExecuteAction::CreateUObject(this, &UOCGEditorSubsystem::OnGenerateClicked)),
-		LOCTEXT("OCGGenerateLabel", "Generate"),
-		LOCTEXT("OCGGenerateTooltip", "Select a Map Preset and run the OCG generation pipeline"),
-		FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Settings")
+		LOCTEXT("OCGGenerateLabel", "OCG"),
+		LOCTEXT("OCGGenerateTooltip", "Open OCG Generator window"),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "LandscapeEditor.NewLandscape")
 	));
 }
 
@@ -160,41 +256,9 @@ void UOCGEditorSubsystem::UnregisterConsoleCommand()
 
 void UOCGEditorSubsystem::OnGenerateClicked()
 {
-	TSharedRef<SWindow> PickerWindow = SNew(SWindow)
-		.Title(LOCTEXT("SelectPreset", "Select Map Preset"))
-		.SizingRule(ESizingRule::UserSized)
-		.ClientSize(FVector2D(640.f, 480.f))
-		.IsTopmostWindow(true);
-
-	UMapPreset* SelectedPreset = nullptr;
-
-	FAssetPickerConfig PickerConfig;
-	PickerConfig.Filter.ClassPaths.Add(UMapPreset::StaticClass()->GetClassPathName());
-	PickerConfig.bAllowNullSelection = false;
-	PickerConfig.SelectionMode = ESelectionMode::Single;
-	PickerConfig.OnAssetDoubleClicked = FOnAssetDoubleClicked::CreateLambda([&SelectedPreset, &PickerWindow](const FAssetData& AssetData)
-	{
-		SelectedPreset = Cast<UMapPreset>(AssetData.GetAsset());
-		PickerWindow->RequestDestroyWindow();
-	});
-	PickerConfig.OnAssetEnterPressed = FOnAssetEnterPressed::CreateLambda([&SelectedPreset, &PickerWindow](const TArray<FAssetData>& Assets)
-	{
-		if (!Assets.IsEmpty())
-		{
-			SelectedPreset = Cast<UMapPreset>(Assets[0].GetAsset());
-			PickerWindow->RequestDestroyWindow();
-		}
-	});
-
-	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-	PickerWindow->SetContent(ContentBrowserModule.Get().CreateAssetPicker(PickerConfig));
-
-	GEditor->EditorAddModalWindow(PickerWindow);
-
-	if (SelectedPreset)
-	{
-		ExecuteGeneration(SelectedPreset);
-	}
+	// v2: 에셋 피커 다이얼로그 대신 OCG Window 탭을 엽니다.
+	// Preset 선택과 Generate 실행은 OCG Window 내에서 처리합니다.
+	OpenOCGWindow();
 }
 
 void UOCGEditorSubsystem::OnConsoleGenerate(const TArray<FString>& Args)

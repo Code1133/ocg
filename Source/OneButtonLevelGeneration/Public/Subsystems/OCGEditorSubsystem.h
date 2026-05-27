@@ -7,6 +7,8 @@
 
 class UMapPreset;
 struct IConsoleCommand;
+class FSpawnTabArgs;
+class SDockTab;
 
 /**
  * OCG 생성 파이프라인의 단일 진입점 에디터 서브시스템
@@ -39,14 +41,36 @@ public:
 	 */
 	const UMapPreset* GetLastUsedPreset() const;
 
+	/**
+	 * OCG Window 탭을 열거나 이미 열려 있으면 포커스를 줍니다.
+	 */
+	void OpenOCGWindow();
+
+	/**
+	 * Hydrology(강) 단계만 재실행합니다.
+	 * 이전 DataGeneration 결과(캐시된 DataContainer)를 사용하므로
+	 * Generate All보다 빠릅니다.
+	 *
+	 * @param Preset 생성 설정 에셋
+	 */
+	void RegenerateRiverOnly(const UMapPreset* Preset);
+
+	/**
+	 * 현재 월드의 모든 AOCGLandscapeVolume에서 PCG 그래프를 강제 재실행합니다.
+	 */
+	void ForcePCGRegenerate();
+
 private:
 	void RegisterToolbarEntry();
 	void UnregisterToolbarEntry();
 	void RegisterConsoleCommand();
 	void UnregisterConsoleCommand();
 
-	/** 툴바 버튼 클릭 시 MapPreset 선택 다이얼로그를 열고 생성을 실행합니다. */
+	/** 툴바 버튼 클릭 시 OCG Window 탭을 엽니다. */
 	void OnGenerateClicked();
+
+	/** SDockTab 스포너: OCG Window Slate 위젯을 담은 탭을 생성합니다. */
+	TSharedRef<SDockTab> SpawnOCGWindowTab(const FSpawnTabArgs& Args);
 
 	/** 콘솔 커맨드 "OCG.Generate [/Game/Path/To/Preset]" 핸들러. */
 	void OnConsoleGenerate(const TArray<FString>& Args);
