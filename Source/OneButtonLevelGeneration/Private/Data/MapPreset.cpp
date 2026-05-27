@@ -3,12 +3,10 @@
 #include "Data/MapPreset.h"
 
 #include "OCGLog.h"
-#include "PCGComponent.h"
-#include "PCGGraph.h"
 #include "Data/MapData.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
-#include "PCG/OCGLandscapeVolume.h"
-#include "Utils/OCGUtils.h"
+
+FOnMapPresetPropertyChanged UMapPreset::OnPropertyChanged = {};
 
 UMapPreset::UMapPreset()
 	: OceanWaterMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_Ocean.Water_Material_Ocean")))
@@ -39,27 +37,10 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		return;
 	}
 
+	// 월드 액터 업데이트는 OCGEditorSubsystem 구독자에게 위임합니다.
+	// DataAsset은 어느 월드에 속하는지 알 수 없으므로 직접 액터를 조작하지 않습니다.
 	const FName PropertyName = PropertyChangedEvent.GetMemberPropertyName();
-
-	// Find Volume Actor
-	TArray<AOCGLandscapeVolume*> Actors;
-	if (UWorld* World = GetWorld())
-	{
-		Actors = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
-	}
-
-	// Update Volume Actor
-	for (AOCGLandscapeVolume* VolumeActor : Actors)
-	{
-		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
-		{
-			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
-		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bAutoGenerate))
-		{
-			VolumeActor->SetEditorAutoGenerate(bAutoGenerate);
-		}
-	}
+	OnPropertyChanged.Broadcast(this, PropertyName);
 
 	if (
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeMaterial)
@@ -167,7 +148,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
 			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
 	}
-	
+
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
 	{
 		UpdateInternalLandscapeFilterNames();
@@ -292,9 +273,4 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 		}
 		Data.LayerName_Internal = NAME_None;
 	}
-}
-
-UWorld* UMapPreset::GetWorld() const
-{
-	return GEditor->GetEditorWorldContext().World();
 }

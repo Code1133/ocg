@@ -64,6 +64,15 @@ private:
 	/** EditorPerProjectIni에서 마지막 Preset 경로를 복원합니다. */
 	void RestoreLastUsedPreset();
 
+	/**
+	 * UMapPreset::OnPropertyChanged 델리게이트 핸들러
+	 * DataAsset 대신 에디터 레이어에서 월드 액터를 업데이트합니다.
+	 *
+	 * @param Preset 변경된 프리셋
+	 * @param PropertyName 변경된 프로퍼티 이름
+	 */
+	void OnMapPresetPropertyChanged(const UMapPreset* Preset, FName PropertyName);
+
 private:
 	UPROPERTY()
 	TSoftObjectPtr<UMapPreset> LastUsedPresetAsset;

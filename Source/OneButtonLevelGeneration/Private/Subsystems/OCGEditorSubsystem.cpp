@@ -4,19 +4,23 @@
 #include "OCGLog.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
+#include "PCG/OCGLandscapeVolume.h"
 #include "Subsystems/OCGDataGenerationSubsystem.h"
+#include "Subsystems/OCGHydrologySubsystem.h"
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
 #include "Subsystems/OCGPopulationSubsystem.h"
-#include "Subsystems/OCGHydrologySubsystem.h"
+#include "Utils/OCGUtils.h"
 
-#include "Editor.h"
 #include "ContentBrowserModule.h"
+#include "Editor.h"
 #include "IContentBrowserSingleton.h"
-#include "Misc/MessageDialog.h"
-#include "HAL/IConsoleManager.h"
+#include "PCGComponent.h"
+#include "PCGGraph.h"
 #include "ToolMenus.h"
-#include "Styling/AppStyle.h"
 #include "AssetRegistry/AssetData.h"
+#include "HAL/IConsoleManager.h"
+#include "Misc/MessageDialog.h"
+#include "Styling/AppStyle.h"
 #include "Widgets/SWindow.h"
 
 #define LOCTEXT_NAMESPACE "OCGEditorSubsystem"
@@ -31,6 +35,10 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
+	// MapPreset 프로퍼티 변경 구독
+	// DataAsset이 직접 월드 액터를 조작하지 않도록 에디터 레이어가 대신 처리합니다.
+	UMapPreset::OnPropertyChanged.AddUObject(this, &UOCGEditorSubsystem::OnMapPresetPropertyChanged);
+
 	RestoreLastUsedPreset();
 	RegisterToolbarEntry();
 	RegisterConsoleCommand();
@@ -38,6 +46,8 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UOCGEditorSubsystem::Deinitialize()
 {
+	UMapPreset::OnPropertyChanged.RemoveAll(this);
+
 	UnregisterConsoleCommand();
 	UnregisterToolbarEntry();
 
@@ -264,6 +274,42 @@ void UOCGEditorSubsystem::RestoreLastUsedPreset()
 	if (GConfig->GetString(OCGConfigSection, OCGLastPresetKey, SavedPath, GEditorPerProjectIni) && !SavedPath.IsEmpty())
 	{
 		LastUsedPresetAsset = TSoftObjectPtr<UMapPreset>(FSoftObjectPath(SavedPath));
+	}
+}
+
+void UOCGEditorSubsystem::OnMapPresetPropertyChanged(const UMapPreset* Preset, FName PropertyName)
+{
+	if (!Preset || !GEditor)
+	{
+		return;
+	}
+
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	if (!World)
+	{
+		return;
+	}
+
+	// 에디터 월드의 모든 OCGLandscapeVolume 액터에 변경사항을 반영합니다.
+	TArray<AOCGLandscapeVolume*> Actors = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
+	for (AOCGLandscapeVolume* VolumeActor : Actors)
+	{
+		if (!VolumeActor)
+		{
+			continue;
+		}
+
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(UMapPreset, PCGGraph))
+		{
+			if (UPCGComponent* PCGComponent = VolumeActor->GetPCGComponent())
+			{
+				PCGComponent->SetGraph(Preset->PCGGraph);
+			}
+		}
+		else if (PropertyName == GET_MEMBER_NAME_CHECKED(UMapPreset, bAutoGenerate))
+		{
+			VolumeActor->SetEditorAutoGenerate(Preset->bAutoGenerate);
+		}
 	}
 }
 
