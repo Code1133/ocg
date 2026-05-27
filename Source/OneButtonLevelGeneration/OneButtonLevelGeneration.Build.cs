@@ -40,6 +40,7 @@ public class OneButtonLevelGeneration : ModuleRules
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"AssetRegistry",
+				"AssetTools",
 				"ContentBrowser",
 				"ContentBrowserData",
 				"InputCore",
