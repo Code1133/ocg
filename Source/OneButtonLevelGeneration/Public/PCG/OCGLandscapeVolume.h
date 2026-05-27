@@ -23,9 +23,7 @@ public:
 	UBoxComponent* GetBoxComponent() const { return BoxComponent; }
 	UPCGComponent* GetPCGComponent() const { return PCGComponent; }
 
-#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OneClickGeneration")
@@ -34,12 +32,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bShowDebugPoints = false;
 
-#if WITH_EDITOR
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DuplicateTransient, Category = "OneClickGeneration")
 	bool bEditorAutoGenerate = true;
 
 	void SetEditorAutoGenerate(bool bEnable);
-#endif
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

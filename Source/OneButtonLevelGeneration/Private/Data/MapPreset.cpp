@@ -10,7 +10,6 @@
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGUtils.h"
 
-#if WITH_EDITOR
 UMapPreset::UMapPreset()
 	: OceanWaterMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_Ocean.Water_Material_Ocean")))
 	, OceanWaterStaticMeshMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_Ocean_LOD.Water_Material_Ocean_LOD")))
@@ -200,7 +199,6 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 	}
 }
-#endif
 
 void UMapPreset::CalculateOptimalLooseness()
 {
@@ -298,9 +296,5 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 
 UWorld* UMapPreset::GetWorld() const
 {
-#if WITH_EDITOR
 	return GEditor->GetEditorWorldContext().World();
-#else
-	return nullptr;
-#endif
 }

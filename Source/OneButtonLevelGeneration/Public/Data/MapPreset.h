@@ -32,9 +32,7 @@ public:
 	UMapPreset();
 	virtual void PostLoad() override;
 
-#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
 
 private:
 	void CalculateOptimalLooseness();

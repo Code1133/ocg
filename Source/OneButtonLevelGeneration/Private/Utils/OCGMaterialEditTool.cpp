@@ -5,14 +5,12 @@
 #include "OCGLog.h"
 #include "FileHelpers.h"
 
-#if WITH_EDITOR
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "Materials/MaterialExpressionMaterialFunctionCall.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialFunctionInterface.h"
 #include "Materials/MaterialExpressionFunctionInput.h"
-#endif
 
 OCGMaterialEditTool::OCGMaterialEditTool()
 {
@@ -25,7 +23,6 @@ OCGMaterialEditTool::~OCGMaterialEditTool()
 void OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMaterial,
 	 TArray<UMaterialFunctionInterface*> FuncToInsert)
 {
-#if WITH_EDITOR
 	if (!TargetMaterial || FuncToInsert.IsEmpty()) return;
 
 	// 에디터용 트랜잭션(Undo/Redo) 지원
@@ -155,12 +152,10 @@ void OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMa
 	TargetMaterial->PostEditChange();
 	(void)TargetMaterial->MarkPackageDirty();
 	SaveMaterialAsset(TargetMaterial);
-#endif
 }
 
 UMaterialExpression* OCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UMaterial* TargetMaterial)
 {
-#if WITH_EDITOR
 	if (!TargetMaterial)
 	{
 		return nullptr;
@@ -188,12 +183,10 @@ UMaterialExpression* OCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UM
 	}
 
 	return nullptr;
-#endif
 }
 
 void OCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
 {
-#if WITH_EDITOR
 	if (!TargetMaterial) return;
 
 	// ① 트랜잭션 및 Modify/MarkPackageDirty() 이후에 호출
@@ -212,12 +205,10 @@ void OCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
 		/*bCheckDirty=*/ false,
 		/*bPromptToSave=*/ false
 	);
-#endif
 }
 
 TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMaterial)
 {
-#if WITH_EDITOR
 	TArray<FName> LayerNames;
 	if (!TargetMaterial) return LayerNames;
 
@@ -250,7 +241,6 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 	}
 
 	return LayerNames;
-#endif
 }
 
 void OCGMaterialEditTool::CollectUsedExpressions(UMaterial* TargetMaterial,	TSet<UMaterialExpression*>& OutUsedExpressions)
