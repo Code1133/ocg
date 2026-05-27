@@ -47,6 +47,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"LandscapeEditor",
 				"LevelEditor",
 				"PCGEditor",
+				"PropertyEditor",
 				"Slate",
 				"SlateCore",
 				"ToolMenus",
