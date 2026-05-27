@@ -2,13 +2,14 @@
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
 
 #include "OCGLog.h"
+#include "OCGStats.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "Utils/OCGLandscapeUtil.h"
 
 #include "Editor.h"
-#include "Engine/Level.h"
 #include "EngineUtils.h"
+#include "Engine/Level.h"
 
 #include "Landscape.h"
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 6
@@ -19,10 +20,10 @@
 #include "LandscapeProxy.h"
 #include "LandscapeStreamingProxy.h"
 
-#include "Components/BoxComponent.h"
-#include "Components/RuntimeVirtualTextureComponent.h"
 #include "LocationVolume.h"
 #include "RuntimeVirtualTextureSetBounds.h"
+#include "Components/BoxComponent.h"
+#include "Components/RuntimeVirtualTextureComponent.h"
 #include "VT/RuntimeVirtualTexture.h"
 #include "VT/RuntimeVirtualTextureVolume.h"
 
@@ -95,6 +96,8 @@ void UOCGLandscapeGenSubsystem::Deinitialize()
 
 void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_LandscapeModify);
+
 	if (!IsValid(Preset))
 	{
         return;
@@ -385,4 +388,3 @@ bool UOCGLandscapeGenSubsystem::CreateRuntimeVirtualTextureVolume(ALandscape* In
 
 	return true;
 }
-

@@ -3,9 +3,12 @@
 
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
+#include "OCGStats.h"
 
 void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_TempMapGenerate);
+
 	Initialize(Preset);
 
 	const FIntPoint CurResolution = Preset->MapResolution;

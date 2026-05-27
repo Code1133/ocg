@@ -2,6 +2,7 @@
 #include "Subsystems/OCGHydrologySubsystem.h"
 
 #include "OCGLog.h"
+#include "OCGStats.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
@@ -126,6 +127,8 @@ void UOCGHydrologySubsystem::RegenerateOcean(const UMapPreset* Preset, const FOC
 
 void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandscape, const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_RiverPathFind);
+
 	const TArray<uint16>& HeightMapData = DataContainer.HeightMapData;
 	const FIntPoint MapResolution = Preset->MapResolution;
 

@@ -1,11 +1,14 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Strategies/OCGDefaultHumidityStrategy.h"
 
+#include "OCGStats.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 
 void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_HumidityMapGenerate);
+
 	Initialize(Preset);
 
 	const FIntPoint CurResolution = Preset->MapResolution;

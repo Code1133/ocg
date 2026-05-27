@@ -1,11 +1,14 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Strategies/OCGDefaultHeightmapStrategy.h"
 
+#include "OCGStats.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 
 void UOCGDefaultHeightmapStrategy::GenerateHeightMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
+	SCOPE_CYCLE_COUNTER(STAT_OCG_HeightMapGenerate);
+
 	Initialize(Preset);
 
 	const FIntPoint CurMapResolution = Preset->MapResolution;
