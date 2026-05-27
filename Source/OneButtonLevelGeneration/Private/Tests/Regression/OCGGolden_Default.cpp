@@ -11,7 +11,7 @@
  * 값을 0으로 설정하면 레코드(기록) 모드로 동작합니다.
  * 최초 1회 실행 후, 테스트 출력 로그에 찍힌 CRC 값을 복사하여 여기에 붙여넣으세요.
  */
-static constexpr uint32 GExpectedCRC = 0xEAC56CA2;
+static constexpr uint32 GExpectedCRC = 0xEFC311B8;
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FOCGGolden_Default,
