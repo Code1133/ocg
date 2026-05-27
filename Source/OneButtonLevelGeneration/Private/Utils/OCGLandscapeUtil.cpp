@@ -6,7 +6,9 @@
 #include <OCGLog.h>
 
 #include "PCGComponent.h"
+#include "Data/MapData.h"
 #include "Data/MapPreset.h"
+#include "Data/OCGLandscapeTypes.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGMaterialEditTool.h"
 #include "Utils/OCGUtils.h"
