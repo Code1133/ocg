@@ -5,8 +5,6 @@
 #include "OCGLog.h"
 #include "PCGComponent.h"
 #include "PCGGraph.h"
-#include "Component/OCGMapGenerateComponent.h"
-#include "Data/MapData.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
 #include "PCG/OCGLandscapeVolume.h"
 #include "Utils/OCGUtils.h"

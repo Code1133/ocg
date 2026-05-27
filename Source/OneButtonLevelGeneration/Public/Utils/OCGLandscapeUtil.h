@@ -9,7 +9,6 @@
 
 struct FLandscapeSetting;
 class UMapPreset;
-class AOCGLevelGenerator;
 class ALocationVolume;
 class ULandscapeInfo;
 class ULandscapeSubsystem;
@@ -62,11 +61,7 @@ public:
 
 	static void ImportMapDatas(UWorld* World, ALandscape* InLandscape, TArray<uint16> ImportHeightMap, TArray<FLandscapeImportLayerInfo> ImportLayers);
 
-	static TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, AOCGLevelGenerator* InLevelGenerator, const UMapPreset* InMapPreset);
-
 	static TMap<FGuid, TArray<FLandscapeImportLayerInfo>> PrepareLandscapeLayerData(ALandscape* InTargetLandscape, const TMap<FName, TArray<uint8>>& InWeightLayers, const UMapPreset* InMapPreset);
-
-	static void RegenerateRiver(UWorld* World, AOCGLevelGenerator* LevelGenerator, UMapPreset* MapPreset);
 
 	static void ForceGeneratePCG(UWorld* World);
 	
