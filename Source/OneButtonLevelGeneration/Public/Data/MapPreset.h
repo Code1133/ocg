@@ -7,9 +7,17 @@
 #include "Structure/OCGHierarchyDataStructure.h"
 #include "MapPreset.generated.h"
 
-class AOCGLandscapeVolume;
 class UPCGGraph;
 
+/**
+ * UMapPreset 프로퍼티가 변경될 때 브로드캐스트됩니다.
+ * DataAsset은 월드를 직접 알 수 없으므로, 월드 액터 업데이트는
+ * 이 델리게이트를 구독한 OCGEditorSubsystem이 담당합니다.
+ *
+ * @param ChangedPreset 변경된 프리셋 인스턴스
+ * @param PropertyName 변경된 멤버 프로퍼티 이름
+ */
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMapPresetPropertyChanged, const class UMapPreset*, FName /*PropertyName*/);
 
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
 UENUM(BlueprintType)
@@ -34,13 +42,16 @@ public:
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
+	/**
+	 * 프로퍼티 변경 시 브로드캐스트되는 정적 델리게이트.
+	 * OCGEditorSubsystem이 Initialize/Deinitialize에서 구독 관리를 담당합니다.
+	 */
+	static FOnMapPresetPropertyChanged OnPropertyChanged;
+
 private:
 	void CalculateOptimalLooseness();
 	void UpdateInternalMeshFilterNames();
 	void UpdateInternalLandscapeFilterNames();
-
-public:
-	virtual UWorld* GetWorld() const override;
 
 public:
 	//~ Begin UPROPERTY World Settings | Basics
