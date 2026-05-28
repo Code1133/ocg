@@ -7,6 +7,7 @@
 #include "Editor.h"
 #include "IDetailsView.h"
 #include "PropertyCustomizationHelpers.h"
+#include "PropertyEditorDelegates.h"
 #include "PropertyEditorModule.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/SBoxPanel.h"
@@ -25,6 +26,42 @@ namespace OCGWindowLayout
 {
 	static const FMargin SectionPadding(6.0f, 4.0f);
 	static const float SeedBoxWidth = 80.0f;
+	static const float SidebarWidth  = 130.0f;
+}
+
+// Sidebar navigation IDs and category mappings
+namespace OCGNav
+{
+	static const FName TerrainBasics   = TEXT("terrain_basics");
+	static const FName TerrainAdvanced = TEXT("terrain_advanced");
+	static const FName Water           = TEXT("water");
+	static const FName PCG             = TEXT("pcg");
+	static const FName OCG             = TEXT("ocg");
+
+	/** Nav ID -> 표시할 MapPreset UPROPERTY Category 목록 */
+	static const TMap<FName, TArray<FName>> CategoryMap =
+	{
+		{
+			TerrainBasics, {
+				TEXT("World Settings | Basics | Landscape Settings"),
+				TEXT("World Settings | Basics | Height"),
+				TEXT("World Settings | Basics | Temperature"),
+				TEXT("World Settings | Basics | Noise"),
+			}
+		},
+		{
+			TerrainAdvanced, {
+				TEXT("World Settings | Advanced | Height"),
+				TEXT("World Settings | Advanced | Temperature"),
+				TEXT("World Settings | Advanced | Humidity"),
+				TEXT("World Settings | Advanced | Noise"),
+				TEXT("World Settings | Advanced | Erosion"),
+			}
+		},
+		{ Water, { TEXT("Ocean Settings"), TEXT("River Settings") } },
+		{ PCG, { TEXT("PCG") } },
+		{ OCG, { TEXT("OCG") } },
+	};
 }
 
 void SOCGWindow::Construct(const FArguments& InArgs)
@@ -41,6 +78,13 @@ void SOCGWindow::Construct(const FArguments& InArgs)
 	DetailsViewArgs.NotifyHook        = nullptr;
 
 	DetailsView = PropEdModule.CreateDetailView(DetailsViewArgs);
+
+	// 프로퍼티 가시성 필터 델리게이트 등록
+	DetailsView->SetIsPropertyVisibleDelegate(
+		FIsPropertyVisible::CreateRaw(this, &SOCGWindow::IsPropertyVisible));
+
+	// 초기 nav 항목 적용 (Terrain > Basics)
+	OnNavItemClicked(OCGNav::TerrainBasics);
 
 	ChildSlot
 	[
@@ -70,11 +114,23 @@ void SOCGWindow::Construct(const FArguments& InArgs)
 			BuildActionBar()
 		]
 
-		// FDetailsView: 나머지 공간을 모두 차지
+		// Body: Sidebar (좌) + DetailsView (우)
 		+ SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		[
-			DetailsView.ToSharedRef()
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				BuildSidebar()
+			]
+
+			+ SHorizontalBox::Slot()
+			.FillWidth(1.0f)
+			[
+				DetailsView.ToSharedRef()
+			]
 		]
 	];
 }
@@ -505,6 +561,275 @@ bool SOCGWindow::CanExecuteAction() const
 bool SOCGWindow::CanRegenRiver() const
 {
 	return CurrentPreset.IsValid() && CurrentPreset->bGenerateRiver;
+}
+
+TSharedRef<SWidget> SOCGWindow::BuildSidebar()
+{
+	// 단색 배경을 그리기 위한 정적 브러시.
+	// SBorder의 BorderBackgroundColor가 이 브러시를 곱셈(tint)하여 최종 색상을 결정합니다.
+	// "NoBorder"는 실제로 렌더링되지 않으므로 단색 표현에 적합하지 않습니다.
+	static const FSlateColorBrush SolidBrush(FLinearColor::White);
+
+	// 항목 하나를 생성하는 로컬 헬퍼.
+	// IsActiveFunc : 이 항목이 "활성" 상태인지 반환하는 조건 람다
+	// bSub         : true이면 들여쓰기 적용 (Terrain sub-item)
+	auto MakeNavItem = [this](
+		FName Id,
+		const FText& Label,
+		bool bSub,
+		TFunction<bool()> IsActiveFunc
+	) -> TSharedRef<SWidget>
+	{
+		const float LeftPad = bSub ? 20.f : 8.f;
+
+		return SNew(SHorizontalBox)
+
+		// 좌측 2px 액센트 바: 활성 시 파란색, 비활성 시 투명
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SBox)
+			.WidthOverride(2.f)
+			[
+				SNew(SBorder)
+				.Padding(0.f)
+				.BorderImage(&SolidBrush)
+				.BorderBackgroundColor_Lambda([IsActiveFunc]() -> FLinearColor
+				{
+					return IsActiveFunc()
+						? FLinearColor(0.2f, 0.5f, 1.0f, 1.0f)
+						: FLinearColor::Transparent;
+				})
+			]
+		]
+
+		// 우측 버튼 영역: 활성 시 짙은 파란 배경
+		+ SHorizontalBox::Slot()
+		.FillWidth(1.0f)
+		[
+			SNew(SBorder)
+			.Padding(0.f)
+			.BorderImage(&SolidBrush)
+			.BorderBackgroundColor_Lambda([IsActiveFunc]() -> FLinearColor
+			{
+				return IsActiveFunc()
+					? FLinearColor(0.08f, 0.15f, 0.30f, 0.90f)
+					: FLinearColor::Transparent;
+			})
+			[
+				SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "NoBorder")
+				.HAlign(HAlign_Left)
+				.ContentPadding(FMargin(LeftPad, 6.f, 8.f, 6.f))
+				.OnClicked_Lambda([this, Id]()
+				{
+					OnNavItemClicked(Id);
+					return FReply::Handled();
+				})
+				[
+					SNew(STextBlock)
+					.Text(Label)
+					.Font(FAppStyle::GetFontStyle("SmallFont"))
+					.ColorAndOpacity_Lambda([IsActiveFunc]() -> FSlateColor
+					{
+						return FSlateColor(IsActiveFunc()
+							? FLinearColor(0.9f, 0.95f, 1.0f)   // 활성: 청백색
+							: FLinearColor(0.55f, 0.55f, 0.55f)); // 비활성: 회색
+					})
+				]
+			]
+		];
+	};
+
+	// Terrain sub-item 가시성 (terrain_basics or terrain_advanced가 선택된 경우에만 표시)
+	auto TerrainSubVisibility = [this]() -> EVisibility
+	{
+		return (ActiveNavItem == OCGNav::TerrainBasics || ActiveNavItem == OCGNav::TerrainAdvanced)
+			? EVisibility::Visible : EVisibility::Collapsed;
+	};
+
+	// 그룹 구분선 (좌우 여백 포함)
+	auto MakeSeparator = []() -> TSharedRef<SWidget>
+	{
+		return SNew(SBorder)
+			.Padding(FMargin(8.f, 4.f))
+			.BorderImage(FAppStyle::GetBrush("NoBorder"))
+			[
+				SNew(SSeparator)
+				.Orientation(Orient_Horizontal)
+				.Thickness(1.0f)
+			];
+	};
+
+	return SNew(SBox)
+		.WidthOverride(OCGWindowLayout::SidebarWidth)
+		[
+			SNew(SBorder)
+			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+			.Padding(0.f)
+			[
+				SNew(SVerticalBox)
+
+				// 헤더
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(8.f, 5.f, 8.f, 4.f)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("SidebarHeader", "SETTINGS"))
+					.Font(FAppStyle::GetFontStyle("TinyFont"))
+					.ColorAndOpacity(FLinearColor(0.4f, 0.4f, 0.4f))
+				]
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SSeparator).Orientation(Orient_Horizontal)
+				]
+
+				// ── Terrain 그룹 ──────────────────────────────
+				// Terrain (클릭 시 terrain_basics 선택 / 두 sub 중 하나가 활성이면 하이라이트)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeNavItem(
+						OCGNav::TerrainBasics,
+						LOCTEXT("NavTerrain", "Terrain"),
+						false,
+						[this]() { return ActiveNavItem == OCGNav::TerrainBasics || ActiveNavItem == OCGNav::TerrainAdvanced; }
+					)
+				]
+
+				// Terrain sub-items (terrain이 활성일 때만 표시)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SVerticalBox)
+					.Visibility_Lambda(TerrainSubVisibility)
+
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						MakeNavItem(
+							OCGNav::TerrainBasics,
+							LOCTEXT("NavTerrainBasics", "Basics"),
+							true,
+							[this]() { return ActiveNavItem == OCGNav::TerrainBasics; }
+						)
+					]
+
+					+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						MakeNavItem(
+							OCGNav::TerrainAdvanced,
+							LOCTEXT("NavTerrainAdvanced", "Advanced"),
+							true,
+							[this]() { return ActiveNavItem == OCGNav::TerrainAdvanced; }
+						)
+					]
+				]
+
+				// ── 구분선: Terrain / Water ───────────────────
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeSeparator()
+				]
+
+				// Water
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeNavItem(
+						OCGNav::Water,
+						LOCTEXT("NavWater", "Water"),
+						false,
+						[this]() { return ActiveNavItem == OCGNav::Water; }
+					)
+				]
+
+				// ── 구분선: Water / PCG+OCG ───────────────────
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeSeparator()
+				]
+
+				// PCG
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeNavItem(
+						OCGNav::PCG,
+						LOCTEXT("NavPCG", "PCG"),
+						false,
+						[this]() { return ActiveNavItem == OCGNav::PCG; }
+					)
+				]
+
+				// OCG
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					MakeNavItem(
+						OCGNav::OCG,
+						LOCTEXT("NavOCG", "OCG"),
+						false,
+						[this]() { return ActiveNavItem == OCGNav::OCG; }
+					)
+				]
+			]
+		];
+}
+
+void SOCGWindow::OnNavItemClicked(FName ItemId)
+{
+	ActiveNavItem = ItemId;
+
+	// AllowedCategories 업데이트
+	AllowedCategories.Reset();
+	if (const TArray<FName>* Cats = OCGNav::CategoryMap.Find(ItemId))
+	{
+		for (const FName& Cat : *Cats)
+		{
+			AllowedCategories.Add(Cat);
+		}
+	}
+
+	// DetailsView에 필터 재적용
+	if (DetailsView.IsValid())
+	{
+		DetailsView->ForceRefresh();
+	}
+}
+
+bool SOCGWindow::IsPropertyVisible(const FPropertyAndParent& PropertyAndParent) const
+{
+	if (AllowedCategories.IsEmpty())
+	{
+		return true;
+	}
+
+	// 프로퍼티 자신의 카테고리 확인
+	const FString OwnCategory = PropertyAndParent.Property.GetMetaData(TEXT("Category"));
+	if (!OwnCategory.IsEmpty() && AllowedCategories.Contains(FName(*OwnCategory)))
+	{
+		return true;
+	}
+
+	// 부모 체인 확인 (배열/구조체 내부 프로퍼티 대응)
+	for (const FProperty* Parent : PropertyAndParent.ParentProperties)
+	{
+		if (!Parent) { continue; }
+		const FString ParentCategory = Parent->GetMetaData(TEXT("Category"));
+		if (!ParentCategory.IsEmpty() && AllowedCategories.Contains(FName(*ParentCategory)))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 #undef LOCTEXT_NAMESPACE
