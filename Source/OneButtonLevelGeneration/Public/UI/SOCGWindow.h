@@ -5,6 +5,7 @@
 #include "Widgets/SCompoundWidget.h"
 
 struct FAssetData;
+struct FPropertyAndParent;
 class UMapPreset;
 class IDetailsView;
 
@@ -15,7 +16,7 @@ class IDetailsView;
  *  - Preset Bar   : SObjectPropertyEntryBox (UE 표준 에셋 피커, Browse 내장)
  *  - Quick Strip  : Seed / RiverSeed 인라인 편집 + 주사위 버튼, Island / Water 체크박스
  *  - Action Bar   : Generate All, Regen River, Force PCG
- *  - Details View : FDetailsView (MapPreset 모든 프로퍼티)
+ *  - Body         : 좌 Sidebar (카테고리 탐색) + 우 IDetailsView (카테고리 필터 적용)
  */
 class SOCGWindow : public SCompoundWidget
 {
@@ -36,6 +37,7 @@ private:
 	TSharedRef<SWidget> BuildPresetBar();
 	TSharedRef<SWidget> BuildQuickStrip();
 	TSharedRef<SWidget> BuildActionBar();
+	TSharedRef<SWidget> BuildSidebar();
 
 	// Preset bar
 	FString GetMapPresetPath() const;
@@ -69,7 +71,20 @@ private:
 	/** Regen River 활성 조건: 프리셋 선택 + bGenerateRiver == true */
 	bool CanRegenRiver() const;
 
+	// Sidebar navigation
+	/** 사이드바 항목 클릭 시 해당 카테고리만 DetailsView에 표시합니다. */
+	void OnNavItemClicked(FName ItemId);
+
+	/** IDetailsView 프로퍼티 가시성 필터 델리게이트 */
+	bool IsPropertyVisible(const FPropertyAndParent& PropertyAndParent) const;
+
 	// State
 	TWeakObjectPtr<UMapPreset> CurrentPreset;
 	TSharedPtr<IDetailsView> DetailsView;
+
+	/** 현재 선택된 사이드바 항목 ID */
+	FName ActiveNavItem;
+
+	/** 현재 표시 중인 카테고리 집합 (IsPropertyVisible에서 참조) */
+	TSet<FName> AllowedCategories;
 };
