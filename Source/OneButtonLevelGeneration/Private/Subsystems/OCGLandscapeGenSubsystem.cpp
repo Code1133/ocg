@@ -252,8 +252,8 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 	const float OffsetY = (-Preset->MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
 
 	FVector WorldLocation = VolumeOrigin + FVector(
-		2.0f * (MapPoint.X / static_cast<float>(Preset->MapResolution.X)) * VolumeExtent.X + OffsetX,
-		2.0f * (MapPoint.Y / static_cast<float>(Preset->MapResolution.Y)) * VolumeExtent.Y + OffsetY,
+		2.0f * (MapPoint.X / static_cast<float>(Preset->MapResolution.X - 1)) * VolumeExtent.X + OffsetX,
+		2.0f * (MapPoint.Y / static_cast<float>(Preset->MapResolution.Y - 1)) * VolumeExtent.Y + OffsetY,
 		0.0f
 	);
 
