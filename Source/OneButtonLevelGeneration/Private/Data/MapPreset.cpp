@@ -268,7 +268,7 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 		if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 		{
 			const uint32 LayerIdx = *Index + 1;
-			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), LayerIdx));
+			Data.LayerName_Internal = OCGMapDataUtils::MakeLayerName(LayerIdx);
 			continue;
 		}
 		Data.LayerName_Internal = NAME_None;
