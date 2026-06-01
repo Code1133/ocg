@@ -102,7 +102,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			}
 		}
 
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 
 		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
 			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
@@ -135,12 +135,12 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			return;
 		}
 
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 	}
 
 	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
 	{
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 	}
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, DebugGridSpacing))

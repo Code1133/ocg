@@ -580,7 +580,7 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 		TFunction<bool()> IsActiveFunc
 	) -> TSharedRef<SWidget>
 	{
-		const float LeftPad = bSub ? 20.f : 8.f;
+		const float LeftPad = bSub ? 20.0f : 8.0f;
 
 		return SNew(SHorizontalBox)
 
@@ -589,10 +589,10 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 		.AutoWidth()
 		[
 			SNew(SBox)
-			.WidthOverride(2.f)
+			.WidthOverride(2.0f)
 			[
 				SNew(SBorder)
-				.Padding(0.f)
+				.Padding(0.0f)
 				.BorderImage(&SolidBrush)
 				.BorderBackgroundColor_Lambda([IsActiveFunc]() -> FLinearColor
 				{
@@ -608,7 +608,7 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 		.FillWidth(1.0f)
 		[
 			SNew(SBorder)
-			.Padding(0.f)
+			.Padding(0.0f)
 			.BorderImage(&SolidBrush)
 			.BorderBackgroundColor_Lambda([IsActiveFunc]() -> FLinearColor
 			{
@@ -620,7 +620,7 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 				SNew(SButton)
 				.ButtonStyle(FAppStyle::Get(), "NoBorder")
 				.HAlign(HAlign_Left)
-				.ContentPadding(FMargin(LeftPad, 6.f, 8.f, 6.f))
+				.ContentPadding(FMargin(LeftPad, 6.0f, 8.0f, 6.0f))
 				.OnClicked_Lambda([this, Id]()
 				{
 					OnNavItemClicked(Id);
@@ -652,7 +652,7 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 	auto MakeSeparator = []() -> TSharedRef<SWidget>
 	{
 		return SNew(SBorder)
-			.Padding(FMargin(8.f, 4.f))
+			.Padding(FMargin(8.0f, 4.0f))
 			.BorderImage(FAppStyle::GetBrush("NoBorder"))
 			[
 				SNew(SSeparator)
@@ -666,14 +666,14 @@ TSharedRef<SWidget> SOCGWindow::BuildSidebar()
 		[
 			SNew(SBorder)
 			.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
-			.Padding(0.f)
+			.Padding(0.0f)
 			[
 				SNew(SVerticalBox)
 
 				// 헤더
 				+ SVerticalBox::Slot()
 				.AutoHeight()
-				.Padding(8.f, 5.f, 8.f, 4.f)
+				.Padding(8.0f, 5.0f, 8.0f, 4.0f)
 				[
 					SNew(STextBlock)
 					.Text(LOCTEXT("SidebarHeader", "SETTINGS"))

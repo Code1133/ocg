@@ -116,5 +116,5 @@ float UOCGDefaultTemperatureStrategy::HeightMapToWorldHeight(const uint16 Height
 {
 	// Add ZOffset to return actual world height;
 	// ZOffset is 0 if the absolute values of MaxHeight and MinHeight are equal.
-	return (Height - 32768.f) * LandscapeZScale / 128.f + ZOffset;
+	return (Height - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
 }
