@@ -63,13 +63,13 @@ void FOneButtonLevelGenerationStyle::Initialize()
 	// Content Browser 리스트 뷰 아이콘 (16x16)
 	StyleSet->Set(
 		"ClassIcon.MapPreset",
-		new FSlateImageBrush(ResourcesDir / TEXT("MapPreset128.png"), FVector2D(16.f, 16.f))
+		new FSlateImageBrush(ResourcesDir / TEXT("MapPreset128.png"), FVector2D(16.0f, 16.0f))
 	);
 
 	// Content Browser 타일 뷰 썸네일 (64x64)
 	StyleSet->Set(
 		"ClassThumbnail.MapPreset",
-		new FSlateImageBrush(ResourcesDir / TEXT("MapPreset128.png"), FVector2D(64.f, 64.f))
+		new FSlateImageBrush(ResourcesDir / TEXT("MapPreset128.png"), FVector2D(64.0f, 64.0f))
 	);
 
 	FSlateStyleRegistry::RegisterSlateStyle(*StyleSet);

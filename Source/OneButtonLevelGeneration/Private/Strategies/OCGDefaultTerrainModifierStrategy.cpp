@@ -27,7 +27,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	}
 
 	const float SeaLevelHeightF = (Preset->bContainWater ? Preset->SeaLevel * HeightRange : 0.0f) + Preset->MinHeight;
-	const uint16 SeaLevelHeight = static_cast<uint16>((SeaLevelHeightF - ZOffset) * 128.f / ZScale + 32768.f);
+	const uint16 SeaLevelHeight = static_cast<uint16>((SeaLevelHeightF - ZOffset) * 128.0f / ZScale + 32768.0f);
 
 	for (int32 Y = 0; Y < Preset->MapResolution.Y; ++Y)
 	{
@@ -38,24 +38,24 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 			if (CurrentLayerIdx <= 0) continue; // 0 = Water, skip
 
 			const uint16 CurrentHeight = DataContainer.HeightMapData[Index];
-			float MtoPRatio = 0.f;
+			float MtoPRatio = 0.0f;
 
 			for (int32 I = 1; I < DataContainer.WeightLayers.Num(); ++I)
 			{
 				const FName LayerName(FString::Printf(TEXT("Layer%d"), I));
-				const float CurrentBiomeWeight = DataContainer.WeightLayers[LayerName][Index] / 255.f;
-				if (CurrentBiomeWeight <= 0.f) continue;
+				const float CurrentBiomeWeight = DataContainer.WeightLayers[LayerName][Index] / 255.0f;
+				if (CurrentBiomeWeight <= 0.0f) continue;
 				MtoPRatio += Preset->Biomes[I - 1].MountainRatio * CurrentBiomeWeight;
 			}
 
-			const uint16 BiomeMinHeight = static_cast<uint16>((BlurredMinHeights[Index] - ZOffset) * 128.f / ZScale + 32768.f);
+			const uint16 BiomeMinHeight = static_cast<uint16>((BlurredMinHeights[Index] - ZOffset) * 128.0f / ZScale + 32768.0f);
 			const uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, BiomeMinHeight, (1.0f - MtoPRatio) * Preset->PlainSmoothFactor);
 
-			const float MaxAmplitude = (65535.f - TargetPlainHeight) * ZScale / HeightRange / 128.f;
+			const float MaxAmplitude = (65535.0f - TargetPlainHeight) * ZScale / HeightRange / 128.0f;
 			const float Amplitude = MaxAmplitude * Preset->BiomeNoiseAmplitude;
 			const float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(X), static_cast<float>(Y)) * Preset->BiomeNoiseScale) * Amplitude + Amplitude;
-			const float HeightToAdd = DetailNoise * HeightRange * 128.f / ZScale;
-			const float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0.f, 65535.f);
+			const float HeightToAdd = DetailNoise * HeightRange * 128.0f / ZScale;
+			const float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0.0f, 65535.0f);
 
 			uint16 NewHeight = FMath::Lerp(TargetPlainHeight, static_cast<uint16>(MountainHeight), MtoPRatio);
 			NewHeight = static_cast<uint16>(FMath::Clamp(static_cast<int32>(FMath::Max(NewHeight, SeaLevelHeight)), 0, 65535));
@@ -71,7 +71,7 @@ void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPres
 
 	TArray<int32> RegionIDMap;
 	RegionIDMap.Init(0, TotalPixels);
-	OutMinHeights.Init(0.f, TotalPixels);
+	OutMinHeights.Init(0.0f, TotalPixels);
 
 	TMap<int32, float> RegionMinHeight;
 	int32 CurrentRegionID = 1;
@@ -104,11 +104,11 @@ void UOCGDefaultTerrainModifierStrategy::BlurBiomeMinHeights(const UMapPreset* P
 	OutMinHeights.SetNumUninitialized(TotalPixels);
 
 	TArray<float> HorizontalPass;
-	HorizontalPass.Init(0.f, TotalPixels);
+	HorizontalPass.Init(0.0f, TotalPixels);
 
 	for (int32 Y = 0; Y < MapSize.Y; ++Y)
 	{
-		float Sum = 0.f;
+		float Sum = 0.0f;
 		int32 ValidPixelCount = 0;
 		for (int32 I = -BlendRadius; I <= BlendRadius; ++I)
 		{
@@ -132,7 +132,7 @@ void UOCGDefaultTerrainModifierStrategy::BlurBiomeMinHeights(const UMapPreset* P
 
 	for (int32 X = 0; X < MapSize.X; ++X)
 	{
-		float Sum = 0.f;
+		float Sum = 0.0f;
 		int32 ValidPixelCount = 0;
 		for (int32 I = -BlendRadius; I <= BlendRadius; ++I)
 		{
@@ -168,7 +168,7 @@ void UOCGDefaultTerrainModifierStrategy::GetBiomeStats(FIntPoint MapSize, int32 
 	while (Queue.Dequeue(CurrentPoint))
 	{
 		const uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
-		const float CurrentHeight = (InHeightMap[CurrentIndex] - 32768.f) * ZScale / 128.f + ZOffset;
+		const float CurrentHeight = (InHeightMap[CurrentIndex] - 32768.0f) * ZScale / 128.0f + ZOffset;
 		if (CurrentHeight < OutMinHeight) OutMinHeight = CurrentHeight;
 
 		const FIntPoint Neighbors[] =

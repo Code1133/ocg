@@ -204,16 +204,16 @@ void OCGLandscapeUtil::AddWeightMap(ALandscape* InLandscape, ULandscapeLayerInfo
 
 			for (int32 i = 0; i < NumPixels; ++i)
 			{
-				float Origin = OriginWeightMap[i] / 255.f;
+				float Origin = OriginWeightMap[i] / 255.0f;
 				float New = 0;
 
 				if (i < InWeightMap.Num())
 				{
-					New = FMath::Clamp(InWeightMap[i] / 255.f, 0.f, 1.f);
+					New = FMath::Clamp(InWeightMap[i] / 255.0f, 0.0f, 1.0f);
 				}
 
-				float Final = FMath::Clamp(Origin + New, 0.f, 1.f);    // 더하기 방식 블렌드
-				TargetWeightData[i] = static_cast<uint8>(Final * 255.f);
+				float Final = FMath::Clamp(Origin + New, 0.0f, 1.0f);    // 더하기 방식 블렌드
+				TargetWeightData[i] = static_cast<uint8>(Final * 255.0f);
 			}
 
 			AlphamapAccessor.SetData(Region.Min.X, Region.Min.Y, Region.Max.X, Region.Max.Y,

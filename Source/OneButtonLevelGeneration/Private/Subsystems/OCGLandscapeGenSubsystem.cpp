@@ -188,10 +188,10 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 	}
 
 	const FIntPoint MapResolution = Preset->MapResolution;
-	const float OffsetX = (-MapResolution.X / 2.f) * 100.f * Preset->LandscapeScale;
-	const float OffsetY = (-MapResolution.Y / 2.f) * 100.f * Preset->LandscapeScale;
+	const float OffsetX = (-MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeScale;
+	const float OffsetY = (-MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
 	TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, ZOffset));
-	TargetLandscape->SetActorScale3D(FVector(100.f * Preset->LandscapeScale, 100.f * Preset->LandscapeScale, LandscapeZScale));
+	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeScale, 100.0f * Preset->LandscapeScale, LandscapeZScale));
 
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer =
 		OCGLandscapeUtil::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
@@ -248,12 +248,12 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 		return FVector::ZeroVector;
 	}
 
-	const float OffsetX = (-Preset->MapResolution.X / 2.f) * 100.f * Preset->LandscapeScale;
-	const float OffsetY = (-Preset->MapResolution.Y / 2.f) * 100.f * Preset->LandscapeScale;
+	const float OffsetX = (-Preset->MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeScale;
+	const float OffsetY = (-Preset->MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
 
 	FVector WorldLocation = VolumeOrigin + FVector(
-		2.f * (MapPoint.X / static_cast<float>(Preset->MapResolution.X)) * VolumeExtent.X + OffsetX,
-		2.f * (MapPoint.Y / static_cast<float>(Preset->MapResolution.Y)) * VolumeExtent.Y + OffsetY,
+		2.0f * (MapPoint.X / static_cast<float>(Preset->MapResolution.X)) * VolumeExtent.X + OffsetX,
+		2.0f * (MapPoint.Y / static_cast<float>(Preset->MapResolution.Y)) * VolumeExtent.Y + OffsetY,
 		0.0f
 	);
 
@@ -267,7 +267,7 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 		if (InHeightMapData->IsValidIndex(Index))
 		{
 			const float LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-			WorldLocation.Z = ((*InHeightMapData)[Index] - 32768.f) / 128.f * LandscapeZScale;
+			WorldLocation.Z = ((*InHeightMapData)[Index] - 32768.0f) / 128.0f * LandscapeZScale;
 		}
 	}
 

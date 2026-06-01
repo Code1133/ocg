@@ -219,7 +219,7 @@ public:
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9")
 	)
-	float MaxSlopeAngle = 60.f;
+	float MaxSlopeAngle = 60.0f;
 
 	// Decides the strength of smoothing
 	UPROPERTY(
@@ -276,7 +276,7 @@ public:
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = 0.0f, ClampMax = 1.0f)
 	)
-	float PlainSmoothFactor = 1.f;
+	float PlainSmoothFactor = 1.0f;
 
 	// Decides the frequency of details in Biome
 	UPROPERTY(
@@ -330,7 +330,7 @@ public:
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0")
 	)
-	float StandardNoiseOffset = 10000.f;
+	float StandardNoiseOffset = 10000.0f;
 
 	// Decides how much the noise is spread out
 	UPROPERTY(
@@ -509,7 +509,7 @@ public:
 		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100"
 			, UIMax = "1000")
 	)
-	float RiverSplineSimplifyEpsilon = 200.f;
+	float RiverSplineSimplifyEpsilon = 200.0f;
 
 	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
 	UPROPERTY(
@@ -624,7 +624,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;
 
-	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f };
+	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.0f, 1.0f, FLinearColor::Blue, 1, 0.5f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
