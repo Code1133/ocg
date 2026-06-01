@@ -17,9 +17,7 @@ void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, 
 		DataContainer.HumidityMapData.SetNumUninitialized(CurResolution.X * CurResolution.Y);
 	}
 
-	const float SeaLevelWorldHeight = Preset->bContainWater
-		? Preset->MinHeight + Preset->SeaLevel * (Preset->MaxHeight - Preset->MinHeight)
-		: Preset->MinHeight;
+	const float SeaLevelWorldHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset);
 
 	TArray<float> HumidityMapFloat;
 	HumidityMapFloat.Init(0.0f, CurResolution.X * CurResolution.Y);
@@ -34,7 +32,7 @@ void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, 
 		for (int32 X = 0; X < CurResolution.X; ++X)
 		{
 			const int32 Index = Y * CurResolution.X + X;
-			const float WorldHeight = HeightMapToWorldHeight(DataContainer.HeightMapData[Index]);
+			const float WorldHeight = HeightConverter.ToWorldHeight(DataContainer.HeightMapData[Index]);
 
 			if (WorldHeight <= SeaLevelWorldHeight)
 			{
@@ -119,17 +117,5 @@ void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, 
 
 void UOCGDefaultHumidityStrategy::Initialize(const UMapPreset* Preset)
 {
-	// HeightMap conversion constants
-	LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
-}
-
-float UOCGDefaultHumidityStrategy::HeightMapToWorldHeight(const uint16 Height) const
-{
-	// Add ZOffset to return actual world height;
-	// ZOffset is 0 if the absolute values of MaxHeight and MinHeight are equal.
-	return (Height - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
+	HeightConverter.Initialize(Preset);
 }

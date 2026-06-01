@@ -5,7 +5,7 @@
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 
-void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, float ZScale, float ZOffset)
+void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, const FOCGHeightConverter& Converter)
 {
 	if (!Preset->bModifyTerrainByBiome)
 	{
@@ -16,7 +16,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	TArray<float> BlurredMinHeights;
 
 	const float HeightRange = Preset->MaxHeight - Preset->MinHeight;
-	CalculateBiomeMinHeights(Preset, DataContainer.HeightMapData, DataContainer.BiomeLayerMap, MinHeights, ZScale, ZOffset);
+	CalculateBiomeMinHeights(Preset, DataContainer.HeightMapData, DataContainer.BiomeLayerMap, MinHeights, Converter);
 
 	if (Preset->BiomeHeightBlendRadius > 0)
 	{
@@ -28,7 +28,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	}
 
 	const float SeaLevelHeightF = (Preset->bContainWater ? Preset->SeaLevel * HeightRange : 0.0f) + Preset->MinHeight;
-	const uint16 SeaLevelHeight = static_cast<uint16>((SeaLevelHeightF - ZOffset) * 128.0f / ZScale + 32768.0f);
+	const uint16 SeaLevelHeight = Converter.ToHeightMapValue(SeaLevelHeightF);
 
 	for (int32 Y = 0; Y < Preset->MapResolution.Y; ++Y)
 	{
@@ -49,13 +49,13 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 				MtoPRatio += Preset->Biomes[I - 1].MountainRatio * CurrentBiomeWeight;
 			}
 
-			const uint16 BiomeMinHeight = static_cast<uint16>((BlurredMinHeights[Index] - ZOffset) * 128.0f / ZScale + 32768.0f);
+			const uint16 BiomeMinHeight = Converter.ToHeightMapValue(BlurredMinHeights[Index]);
 			const uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, BiomeMinHeight, (1.0f - MtoPRatio) * Preset->PlainSmoothFactor);
 
-			const float MaxAmplitude = (65535.0f - TargetPlainHeight) * ZScale / HeightRange / 128.0f;
+			const float MaxAmplitude = (65535.0f - TargetPlainHeight) * Converter.ZScale / HeightRange / 128.0f;
 			const float Amplitude = MaxAmplitude * Preset->BiomeNoiseAmplitude;
 			const float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(X), static_cast<float>(Y)) * Preset->BiomeNoiseScale) * Amplitude + Amplitude;
-			const float HeightToAdd = DetailNoise * HeightRange * 128.0f / ZScale;
+			const float HeightToAdd = DetailNoise * HeightRange * 128.0f / Converter.ZScale;
 			const float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0.0f, 65535.0f);
 
 			uint16 NewHeight = FMath::Lerp(TargetPlainHeight, static_cast<uint16>(MountainHeight), MtoPRatio);
@@ -65,7 +65,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	}
 }
 
-void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPreset* Preset, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, TArray<float>& OutMinHeights, float ZScale, float ZOffset)
+void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPreset* Preset, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, TArray<float>& OutMinHeights, const FOCGHeightConverter& Converter)
 {
 	const FIntPoint MapSize = Preset->MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
@@ -84,7 +84,7 @@ void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPres
 			if (RegionIDMap[Y * MapSize.X + X] == 0)
 			{
 				float MinimumHeight;
-				GetBiomeStats(MapSize, X, Y, CurrentRegionID, MinimumHeight, RegionIDMap, InHeightMap, InBiomeLayerMap, ZScale, ZOffset);
+				GetBiomeStats(MapSize, X, Y, CurrentRegionID, MinimumHeight, RegionIDMap, InHeightMap, InBiomeLayerMap, Converter);
 				RegionMinHeight.Add(CurrentRegionID, MinimumHeight);
 				++CurrentRegionID;
 			}
@@ -156,7 +156,7 @@ void UOCGDefaultTerrainModifierStrategy::BlurBiomeMinHeights(const UMapPreset* P
 	}
 }
 
-void UOCGDefaultTerrainModifierStrategy::GetBiomeStats(FIntPoint MapSize, int32 X, int32 Y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, float ZScale, float ZOffset)
+void UOCGDefaultTerrainModifierStrategy::GetBiomeStats(FIntPoint MapSize, int32 X, int32 Y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, const FOCGHeightConverter& Converter)
 {
 	TQueue<FIntPoint> Queue;
 	Queue.Enqueue(FIntPoint(X, Y));
@@ -169,7 +169,7 @@ void UOCGDefaultTerrainModifierStrategy::GetBiomeStats(FIntPoint MapSize, int32 
 	while (Queue.Dequeue(CurrentPoint))
 	{
 		const uint32 CurrentIndex = CurrentPoint.Y * MapSize.X + CurrentPoint.X;
-		const float CurrentHeight = (InHeightMap[CurrentIndex] - 32768.0f) * ZScale / 128.0f + ZOffset;
+		const float CurrentHeight = Converter.ToWorldHeight(InHeightMap[CurrentIndex]);
 		if (CurrentHeight < OutMinHeight) OutMinHeight = CurrentHeight;
 
 		const FIntPoint Neighbors[] =

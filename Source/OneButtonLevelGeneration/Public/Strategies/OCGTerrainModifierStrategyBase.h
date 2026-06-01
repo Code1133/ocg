@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/OCGHeightConverter.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "OCGTerrainModifierStrategyBase.generated.h"
 
@@ -22,8 +23,7 @@ public:
 	 *
 	 * @param Preset 생성 설정 에셋
 	 * @param DataContainer 높이맵과 바이옴 레이어가 담긴 컨테이너 (HeightMapData In-place 수정됨)
-	 * @param ZScale Landscape Z 스케일 ((MaxHeight - MinHeight) * 0.001953125f)
-	 * @param ZOffset Landscape Z 오프셋
+	 * @param Converter 높이맵 uint16 <-> 월드 높이 변환기 (ZScale/ZOffset 보유)
 	 */
-	virtual void ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, float ZScale, float ZOffset) PURE_VIRTUAL(UOCGTerrainModifierStrategyBase::ModifyTerrainByBiome);
+	virtual void ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, const FOCGHeightConverter& Converter) PURE_VIRTUAL(UOCGTerrainModifierStrategyBase::ModifyTerrainByBiome);
 };

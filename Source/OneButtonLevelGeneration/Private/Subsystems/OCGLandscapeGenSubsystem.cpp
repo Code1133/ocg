@@ -4,6 +4,7 @@
 #include "OCGLog.h"
 #include "OCGStats.h"
 #include "Data/MapPreset.h"
+#include "Data/OCGHeightConverter.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "Utils/OCGLandscapeUtil.h"
 
@@ -110,11 +111,8 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		return;
 	}
 
-	const float LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight    = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight    = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset       = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	const float ZOffset         = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+	FOCGHeightConverter HeightConverter;
+	HeightConverter.Initialize(Preset);
 
 	const bool bIsNewLandscape = ShouldCreateNewLandscape(Preset);
 	if (bIsNewLandscape)
@@ -190,8 +188,8 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 	const FIntPoint MapResolution = Preset->MapResolution;
 	const float OffsetX = (-MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeScale;
 	const float OffsetY = (-MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
-	TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, ZOffset));
-	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeScale, 100.0f * Preset->LandscapeScale, LandscapeZScale));
+	TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, HeightConverter.ZOffset));
+	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeScale, 100.0f * Preset->LandscapeScale, HeightConverter.ZScale));
 
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer =
 		OCGLandscapeUtil::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
@@ -266,8 +264,10 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 		const int32 Index = MapPoint.Y * Preset->MapResolution.X + MapPoint.X;
 		if (InHeightMapData->IsValidIndex(Index))
 		{
-			const float LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-			WorldLocation.Z = ((*InHeightMapData)[Index] - 32768.0f) / 128.0f * LandscapeZScale;
+			// 이 fallback은 의도적으로 ZOffset을 적용하지 않음. (ToWorldHeight를 사용하면 동작이 달라짐)
+			FOCGHeightConverter HeightConverter;
+			HeightConverter.Initialize(Preset);
+			WorldLocation.Z = ((*InHeightMapData)[Index] - 32768.0f) / 128.0f * HeightConverter.ZScale;
 		}
 	}
 

@@ -23,13 +23,10 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 	HeightMapFloat.SetNumUninitialized(DataContainer.HeightMapData.Num());
 	for (int32 i = 0; i < DataContainer.HeightMapData.Num(); ++i)
 	{
-		HeightMapFloat[i] = HeightMapToWorldHeight(DataContainer.HeightMapData[i]);
+		HeightMapFloat[i] = HeightConverter.ToWorldHeight(DataContainer.HeightMapData[i]);
 	}
 
-	const float SeaLevelHeight = Preset->bContainWater
-		? Preset->MinHeight + Preset->SeaLevel * (Preset->MaxHeight - Preset->MinHeight)
-		: Preset->MinHeight;
-
+	const float SeaLevelHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset);
 	const float LandscapeScale = Preset->LandscapeScale * 100.0f;
 
 	// 3. Main Erosion loop
@@ -132,13 +129,13 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 		}
 	}
 
-	const uint16 SeaHeight = WorldHeightToHeightMap(SeaLevelHeight);
+	const uint16 SeaHeight = HeightConverter.ToHeightMapValue(SeaLevelHeight);
 
 	// 4. Change world height map to height map (uint16)
 	for (int32 i = 0; i < HeightMapFloat.Num(); ++i)
 	{
 		// Erase height higher than original height map due to sediment
-		const uint16 Height = WorldHeightToHeightMap(HeightMapFloat[i]);
+		const uint16 Height = HeightConverter.ToHeightMapValue(HeightMapFloat[i]);
 		uint16 NewHeight = FMath::Min(Height, DataContainer.HeightMapData[i]);
 
 		// Prevent height from going under sea level due to erosion
@@ -154,13 +151,7 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 void UOCGDefaultErosionStrategy::Initialize(const UMapPreset* Preset)
 {
 	Stream.Initialize(Preset->Seed);
-
-	// HeightMap conversion constants
-	LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+	HeightConverter.Initialize(Preset);
 }
 
 void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset)
@@ -255,18 +246,4 @@ float UOCGDefaultErosionStrategy::CalculateHeightAndGradient(const UMapPreset* P
 	     + Height_10 * FracX           * (1.0f - FracY)
 	     + Height_01 * (1.0f - FracX) * FracY
 	     + Height_11 * FracX           * FracY;
-}
-
-float UOCGDefaultErosionStrategy::HeightMapToWorldHeight(const uint16 Height) const
-{
-	// Add ZOffset to return actual world height;
-	// ZOffset is 0 if the absolute values of MaxHeight and MinHeight are equal.
-	return (Height - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
-}
-
-uint16 UOCGDefaultErosionStrategy::WorldHeightToHeightMap(const float Height) const
-{
-	// Subtract ZOffset to return actual height map value;
-	// ZOffset is 0 if the absolute values of MaxHeight and MinHeight are equal.
-	return static_cast<uint16>((Height - ZOffset) * 128.0f / LandscapeZScale + 32768.0f);
 }

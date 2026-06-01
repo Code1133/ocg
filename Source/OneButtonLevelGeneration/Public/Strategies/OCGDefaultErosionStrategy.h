@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/OCGHeightConverter.h"
 #include "Strategies/OCGErosionStrategyBase.h"
 #include "OCGDefaultErosionStrategy.generated.h"
 
@@ -24,7 +25,7 @@ public:
 	virtual void ApplyErosion(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) override;
 
 private:
-	/** LandscapeZScale, ZOffset 등 높이 변환 상수 및 FRandomStream을 초기화합니다. */
+	/** FRandomStream과 높이 변환기(HeightConverter)를 초기화합니다. */
 	void Initialize(const UMapPreset* Preset);
 
 	/**
@@ -40,21 +41,12 @@ private:
 	[[nodiscard]] float CalculateHeightAndGradient(
 		const UMapPreset* Preset, const TArray<float>& HeightMap, float LandscapeScale, float PosX, float PosY, FVector2D& OutGradient) const;
 
-	/** uint16 높이맵 값을 실제 월드 높이(cm)로 변환합니다. */
-	[[nodiscard]] float HeightMapToWorldHeight(uint16 Height) const;
-
-	/** 실제 월드 높이(cm)를 uint16 높이맵 값으로 변환합니다. */
-	[[nodiscard]] uint16 WorldHeightToHeightMap(float Height) const;
-
 private:
 	/** 물방울 시뮬레이션에 사용되는 난수 생성기 (Preset->Seed로 초기화) */
 	FRandomStream Stream;
 
-	/** 높이맵 uint16 -> 월드 높이(cm) 변환 시 사용되는 스케일 계수 */
-	float LandscapeZScale = 0.0f;
-
-	/** 최대/최소 높이의 절댓값 차이를 보정하기 위한 Z축 오프셋 */
-	float ZOffset = 0.0f;
+	/** 높이맵 uint16 <-> 월드 높이(cm) 변환기 (ZScale/ZOffset 보유) */
+	FOCGHeightConverter HeightConverter;
 
 	/** 마지막으로 브러시를 계산했을 때의 ErosionRadius. 변경 감지에 사용됩니다. */
 	int32 CachedErosionRadius = -1;
