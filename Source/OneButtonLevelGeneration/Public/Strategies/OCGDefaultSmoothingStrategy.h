@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/OCGHeightConverter.h"
 #include "Strategies/OCGSmoothingStrategyBase.h"
 #include "OCGDefaultSmoothingStrategy.generated.h"
 
@@ -23,14 +24,13 @@ public:
 	virtual void SmoothHeightMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) override;
 
 private:
-	/** LandscapeZScale, ZOffset 등 높이 변환 상수를 초기화합니다. */
+	/** 높이 변환기(HeightConverter)를 초기화합니다. */
 	void Initialize(const UMapPreset* Preset);
 
 	/**
-	 * 분리형(Horizontal -> Vertical) 가우시안 블러를 적용합니다.
-	 * 결과는 OutBlurredMap에 기록되며, InOutHeightMap에 다시 덮어씁니다.
+	 * 분리형(Horizontal -> Vertical) 가우시안 블러를 InOutHeightMap에 인플레이스로 적용합니다.
 	 */
-	void ApplyGaussianBlur(const UMapPreset* Preset, TArray<uint16>& InOutHeightMap, TArray<uint16>& OutBlurredMap);
+	void ApplyGaussianBlur(const UMapPreset* Preset, TArray<uint16>& InOutHeightMap);
 
 	/**
 	 * 경사도(Slope)가 MaxSlopeAngle을 초과하는 영역을 반복적으로 평탄화합니다.
@@ -61,16 +61,7 @@ private:
 	 */
 	void MedianSmooth(const UMapPreset* Preset, TArray<uint16>& InOutHeightMap);
 
-	/** uint16 높이맵 값을 실제 월드 높이(cm)로 변환합니다. */
-	float HeightMapToWorldHeight(uint16 Height) const;
-
-	/** 실제 월드 높이(cm)를 uint16 높이맵 값으로 변환합니다. */
-	uint16 WorldHeightToHeightMap(float Height) const;
-
 private:
-	/** 높이맵 uint16 -> 월드 높이(cm) 변환 시 사용되는 스케일 계수 */
-	float LandscapeZScale = 0.0f;
-
-	/** 최대/최소 높이의 절댓값 차이를 보정하기 위한 Z축 오프셋 */
-	float ZOffset = 0.0f;
+	/** 높이맵 uint16 <-> 월드 높이(cm) 변환기 (ZScale/ZOffset 보유) */
+	FOCGHeightConverter HeightConverter;
 };

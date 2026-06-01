@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/OCGHeightConverter.h"
 #include "Strategies/OCGTemperatureStrategyBase.h"
 #include "OCGDefaultTemperatureStrategy.generated.h"
 
@@ -22,19 +23,13 @@ public:
 	virtual void GenerateTemperatureMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer) override;
 
 private:
-	/** Seed, PlainNoiseOffset, 높이 변환 상수를 초기화합니다. */
+	/** Seed로부터 PlainNoiseOffset을 추출하고 높이 변환기(HeightConverter)를 초기화합니다. */
 	void Initialize(const UMapPreset* Preset);
-
-	/** uint16 높이맵 값을 실제 월드 높이(cm)로 변환합니다. */
-	[[nodiscard]] float HeightMapToWorldHeight(uint16 Height) const;
 
 private:
 	/** 온도 노이즈에 사용되는 공간 오프셋 (컴포넌트의 PlainNoiseOffset과 동일한 스트림 위치에서 추출). */
 	FVector2D PlainNoiseOffset;
 
-	/** 높이맵 uint16 -> 월드 높이(cm) 변환 시 사용되는 스케일 계수. */
-	float LandscapeZScale = 0.0f;
-
-	/** 최대/최소 높이의 절댓값 차이를 보정하기 위한 Z축 오프셋. */
-	float ZOffset = 0.0f;
+	/** 높이맵 uint16 <-> 월드 높이(cm) 변환기 (ZScale/ZOffset 보유) */
+	FOCGHeightConverter HeightConverter;
 };

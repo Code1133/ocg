@@ -15,14 +15,14 @@ class ONEBUTTONLEVELGENERATION_API UOCGDefaultTerrainModifierStrategy : public U
 	GENERATED_BODY()
 
 public:
-	virtual void ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, float ZScale, float ZOffset) override;
+	virtual void ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, const FOCGHeightConverter& Converter) override;
 
 private:
 	/**
 	 * 각 바이옴 연결 영역의 최소 높이를 계산합니다.
 	 * @note 원본: UOCGMapGenerateComponent::CalculateBiomeMinHeights
 	 */
-	void CalculateBiomeMinHeights(const UMapPreset* Preset, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, TArray<float>& OutMinHeights, float ZScale, float ZOffset);
+	static void CalculateBiomeMinHeights(const UMapPreset* Preset, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, TArray<float>& OutMinHeights, const FOCGHeightConverter& Converter);
 
 	/**
 	 * 바이옴 최소 높이 배열에 슬라이딩 윈도우 박스 블러를 적용합니다.
@@ -34,5 +34,5 @@ private:
 	 * BFS로 동일 바이옴 연결 영역을 탐색해 최소 높이를 구합니다.
 	 * @note 원본: UOCGMapGenerateComponent::GetBiomeStats
 	 */
-	static void GetBiomeStats(FIntPoint MapSize, int32 X, int32 Y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, float ZScale, float ZOffset);
+	static void GetBiomeStats(FIntPoint MapSize, int32 X, int32 Y, int32 RegionID, float& OutMinHeight, TArray<int32>& RegionIDMap, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, const FOCGHeightConverter& Converter);
 };

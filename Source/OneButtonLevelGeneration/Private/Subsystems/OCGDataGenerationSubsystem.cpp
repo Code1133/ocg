@@ -2,6 +2,7 @@
 #include "Subsystems/OCGDataGenerationSubsystem.h"
 
 #include "Data/MapPreset.h"
+#include "Data/OCGHeightConverter.h"
 #include "Strategies/OCGDefaultHeightmapStrategy.h"
 #include "Strategies/OCGDefaultTemperatureStrategy.h"
 #include "Strategies/OCGDefaultHumidityStrategy.h"
@@ -42,13 +43,10 @@ void UOCGDataGenerationSubsystem::GenerateData(const UMapPreset* Preset)
 	BiomeStrategy->DecideAndBlendBiomes(Preset, DataContainer);
 
 	// v1 파이프라인 순서: TerrainModify -> Smooth -> FinalizeBiomes -> Erosion
-	const float LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight    = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight    = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset       = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	const float ZOffset         = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+	FOCGHeightConverter HeightConverter;
+	HeightConverter.Initialize(Preset);
 
-	TerrainModifierStrategy->ModifyTerrainByBiome(Preset, DataContainer, LandscapeZScale, ZOffset);
+	TerrainModifierStrategy->ModifyTerrainByBiome(Preset, DataContainer, HeightConverter);
 	SmoothingStrategy->SmoothHeightMap(Preset, DataContainer);
 	BiomeStrategy->FinalizeBiomes(Preset, DataContainer);
 	ErosionStrategy->ApplyErosion(Preset, DataContainer);
@@ -57,18 +55,15 @@ void UOCGDataGenerationSubsystem::GenerateData(const UMapPreset* Preset)
 
 void UOCGDataGenerationSubsystem::ComputeHeightRange(const UMapPreset* Preset)
 {
-	const float LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	const float ZOffset      = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+	FOCGHeightConverter HeightConverter;
+	HeightConverter.Initialize(Preset);
 
 	float Max = Preset->MinHeight;
 	float Min = Preset->MaxHeight;
 
 	for (const uint16 RawHeight : DataContainer.HeightMapData)
 	{
-		const float WorldHeight = (RawHeight - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
+		const float WorldHeight = HeightConverter.ToWorldHeight(RawHeight);
 		if (WorldHeight > Max) Max = WorldHeight;
 		if (WorldHeight < Min) Min = WorldHeight;
 	}

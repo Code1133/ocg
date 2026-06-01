@@ -24,9 +24,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 	float GlobalMaxTemp = TNumericLimits<float>::Lowest();
 	const float TempRange = Preset->MaxTemp - Preset->MinTemp;
 
-	const float SeaLevelHeight = Preset->bContainWater
-		? Preset->MinHeight + Preset->SeaLevel * (Preset->MaxHeight - Preset->MinHeight)
-		: Preset->MinHeight;
+	const float SeaLevelHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset);
 
 	for (int32 y = 0; y < CurResolution.Y; ++y)
 	{
@@ -41,7 +39,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 			float BaseTemp = FMath::Lerp(Preset->MinTemp, Preset->MaxTemp, TempNoiseAlpha);
 
 			// Decrease temperature by altitude
-			const float WorldHeight = HeightMapToWorldHeight(DataContainer.HeightMapData[Index]);
+			const float WorldHeight = HeightConverter.ToWorldHeight(DataContainer.HeightMapData[Index]);
 			if (WorldHeight > SeaLevelHeight)
 			{
 				BaseTemp -= ((WorldHeight - SeaLevelHeight) / 1000.0f) * Preset->TempDropPer1000Units;
@@ -104,17 +102,5 @@ void UOCGDefaultTemperatureStrategy::Initialize(const UMapPreset* Preset)
 	PlainNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 	PlainNoiseOffset.Y = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 
-	// HeightMap conversion constants (same formula as OCGMapGenerateComponent::Initialize)
-	LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
-}
-
-float UOCGDefaultTemperatureStrategy::HeightMapToWorldHeight(const uint16 Height) const
-{
-	// Add ZOffset to return actual world height;
-	// ZOffset is 0 if the absolute values of MaxHeight and MinHeight are equal.
-	return (Height - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
+	HeightConverter.Initialize(Preset);
 }

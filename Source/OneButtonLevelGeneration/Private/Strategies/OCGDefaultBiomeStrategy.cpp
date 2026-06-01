@@ -12,18 +12,14 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 	SCOPE_CYCLE_COUNTER(STAT_OCG_BiomeDecide);
 
 	// Calculate total weight across all biomes for the distance metric normalization
-	float TotalWeight = 0.0f;
-	for (const auto& Biome : Preset->Biomes)
-	{
-		TotalWeight += Biome.Weight;
-	}
+	const float TotalWeight = ComputeTotalBiomeWeight(Preset);
 
 	const FIntPoint CurResolution = Preset->MapResolution;
 	const int32 PixelCount = CurResolution.X * CurResolution.Y;
 
 	// Initialize per-pixel maps
 	BiomeNameMap.SetNumUninitialized(PixelCount);
-	DataContainer.BiomeLayerMap.SetNumUninitialized(PixelCount);
+	DataContainer.BiomeLayerMap.SetNumZeroed(PixelCount);
 
 	// Initialize weight layers: Layer0 = Water, Layer1..N = Biomes
 	DataContainer.WeightLayers.Reset();
@@ -46,44 +42,9 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 		for (int32 X = 0; X < CurResolution.X; ++X)
 		{
 			const int32 Index = Y * CurResolution.X + X;
-			const float Height = DataContainer.HeightMapData[Index];
-
-			const float NormalizedTemp = static_cast<float>(DataContainer.TemperatureMapData[Index]) / 65535.0f;
-			const float Temp = FMath::Lerp(DataContainer.MinTemp, DataContainer.MaxTemp, NormalizedTemp);
-
-			const float NormalizedHumidity = static_cast<float>(DataContainer.HumidityMapData[Index]) / 65535.0f;
-			const float Humidity = FMath::Lerp(DataContainer.MinHumidity, DataContainer.MaxHumidity, NormalizedHumidity);
 
 			const FOCGBiomeSettings* CurrentBiome = nullptr;
-			const FOCGBiomeSettings* WaterBiome = &Preset->WaterBiome;
-			uint32 CurrentBiomeIndex = INDEX_NONE;
-
-			if (WaterBiome && Height < SeaLevelHeight)
-			{
-				CurrentBiome = WaterBiome;
-				CurrentBiomeIndex = 0; // Water biome is first layer
-			}
-			else
-			{
-				float MinDist = TNumericLimits<float>::Max();
-				const float TempRange = Preset->MaxTemp - Preset->MinTemp;
-
-				for (int32 BiomeIndex = 1; BiomeIndex <= Preset->Biomes.Num(); ++BiomeIndex)
-				{
-					const FOCGBiomeSettings* BiomeSettings = &Preset->Biomes[BiomeIndex - 1];
-					const float TempDiff     = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
-					const float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
-					const float Weight       = 1.0f - BiomeSettings->Weight / TotalWeight;
-					const float Dist         = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
-
-					if (Dist < MinDist)
-					{
-						MinDist = Dist;
-						CurrentBiome = BiomeSettings;
-						CurrentBiomeIndex = BiomeIndex;
-					}
-				}
-			}
+			const uint32 CurrentBiomeIndex = FindBiomeForPixel(Preset, DataContainer, Index, TotalWeight, SeaLevelHeight, CurrentBiome);
 
 			if (CurrentBiome)
 			{
@@ -235,11 +196,7 @@ void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorl
 		return;
 	}
 
-	float TotalWeight = 0.0f;
-	for (const auto& Biome : Preset->Biomes)
-	{
-		TotalWeight += Biome.Weight;
-	}
+	const float TotalWeight = ComputeTotalBiomeWeight(Preset);
 
 	const FIntPoint CurResolution = Preset->MapResolution;
 	const uint16 SeaLevelHeight = static_cast<uint16>(65535 * Preset->SeaLevel);
@@ -249,44 +206,9 @@ void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorl
 		for (int32 X = 0; X < CurResolution.X; ++X)
 		{
 			const int32 Index = Y * CurResolution.X + X;
-			const float Height = DataContainer.HeightMapData[Index];
-
-			const float NormalizedTemp = static_cast<float>(DataContainer.TemperatureMapData[Index]) / 65535.0f;
-			const float Temp = FMath::Lerp(DataContainer.MinTemp, DataContainer.MaxTemp, NormalizedTemp);
-
-			const float NormalizedHumidity = static_cast<float>(DataContainer.HumidityMapData[Index]) / 65535.0f;
-			const float Humidity = FMath::Lerp(DataContainer.MinHumidity, DataContainer.MaxHumidity, NormalizedHumidity);
 
 			const FOCGBiomeSettings* CurrentBiome = nullptr;
-			const FOCGBiomeSettings* WaterBiome = &Preset->WaterBiome;
-			uint32 CurrentBiomeIndex = INDEX_NONE;
-
-			if (WaterBiome && Height < SeaLevelHeight)
-			{
-				CurrentBiome = WaterBiome;
-				CurrentBiomeIndex = 0;
-			}
-			else
-			{
-				float MinDist = TNumericLimits<float>::Max();
-				const float TempRange = Preset->MaxTemp - Preset->MinTemp;
-
-				for (int32 BiomeIndex = 1; BiomeIndex <= Preset->Biomes.Num(); ++BiomeIndex)
-				{
-					const FOCGBiomeSettings* BiomeSettings = &Preset->Biomes[BiomeIndex - 1];
-					const float TempDiff     = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
-					const float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
-					const float Weight       = 1.0f - BiomeSettings->Weight / TotalWeight;
-					const float Dist         = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
-
-					if (Dist < MinDist)
-					{
-						MinDist = Dist;
-						CurrentBiome = BiomeSettings;
-						CurrentBiomeIndex = BiomeIndex;
-					}
-				}
-			}
+			const uint32 CurrentBiomeIndex = FindBiomeForPixel(Preset, DataContainer, Index, TotalWeight, SeaLevelHeight, CurrentBiome);
 
 			if (CurrentBiome && CurrentBiomeIndex != INDEX_NONE)
 			{
@@ -298,4 +220,57 @@ void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorl
 	}
 
 	BlendBiomes(Preset, DataContainer);
+}
+
+uint32 UOCGDefaultBiomeStrategy::FindBiomeForPixel(const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer,
+	int32 Index, float TotalWeight, uint16 SeaLevelHeight, const FOCGBiomeSettings*& OutBiome) const
+{
+	const float Height = DataContainer.HeightMapData[Index];
+
+	const float NormalizedTemp = static_cast<float>(DataContainer.TemperatureMapData[Index]) / 65535.0f;
+	const float Temp = FMath::Lerp(DataContainer.MinTemp, DataContainer.MaxTemp, NormalizedTemp);
+
+	const float NormalizedHumidity = static_cast<float>(DataContainer.HumidityMapData[Index]) / 65535.0f;
+	const float Humidity = FMath::Lerp(DataContainer.MinHumidity, DataContainer.MaxHumidity, NormalizedHumidity);
+
+	// 해수면보다 낮으면 Water 바이옴(레이어 0)으로 분류
+	const FOCGBiomeSettings* WaterBiome = &Preset->WaterBiome;
+	if (WaterBiome && Height < SeaLevelHeight)
+	{
+		OutBiome = WaterBiome;
+		return 0;
+	}
+
+	// 그 외에는 온도/습도 가중 거리(MinDist)로 최근접 바이옴 결정
+	OutBiome = nullptr;
+	uint32 CurrentBiomeIndex = INDEX_NONE;
+	float MinDist = TNumericLimits<float>::Max();
+	const float TempRange = Preset->MaxTemp - Preset->MinTemp;
+
+	for (int32 BiomeIndex = 1; BiomeIndex <= Preset->Biomes.Num(); ++BiomeIndex)
+	{
+		const FOCGBiomeSettings* BiomeSettings = &Preset->Biomes[BiomeIndex - 1];
+		const float TempDiff     = FMath::Abs(BiomeSettings->Temperature - Temp) / TempRange;
+		const float HumidityDiff = FMath::Abs(BiomeSettings->Humidity - Humidity);
+		const float Weight       = 1.0f - BiomeSettings->Weight / TotalWeight;
+		const float Dist         = FVector2D(TempDiff, HumidityDiff).Length() * Weight;
+
+		if (Dist < MinDist)
+		{
+			MinDist = Dist;
+			OutBiome = BiomeSettings;
+			CurrentBiomeIndex = BiomeIndex;
+		}
+	}
+	return CurrentBiomeIndex;
+}
+
+float UOCGDefaultBiomeStrategy::ComputeTotalBiomeWeight(const UMapPreset* Preset) const
+{
+	float TotalWeight = 0.0f;
+	for (const FOCGBiomeSettings& Biome : Preset->Biomes)
+	{
+		TotalWeight += Biome.Weight;
+	}
+	return TotalWeight;
 }

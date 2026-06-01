@@ -14,25 +14,16 @@ void UOCGDefaultSmoothingStrategy::SmoothHeightMap(const UMapPreset* Preset, FOC
 
 	Initialize(Preset);
 	ApplySpikeSmooth(Preset, DataContainer.HeightMapData);
-
-	// TODO: OutBlurredMap은 호출부에서 사용되지 않음. ApplyGaussianBlur 내부 지역 변수로 이동하고 파라미터 제거 고려
-	TArray<uint16> BlurredHeightMap;
-	ApplyGaussianBlur(Preset, DataContainer.HeightMapData, BlurredHeightMap);
-
+	ApplyGaussianBlur(Preset, DataContainer.HeightMapData);
 	MedianSmooth(Preset, DataContainer.HeightMapData);
 }
 
 void UOCGDefaultSmoothingStrategy::Initialize(const UMapPreset* Preset)
 {
-	LandscapeZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
-	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
-	ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
+	HeightConverter.Initialize(Preset);
 }
 
-void UOCGDefaultSmoothingStrategy::ApplyGaussianBlur(const UMapPreset* Preset, TArray<uint16>& InOutHeightMap,
-	TArray<uint16>& OutBlurredMap)
+void UOCGDefaultSmoothingStrategy::ApplyGaussianBlur(const UMapPreset* Preset, TArray<uint16>& InOutHeightMap)
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_SmoothGaussian);
 
@@ -40,6 +31,7 @@ void UOCGDefaultSmoothingStrategy::ApplyGaussianBlur(const UMapPreset* Preset, T
 	const FIntPoint MapSize = Preset->MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
 
+	TArray<uint16> OutBlurredMap;
 	OutBlurredMap.SetNumUninitialized(TotalPixels);
 
 	TArray<float> TempMap;
@@ -137,10 +129,10 @@ void UOCGDefaultSmoothingStrategy::ProcessPlane(
 	const float LandscapeScale = Preset->LandscapeScale * 100.0f;
 	const float Length = KernelSize * LandscapeScale;
 
-	const float TLHeight = HeightMapToWorldHeight(InOriginalHeightMap[(CenterY - KernelRadius) * MapSize.X + (CenterX - KernelRadius)]);
-	const float TRHeight = HeightMapToWorldHeight(InOriginalHeightMap[(CenterY - KernelRadius) * MapSize.X + (CenterX + KernelRadius)]);
-	const float BLHeight = HeightMapToWorldHeight(InOriginalHeightMap[(CenterY + KernelRadius) * MapSize.X + (CenterX - KernelRadius)]);
-	const float BRHeight = HeightMapToWorldHeight(InOriginalHeightMap[(CenterY + KernelRadius) * MapSize.X + (CenterX + KernelRadius)]);
+	const float TLHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[(CenterY - KernelRadius) * MapSize.X + (CenterX - KernelRadius)]);
+	const float TRHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[(CenterY - KernelRadius) * MapSize.X + (CenterX + KernelRadius)]);
+	const float BLHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[(CenterY + KernelRadius) * MapSize.X + (CenterX - KernelRadius)]);
+	const float BRHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[(CenterY + KernelRadius) * MapSize.X + (CenterX + KernelRadius)]);
 
 	const float TopSlope    = (TRHeight - TLHeight) / Length;
 	const float BottomSlope = (BRHeight - BLHeight) / Length;
@@ -166,14 +158,14 @@ void UOCGDefaultSmoothingStrategy::ProcessPlane(
 			for (int32 KernelX = -KernelRadius; KernelX <= KernelRadius; ++KernelX)
 			{
 				const int32 Index = (CenterY + KernelY) * MapSize.X + (CenterX + KernelX);
-				const float OriginalWorldHeight = HeightMapToWorldHeight(InOriginalHeightMap[Index]);
+				const float OriginalWorldHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[Index]);
 				const float CurrentHeight = Plane.X * KernelX * LandscapeScale + Plane.Y * KernelY * LandscapeScale + Plane.Z;
 				const float CorrectedHeight = CorrectedSlopeX * KernelX * LandscapeScale + CorrectedSlopeY * KernelY * LandscapeScale + Plane.Z;
 				float NewWorldHeight = OriginalWorldHeight + (CorrectedHeight - CurrentHeight);
-				NewWorldHeight = FMath::Clamp(NewWorldHeight, Preset->MinHeight + ZOffset, Preset->MaxHeight + ZOffset);
+				NewWorldHeight = FMath::Clamp(NewWorldHeight, Preset->MinHeight + HeightConverter.ZOffset, Preset->MaxHeight + HeightConverter.ZOffset);
 
-				const uint16 NewHeight = WorldHeightToHeightMap(NewWorldHeight);
-				const uint16 OriginalHeight = WorldHeightToHeightMap(OriginalWorldHeight);
+				const uint16 NewHeight = HeightConverter.ToHeightMapValue(NewWorldHeight);
+				const uint16 OriginalHeight = HeightConverter.ToHeightMapValue(OriginalWorldHeight);
 				OutHeightMap[Index] = static_cast<uint16>(FMath::Lerp(static_cast<float>(OriginalHeight), static_cast<float>(NewHeight), Preset->SmoothingStrength));
 			}
 		}
@@ -212,14 +204,4 @@ void UOCGDefaultSmoothingStrategy::MedianSmooth(const UMapPreset* Preset, TArray
 			InOutHeightMap[Y * MapSize.X + X] = Window[Window.Num() / 2];
 		}
 	}
-}
-
-float UOCGDefaultSmoothingStrategy::HeightMapToWorldHeight(const uint16 Height) const
-{
-	return (Height - 32768.0f) * LandscapeZScale / 128.0f + ZOffset;
-}
-
-uint16 UOCGDefaultSmoothingStrategy::WorldHeightToHeightMap(const float Height) const
-{
-	return static_cast<uint16>((Height - ZOffset) * 128.0f / LandscapeZScale + 32768.0f);
 }
