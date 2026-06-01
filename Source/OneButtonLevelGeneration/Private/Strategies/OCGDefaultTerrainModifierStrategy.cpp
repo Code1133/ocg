@@ -1,6 +1,7 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Strategies/OCGDefaultTerrainModifierStrategy.h"
 
+#include "Data/MapData.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 
@@ -42,7 +43,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 
 			for (int32 I = 1; I < DataContainer.WeightLayers.Num(); ++I)
 			{
-				const FName LayerName(FString::Printf(TEXT("Layer%d"), I));
+				const FName LayerName = OCGMapDataUtils::MakeLayerName(I);
 				const float CurrentBiomeWeight = DataContainer.WeightLayers[LayerName][Index] / 255.0f;
 				if (CurrentBiomeWeight <= 0.0f) continue;
 				MtoPRatio += Preset->Biomes[I - 1].MountainRatio * CurrentBiomeWeight;

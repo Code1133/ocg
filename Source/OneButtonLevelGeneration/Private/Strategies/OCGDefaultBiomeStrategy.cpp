@@ -1,10 +1,11 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Strategies/OCGDefaultBiomeStrategy.h"
 
-#include "Data/MapPreset.h"
-#include "Data/OCGWorldDataContainer.h"
 #include "OCGLog.h"
 #include "OCGStats.h"
+#include "Data/MapData.h"
+#include "Data/MapPreset.h"
+#include "Data/OCGWorldDataContainer.h"
 
 void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
@@ -28,7 +29,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 	DataContainer.WeightLayers.Reset();
 	for (int32 LayerIndex = 0; LayerIndex <= Preset->Biomes.Num(); ++LayerIndex)
 	{
-		FName LayerName = *FString::Printf(TEXT("Layer%d"), LayerIndex);
+		FName LayerName = OCGMapDataUtils::MakeLayerName(LayerIndex);
 
 		TArray<uint8> WeightLayer;
 		WeightLayer.SetNumZeroed(PixelCount);
@@ -88,7 +89,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 			{
 				if (CurrentBiomeIndex != INDEX_NONE)
 				{
-					FName LayerName = *FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
+					FName LayerName = OCGMapDataUtils::MakeLayerName(CurrentBiomeIndex);
 
 					DataContainer.WeightLayers[LayerName][Index] = 255;
 					BiomeNameMap[Index] = LayerName;
@@ -115,7 +116,7 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 	TMap<FName, TArray<uint8>> OriginalWeightMaps;
 	for (int32 LayerIndex = 0; LayerIndex < DataContainer.WeightLayers.Num(); ++LayerIndex)
 	{
-		FName LayerName = *FString::Printf(TEXT("Layer%d"), LayerIndex);
+		FName LayerName = OCGMapDataUtils::MakeLayerName(LayerIndex);
 		DataContainer.WeightLayers[LayerName].SetNumZeroed(CurResolution.X * CurResolution.Y);
 
 		TArray<uint8> InitialWeights;
@@ -211,7 +212,7 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 		float TotalNormWeight = 0.0f;
 		for (int32 LayerIndex = 0; LayerIndex < DataContainer.WeightLayers.Num(); ++LayerIndex)
 		{
-			FName LayerName = *FString::Printf(TEXT("Layer%d"), LayerIndex);
+			FName LayerName = OCGMapDataUtils::MakeLayerName(LayerIndex);
 			TotalNormWeight += DataContainer.WeightLayers[LayerName][i];
 		}
 
@@ -220,7 +221,7 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 			const float NormFactor = 255.0f / TotalNormWeight;
 			for (int32 LayerIndex = 0; LayerIndex < DataContainer.WeightLayers.Num(); ++LayerIndex)
 			{
-				FName LayerName = *FString::Printf(TEXT("Layer%d"), LayerIndex);
+				FName LayerName = OCGMapDataUtils::MakeLayerName(LayerIndex);
 				DataContainer.WeightLayers[LayerName][i] = FMath::RoundToInt(DataContainer.WeightLayers[LayerName][i] * NormFactor);
 			}
 		}
@@ -289,7 +290,7 @@ void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorl
 
 			if (CurrentBiome && CurrentBiomeIndex != INDEX_NONE)
 			{
-				const FName LayerName = *FString::Printf(TEXT("Layer%d"), CurrentBiomeIndex);
+				const FName LayerName = OCGMapDataUtils::MakeLayerName(CurrentBiomeIndex);
 				BiomeNameMap[Index] = LayerName;
 				DataContainer.BiomeLayerMap[Index] = static_cast<int32>(CurrentBiomeIndex);
 			}
