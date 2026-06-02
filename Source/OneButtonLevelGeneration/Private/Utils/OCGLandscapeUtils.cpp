@@ -266,8 +266,6 @@ void FOCGLandscapeUtils::ApplyWeightMap(ALandscape* InLandscape, ULandscapeLayer
 			LandscapeInfo->ForceLayersFullUpdate();
 
 			InLandscape->ReregisterAllComponents();
-
-			OCGMapDataUtils::ExportMap(InWeightMap, FIntPoint(Region.Max.X - 1, Region.Max.Y - 1), TEXT("OriginWeightMap.png"));
 		}
 	}
 }
