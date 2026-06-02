@@ -39,18 +39,4 @@ struct ONEBUTTONLEVELGENERATION_API FOCGMaterialEditTool
 	 * @return 레이어 이름 배열. Blend 노드가 없으면 빈 배열.
 	 */
 	static TArray<FName> ExtractLandscapeLayerName(UMaterial* TargetMaterial);
-
-	/**
-	 * 머티리얼의 최종 출력에서 역방향 BFS로 실제 사용 중인 모든 표현식 노드를 수집합니다.
-	 * (Reroute 노드는 GetTracedInput으로 건너뜀)
-	 * @param TargetMaterial 수집할 머티리얼
-	 * @param OutUsedExpressions 수집된 사용 표현식 집합(출력)
-	 */
-	static void CollectUsedExpressions(UMaterial* TargetMaterial, TSet<UMaterialExpression*>& OutUsedExpressions);
-
-	/**
-	 * 단일 입력 핀이 가리키는 소스 표현식을 추적하여, 미방문이면 수집 집합과 처리 목록에 추가합니다.
-	 * 표현식 그래프 탐색의 보조 헬퍼입니다.
-	 */
-	static void AddAttributeInput(const FExpressionInput& Input, TSet<UMaterialExpression*>& OutUsedExpressions, TArray<UMaterialExpression*>& ExpressionsToProcess);
 };
