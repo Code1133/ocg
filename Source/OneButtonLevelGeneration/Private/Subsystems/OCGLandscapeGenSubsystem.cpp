@@ -6,7 +6,7 @@
 #include "Data/MapPreset.h"
 #include "Data/OCGHeightConverter.h"
 #include "Data/OCGWorldDataContainer.h"
-#include "Utils/OCGLandscapeUtil.h"
+#include "Utils/OCGLandscapeUtils.h"
 
 #include "Editor.h"
 #include "EngineUtils.h"
@@ -192,7 +192,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeScale, 100.0f * Preset->LandscapeScale, HeightConverter.ZScale));
 
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer =
-		OCGLandscapeUtil::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
+		FOCGLandscapeUtils::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
 	const FGuid LayerGuid = FGuid();
 
 	if (bIsNewLandscape)
@@ -216,9 +216,9 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
 		TargetLandscape->SetActorLabel(ALandscape::StaticClass()->GetName());
 		LandscapeInfo->UpdateLayerInfoMap(TargetLandscape);
-		OCGLandscapeUtil::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		FOCGLandscapeUtils::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
 		// ManageLandscapeRegions takes non-const UMapPreset* for legacy reasons; does not modify it
-		OCGLandscapeUtil::ManageLandscapeRegions(World, TargetLandscape, const_cast<UMapPreset*>(Preset), LandscapeSetting);
+		FOCGLandscapeUtils::ManageLandscapeRegions(World, TargetLandscape, const_cast<UMapPreset*>(Preset), LandscapeSetting);
 
 		FProperty* RVTProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "RuntimeVirtualTextures");
 		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
@@ -229,9 +229,9 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 	}
 	else
 	{
-		OCGLandscapeUtil::ClearTargetLayers(TargetLandscape);
-		OCGLandscapeUtil::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
-		OCGLandscapeUtil::ImportMapDatas(World, TargetLandscape, DataContainer.HeightMapData, *MaterialLayerDataPerLayer.Find(LayerGuid));
+		FOCGLandscapeUtils::ClearTargetLayers(TargetLandscape);
+		FOCGLandscapeUtils::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		FOCGLandscapeUtils::ImportMapDatas(World, TargetLandscape, DataContainer.HeightMapData, *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
 
 	TargetLandscape->ReregisterAllComponents();

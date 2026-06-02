@@ -12,15 +12,7 @@
 #include "Materials/MaterialFunctionInterface.h"
 #include "Materials/MaterialExpressionFunctionInput.h"
 
-OCGMaterialEditTool::OCGMaterialEditTool()
-{
-}
-
-OCGMaterialEditTool::~OCGMaterialEditTool()
-{
-}
-
-void OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMaterial,
+void FOCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMaterial,
 	 TArray<UMaterialFunctionInterface*> FuncToInsert)
 {
 	if (!TargetMaterial || FuncToInsert.IsEmpty()) return;
@@ -154,7 +146,7 @@ void OCGMaterialEditTool::InsertMaterialFunctionIntoMaterial(UMaterial* TargetMa
 	SaveMaterialAsset(TargetMaterial);
 }
 
-UMaterialExpression* OCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UMaterial* TargetMaterial)
+UMaterialExpression* FOCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UMaterial* TargetMaterial)
 {
 	if (!TargetMaterial)
 	{
@@ -185,7 +177,7 @@ UMaterialExpression* OCGMaterialEditTool::GetResultNodeFromMaterialAttributes(UM
 	return nullptr;
 }
 
-void OCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
+void FOCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
 {
 	if (!TargetMaterial) return;
 
@@ -207,10 +199,13 @@ void OCGMaterialEditTool::SaveMaterialAsset(UMaterial* TargetMaterial)
 	);
 }
 
-TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMaterial)
+TArray<FName> FOCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMaterial)
 {
 	TArray<FName> LayerNames;
-	if (!TargetMaterial) return LayerNames;
+	if (!TargetMaterial)
+	{
+		return LayerNames;
+	}
 
 	// // 사용 중인 모든 표현식을 수집합니다.
 	// TSet<UMaterialExpression*> UsedExpressions;
@@ -226,15 +221,17 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 			UMaterialExpressionLandscapeLayerBlend* CurBlendNode = Cast<UMaterialExpressionLandscapeLayerBlend>(Expr);
 			if (CurBlendNode/* && UsedExpressions.Contains(CurBlendNode)*/)
 			{
-				UsedBlendNode =  CurBlendNode;
+				UsedBlendNode = CurBlendNode;
 				break;
 			}
 		}
 	}
 
 	if (UsedBlendNode == nullptr)
+	{
 		return LayerNames;
-	
+	}
+
 	for (FLayerBlendInput LayerInput : UsedBlendNode->Layers)
 	{
 		LayerNames.Add(LayerInput.LayerName);
@@ -243,7 +240,7 @@ TArray<FName> OCGMaterialEditTool::ExtractLandscapeLayerName(UMaterial* TargetMa
 	return LayerNames;
 }
 
-void OCGMaterialEditTool::CollectUsedExpressions(UMaterial* TargetMaterial,	TSet<UMaterialExpression*>& OutUsedExpressions)
+void FOCGMaterialEditTool::CollectUsedExpressions(UMaterial* TargetMaterial, TSet<UMaterialExpression*>& OutUsedExpressions)
 {
 	if (!TargetMaterial)
 	{
@@ -288,7 +285,7 @@ void OCGMaterialEditTool::CollectUsedExpressions(UMaterial* TargetMaterial,	TSet
 	}
 }
 
-void OCGMaterialEditTool::AddAttributeInput(const FExpressionInput& Input,
+void FOCGMaterialEditTool::AddAttributeInput(const FExpressionInput& Input,
 	TSet<UMaterialExpression*>& OutUsedExpressions, TArray<UMaterialExpression*>& ExpressionsToProcess)
 {
 	// GetTracedInput()은 Reroute 및 Named Reroute 노드를 자동으로 해석하여 실제 소스 표현식을 반환합니다.
