@@ -5,14 +5,6 @@
 #include "HAL/FileManager.h"
 #include "Logging/LogMacros.h"
 
-FOCGFileUtils::FOCGFileUtils()
-{
-}
-
-FOCGFileUtils::~FOCGFileUtils()
-{
-}
-
 bool FOCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
 {
 	// 1. /Game/ 접두사를 제거하여 Content 폴더 내의 상대 경로를 만듭니다.

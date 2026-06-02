@@ -6,7 +6,7 @@
 #include "Data/MapPreset.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
-#include "Utils/OCGLandscapeUtil.h"
+#include "Utils/OCGLandscapeUtils.h"
 #include "Utils/OCGMaterialEditTool.h"
 
 #include "Editor.h"
@@ -436,7 +436,7 @@ void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
 
 	if (InLandscape)
 	{
-		const FGuid WaterLayerGuid = OCGLandscapeUtil::GetLandscapeLayerGuid(InLandscape, FName(TEXT("Water")));
+		const FGuid WaterLayerGuid = FOCGLandscapeUtils::GetLandscapeLayerGuid(InLandscape, FName(TEXT("Water")));
 		Compat::ClearEditLayer(InLandscape, WaterLayerGuid);
 		InLandscape->RequestLayersContentUpdate(ELandscapeLayerUpdateMode::Update_Heightmap_All);
 	}
@@ -464,14 +464,14 @@ void UOCGHydrologySubsystem::ExportWaterEditLayerHeightMap(ALandscape* InLandsca
 		return;
 	}
 
-	const FGuid CurrentLayerGuid = OCGLandscapeUtil::GetLandscapeLayerGuid(InLandscape, FName(TEXT("Layer")));
+	const FGuid CurrentLayerGuid = FOCGLandscapeUtils::GetLandscapeLayerGuid(InLandscape, FName(TEXT("Layer")));
 
 	int32 SizeX = 0, SizeY = 0;
 	TArray<uint16> BlendedHeightData;
-	OCGLandscapeUtil::ExtractHeightMap(InLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
+	FOCGLandscapeUtils::ExtractHeightMap(InLandscape, FGuid(), SizeX, SizeY, BlendedHeightData);
 
 	TArray<uint16> BaseLayerHeightData;
-	OCGLandscapeUtil::ExtractHeightMap(InLandscape, CurrentLayerGuid, SizeX, SizeY, BaseLayerHeightData);
+	FOCGLandscapeUtils::ExtractHeightMap(InLandscape, CurrentLayerGuid, SizeX, SizeY, BaseLayerHeightData);
 
 	CachedWaterHeightMap.Empty();
 	CachedWaterHeightMap.AddZeroed(SizeX * SizeY);
@@ -502,7 +502,7 @@ void UOCGHydrologySubsystem::ApplyWaterWeight(ALandscape* InLandscape, const UMa
 	{
 		LandscapeMaterial = Cast<UMaterial>(Preset->LandscapeMaterial->Parent);
 	}
-	const TArray<FName> LayerNames = OCGMaterialEditTool::ExtractLandscapeLayerName(LandscapeMaterial);
+	const TArray<FName> LayerNames = FOCGMaterialEditTool::ExtractLandscapeLayerName(LandscapeMaterial);
 
 	const ULandscapeInfo* LandscapeInfo = InLandscape->GetLandscapeInfo();
 	if (!LandscapeInfo)
@@ -525,25 +525,25 @@ void UOCGHydrologySubsystem::ApplyWaterWeight(ALandscape* InLandscape, const UMa
 		}
 
 		TArray<uint8> OriginWeightMap;
-		OCGLandscapeUtil::GetWeightMap(InLandscape, LayerInfo, OriginWeightMap);
-		OCGLandscapeUtil::ApplyMaskedWeightMap(InLandscape, LayerInfo, OriginWeightMap, Pair.Value);
+		FOCGLandscapeUtils::GetWeightMap(InLandscape, LayerInfo, OriginWeightMap);
+		FOCGLandscapeUtils::ApplyMaskedWeightMap(InLandscape, LayerInfo, OriginWeightMap, Pair.Value);
 	}
 
 	TArray<uint8> WeightMap;
-	OCGLandscapeUtil::MakeWeightMapFromHeightDiff(CachedWaterHeightMap, WeightMap);
+	FOCGLandscapeUtils::MakeWeightMapFromHeightDiff(CachedWaterHeightMap, WeightMap);
 
 	TArray<uint8> BlurredWeightMap;
-	OCGLandscapeUtil::BlurWeightMap(WeightMap, BlurredWeightMap, WaterHeightMapWidth, WaterHeightMapHeight);
+	FOCGLandscapeUtils::BlurWeightMap(WeightMap, BlurredWeightMap, WaterHeightMapWidth, WaterHeightMapHeight);
 
 	PrevRiverMaskedWeights.Empty();
 	for (const FLandscapeInfoLayerSettings& Layer : LandscapeInfo->Layers)
 	{
 		TArray<uint8> MaskedWeight;
-		OCGLandscapeUtil::GetMaskedWeightMap(InLandscape, Layer.LayerInfoObj, BlurredWeightMap, MaskedWeight);
+		FOCGLandscapeUtils::GetMaskedWeightMap(InLandscape, Layer.LayerInfoObj, BlurredWeightMap, MaskedWeight);
 		PrevRiverMaskedWeights.Add(Layer.LayerName, MoveTemp(MaskedWeight));
 	}
 
-	OCGLandscapeUtil::AddWeightMap(InLandscape, FirstLayer, BlurredWeightMap);
+	FOCGLandscapeUtils::AddWeightMap(InLandscape, FirstLayer, BlurredWeightMap);
 }
 
 void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath, const UMapPreset* Preset)
