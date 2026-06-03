@@ -58,7 +58,7 @@ namespace OCGNav
 				TEXT("World Settings | Advanced | Erosion"),
 			}
 		},
-		{ Water, { TEXT("Ocean Settings"), TEXT("River Settings") } },
+		{ Water, { TEXT("Ocean Settings"), TEXT("River Settings (Experimental)") } },
 		{ PCG, { TEXT("PCG") } },
 		{ OCG, { TEXT("OCG") } },
 	};
@@ -356,7 +356,9 @@ TSharedRef<SWidget> SOCGWindow::BuildActionBar()
 				.Text(LOCTEXT("RegenRiver", "Regen River"))
 				.ToolTipText(LOCTEXT("RegenRiverTip",
 					"Re-run only the Hydrology step using cached heightmap data.\n"
-					"Requires bGenerateRiver = true in the preset."))
+					"Requires bGenerateRiver = true in the preset.\n"
+					"EXPERIMENTAL: river generation has known issues; see team documentation."
+				))
 				.OnClicked_Raw(this, &SOCGWindow::OnRegenRiverClicked)
 				.IsEnabled_Raw(this, &SOCGWindow::CanRegenRiver)
 			]
