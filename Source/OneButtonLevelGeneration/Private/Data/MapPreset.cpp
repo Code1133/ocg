@@ -2,6 +2,7 @@
 
 #include "Data/MapPreset.h"
 
+#include "OCGCustomVersion.h"
 #include "OCGLog.h"
 #include "Data/MapData.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
@@ -20,9 +21,27 @@ UMapPreset::UMapPreset()
 {
 }
 
+void UMapPreset::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	// 저장되는 에셋에 현재 버전 스탬프를 남깁니다. (MapPreset 마이그레이션용)
+	Ar.UsingCustomVersion(FOCGCustomVersion::GUID);
+}
+
 void UMapPreset::PostLoad()
 {
 	Super::PostLoad();
+
+	// 버전별 마이그레이션 예시 (River 플랫 필드를 FOCGRiverSettings 묶음으로 옮기는 경우):
+	//   1) OCGCustomVersion.h enum의 VersionPlusOne 위에 새 버전을 추가합니다. (LatestVersion은 자동 갱신됩니다)
+	//        NestedRiverSettings,
+	//   2) MapPreset.h에서 기존 필드는 지우지 않고 deprecated로 남기고, 새로운 필드를 추가합니다.
+	//        UPROPERTY() int32 RiverSeed_DEPRECATED = 0;
+	//        UPROPERTY(EditAnywhere) FOCGRiverSettings RiverSettings;
+	//   3) 저장 당시 버전으로 분기하여 값을 복사합니다. (스탬프 없는 에셋은 BeforeCustomVersionWasAdded로 잡힙니다)
+	//        const int32 Ver = GetLinkerCustomVersion(FOCGCustomVersion::GUID);
+	//        if (Ver < FOCGCustomVersion::NestedRiverSettings) { RiverSettings.Seed = RiverSeed_DEPRECATED; }
 
 	UpdateInternalMeshFilterNames();
 	UpdateInternalLandscapeFilterNames();
