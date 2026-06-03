@@ -38,6 +38,8 @@ class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 	GENERATED_BODY()
 public:
 	UMapPreset();
+
+	virtual void Serialize(FArchive& Ar) override;
 	virtual void PostLoad() override;
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
