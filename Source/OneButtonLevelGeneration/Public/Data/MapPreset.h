@@ -7,14 +7,17 @@
 #include "Structure/OCGHierarchyDataStructure.h"
 #include "MapPreset.generated.h"
 
-/**
- *
- */
-
-class AOCGLevelGenerator;
-class AOCGLandscapeVolume;
 class UPCGGraph;
 
+/**
+ * UMapPreset 프로퍼티가 변경될 때 브로드캐스트됩니다.
+ * DataAsset은 월드를 직접 알 수 없으므로, 월드 액터 업데이트는
+ * 이 델리게이트를 구독한 OCGEditorSubsystem이 담당합니다.
+ *
+ * @param ChangedPreset 변경된 프리셋 인스턴스
+ * @param PropertyName 변경된 멤버 프로퍼티 이름
+ */
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMapPresetPropertyChanged, const class UMapPreset*, FName /*PropertyName*/);
 
 // 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
 UENUM(BlueprintType)
@@ -37,17 +40,18 @@ public:
 	UMapPreset();
 	virtual void PostLoad() override;
 
-#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
+
+	/**
+	 * 프로퍼티 변경 시 브로드캐스트되는 정적 델리게이트.
+	 * OCGEditorSubsystem이 Initialize/Deinitialize에서 구독 관리를 담당합니다.
+	 */
+	static FOnMapPresetPropertyChanged OnPropertyChanged;
 
 private:
 	void CalculateOptimalLooseness();
 	void UpdateInternalMeshFilterNames();
 	void UpdateInternalLandscapeFilterNames();
-
-public:
-	virtual UWorld* GetWorld() const override;
 
 public:
 	//~ Begin UPROPERTY World Settings | Basics
@@ -187,14 +191,6 @@ public:
 
 	//~ Begin UPROPERTY World Settings | Advanced
 	//~ Begin UPROPERTY World Settings | Advanced | Height
-	// Landscapes Minimum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMinHeight = 0.0f;
-
-	// Landscapes Maximum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMaxHeight = 0.0f;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
 	bool bSmoothHeight = true;
 
@@ -223,7 +219,7 @@ public:
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9")
 	)
-	float MaxSlopeAngle = 60.f;
+	float MaxSlopeAngle = 60.0f;
 
 	// Decides the strength of smoothing
 	UPROPERTY(
@@ -280,7 +276,7 @@ public:
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = 0.0f, ClampMax = 1.0f)
 	)
-	float PlainSmoothFactor = 1.f;
+	float PlainSmoothFactor = 1.0f;
 
 	// Decides the frequency of details in Biome
 	UPROPERTY(
@@ -334,7 +330,7 @@ public:
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0")
 	)
-	float StandardNoiseOffset = 10000.f;
+	float StandardNoiseOffset = 10000.0f;
 
 	// Decides how much the noise is spread out
 	UPROPERTY(
@@ -513,7 +509,7 @@ public:
 		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100"
 			, UIMax = "1000")
 	)
-	float RiverSplineSimplifyEpsilon = 200.f;
+	float RiverSplineSimplifyEpsilon = 200.0f;
 
 	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
 	UPROPERTY(
@@ -628,26 +624,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;
 
-	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f };
+	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.0f, 1.0f, FLinearColor::Blue, 1, 0.5f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
 	//~ End UPROPERTY OCG
-
-public:
-	UPROPERTY()
-	TArray<uint16> HeightMapData;
-
-	UPROPERTY()
-	TArray<uint16> TemperatureMapData;
-
-	UPROPERTY()
-	TArray<uint16> HumidityMapData;
-
-#if WITH_EDITOR
-
-public:
-	UPROPERTY(Transient)
-	TWeakObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
-#endif
 };

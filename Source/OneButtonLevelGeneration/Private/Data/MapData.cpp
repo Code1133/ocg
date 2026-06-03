@@ -6,10 +6,8 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/SavePackage.h"
 
-#if WITH_EDITOR
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
-#endif
 
 bool OCGMapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray)
 {
@@ -36,7 +34,6 @@ bool OCGMapDataUtils::TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& 
 
 bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FilePath)
 {
-#if WITH_EDITOR
     if (!FPaths::FileExists(FilePath))
     {
         UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FilePath);
@@ -105,14 +102,10 @@ bool OCGMapDataUtils::ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolu
 	UE_LOG(LogOCGModule, Log, TEXT("ImportMap: Successfully imported %d x %d heightmap from %s."), Width, Height, *FilePath);
 
 	return true;
-#else
-    return false;
-#endif
 }
 
 UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 {
-#if WITH_EDITOR
 	const FString ContentDir = FPaths::ProjectContentDir();
 	const FString SubDir = TEXT("Maps/");
 	const FString FullPath = FPaths::Combine(ContentDir, SubDir, FileName);
@@ -203,14 +196,10 @@ UTexture2D* OCGMapDataUtils::ImportTextureFromPNG(const FString& FileName)
 		UE_LOG(LogOCGModule, Error, TEXT("Failed to save texture to disk: %s"), *FilePath);
 		return nullptr;
 	}
-#else
-	return nullptr;
-#endif
 }
 
 bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
-#if WITH_EDITOR
 	// Create directory and full path for the map file
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
@@ -272,12 +261,10 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint8>& InMap, const FIntPoint& Res
 		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw data to Image Wrapper."));
 		return false;
 	}
-#endif
 }
 
 bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
-#if WITH_EDITOR
 	// Create directory and full path for the map file
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps/"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
@@ -340,12 +327,10 @@ bool OCGMapDataUtils::ExportMap(const TArray<uint16>& InMap, const FIntPoint& Re
 		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw data to Image Wrapper."));
 		return false;
 	}
-#endif
 }
 
 bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Resolution, const FString& FileName)
 {
-#if WITH_EDITOR
 	// Create directory and full path for the map file
 	const FString DirectoryPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Maps"));
 	const FString FullPath = FPaths::Combine(DirectoryPath, FileName);
@@ -407,12 +392,10 @@ bool OCGMapDataUtils::ExportMap(const TArray<FColor>& InMap, const FIntPoint& Re
 		UE_LOG(LogOCGModule, Error, TEXT("Failed to set raw color data to Image Wrapper."));
 		return false;
 	}
-#endif
 }
 
 bool OCGMapDataUtils::GetImageResolution(FIntPoint& OutResolution, const FString& FilePath)
 {
-#if WITH_EDITOR
 	if (!FPaths::FileExists(FilePath))
 	{
 		UE_LOG(LogOCGModule, Error, TEXT("ImportMap: File does not exist: %s"), *FilePath);
@@ -447,6 +430,5 @@ bool OCGMapDataUtils::GetImageResolution(FIntPoint& OutResolution, const FString
 	const int32 Height = ImageWrapper->GetHeight();
 	OutResolution = FIntPoint(Width, Height);
 	return true;
-#endif
 	return false;
 }

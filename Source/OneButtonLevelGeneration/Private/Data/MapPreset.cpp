@@ -2,17 +2,12 @@
 
 #include "Data/MapPreset.h"
 
-#include "OCGLevelGenerator.h"
 #include "OCGLog.h"
-#include "PCGComponent.h"
-#include "PCGGraph.h"
-#include "Component/OCGMapGenerateComponent.h"
 #include "Data/MapData.h"
 #include "Materials/MaterialExpressionLandscapeLayerBlend.h"
-#include "PCG/OCGLandscapeVolume.h"
-#include "Utils/OCGUtils.h"
 
-#if WITH_EDITOR
+FOnMapPresetPropertyChanged UMapPreset::OnPropertyChanged = {};
+
 UMapPreset::UMapPreset()
 	: OceanWaterMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_Ocean.Water_Material_Ocean")))
 	, OceanWaterStaticMeshMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_Ocean_LOD.Water_Material_Ocean_LOD")))
@@ -42,27 +37,10 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		return;
 	}
 
+	// 월드 액터 업데이트는 OCGEditorSubsystem 구독자에게 위임합니다.
+	// DataAsset은 어느 월드에 속하는지 알 수 없으므로 직접 액터를 조작하지 않습니다.
 	const FName PropertyName = PropertyChangedEvent.GetMemberPropertyName();
-
-	// Find Volume Actor
-	TArray<AOCGLandscapeVolume*> Actors;
-	if (UWorld* World = GetWorld())
-	{
-		Actors = FOCGUtils::GetAllActorsOfClass<AOCGLandscapeVolume>(World);
-	}
-
-	// Update Volume Actor
-	for (AOCGLandscapeVolume* VolumeActor : Actors)
-	{
-		if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, PCGGraph))
-		{
-			VolumeActor->GetPCGComponent()->SetGraph(PCGGraph);
-		}
-		else if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, bAutoGenerate))
-		{
-			VolumeActor->SetEditorAutoGenerate(bAutoGenerate);
-		}
-	}
+	OnPropertyChanged.Broadcast(this, PropertyName);
 
 	if (
 		PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeMaterial)
@@ -124,7 +102,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			}
 		}
 
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 
 		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
 			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
@@ -157,12 +135,12 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 			return;
 		}
 
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 	}
 
 	if (PropertyName==GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSize))
 	{
-		LandscapeScale = LandscapeSize * 1000.f / MapResolution.X;
+		LandscapeScale = LandscapeSize * 1000.0f / MapResolution.X;
 	}
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, DebugGridSpacing))
@@ -170,7 +148,7 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		if (DebugGridSpacing > static_cast<int32>(Landscape_QuadsPerSection))
 			DebugGridSpacing = static_cast<int32>(Landscape_QuadsPerSection);
 	}
-	
+
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
 	{
 		UpdateInternalLandscapeFilterNames();
@@ -202,7 +180,6 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 	}
 }
-#endif
 
 void UMapPreset::CalculateOptimalLooseness()
 {
@@ -291,22 +268,9 @@ void UMapPreset::UpdateInternalLandscapeFilterNames()
 		if (const uint32* Index = NameToIndex.Find(Data.BiomeName))
 		{
 			const uint32 LayerIdx = *Index + 1;
-			Data.LayerName_Internal = FName(*FString::Printf(TEXT("Layer%d"), LayerIdx));
+			Data.LayerName_Internal = OCGMapDataUtils::MakeLayerName(LayerIdx);
 			continue;
 		}
 		Data.LayerName_Internal = NAME_None;
 	}
-}
-
-UWorld* UMapPreset::GetWorld() const
-{
-#if WITH_EDITOR
-	if (LandscapeGenerator.IsValid())
-	{
-		return LandscapeGenerator->GetWorld();
-	}
-	return GEditor->GetEditorWorldContext().World();
-#else
-	return nullptr;
-#endif
 }

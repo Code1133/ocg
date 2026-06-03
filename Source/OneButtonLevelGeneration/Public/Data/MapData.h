@@ -3,25 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MapData.generated.h"
-
-USTRUCT(BlueprintType)
-struct FMapData
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	TArray<uint16> HeightMap;
-
-	UPROPERTY()
-	TArray<float> TemperatureMap;
-
-	UPROPERTY()
-	TArray<float> HumidityMap;
-};
 
 namespace OCGMapDataUtils
 {
+	/** 레이어 인덱스로부터 "Layer{N}" 형식의 FName을 생성합니다 (0=Water, 1..N=Biomes). */
+	[[nodiscard]] inline FName MakeLayerName(int32 LayerIndex)
+	{
+		return FName{ FString::Printf(TEXT("Layer%d"), LayerIndex) };
+	}
+
 	bool TextureToHeightArray(UTexture2D* Texture, TArray<uint16>& OutHeightArray);
 	
 	bool ImportMap(TArray<uint16>& OutMapData, FIntPoint& OutResolution, const FString& FilePath);
