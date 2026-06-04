@@ -245,7 +245,7 @@ uint32 UOCGDefaultBiomeStrategy::FindBiomeForPixel(const UMapPreset* Preset, con
 	OutBiome = nullptr;
 	uint32 CurrentBiomeIndex = INDEX_NONE;
 	float MinDist = TNumericLimits<float>::Max();
-	const float TempRange = Preset->MaxTemp - Preset->MinTemp;
+	const float TempRange = Preset->TemperatureSettings.MaxTemp - Preset->TemperatureSettings.MinTemp;
 
 	for (int32 BiomeIndex = 1; BiomeIndex <= Preset->Biomes.Num(); ++BiomeIndex)
 	{

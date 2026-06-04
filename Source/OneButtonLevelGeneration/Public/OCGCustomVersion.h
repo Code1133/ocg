@@ -14,15 +14,16 @@ struct FOCGCustomVersion
 
 	enum Type : int32
 	{
-		// 이 커스텀 버전이 도입되기 전 저장된 에셋 (스탬프 없음)
+		// 이 커스텀 버전이 도입되기 전 저장된 에셋 (~v1.2.0)
 		BeforeCustomVersionWasAdded = 0,
 
-		// FCustomVersion 인프라 최초 도입
+		// FCustomVersion 인프라 최초 도입 (v2.0.0)
 		InitialVersion = 1,
 
+		// MapPreset 평면 필드를 nested settings struct로 묶고 마이그레이션 (v2.0.0)
+		NestedSettings,
 
-
-		// --- 새 버전은 이 줄 위에 추가 ---
+		// ^^^ 새 버전은 이 줄 위에 추가 ^^^
 		VersionPlusOne,
 		LatestVersion = VersionPlusOne - 1
 	};

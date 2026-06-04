@@ -112,25 +112,25 @@ float UOCGDefaultHeightmapStrategy::CalculateHeightForCoordinate(const UMapPrese
 	float Height = FMath::Clamp(FMath::Lerp(PlainHeight, MountainHeight * 0.5f + 0.5f, BlendNoise), 0.0f, 1.0f);
 
 	// 5. Apply island mask so terrain falls off toward the map edges
-	if (Preset->bIsland)
+	if (Preset->IslandSettings.bIsland)
 	{
 		// Normalized distance from the center of the map, perturbed by noise to avoid a perfect circle
 		const float Nx = (static_cast<float>(InX) / Preset->MapResolution.X) * 2.0f - 1.0f;
 		const float Ny = (static_cast<float>(InY) / Preset->MapResolution.Y) * 2.0f - 1.0f;
 		const float Distance = FMath::Sqrt(Nx * Nx + Ny * Ny);
 
-		const float IslandNoiseX = InX * Preset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;
-		const float IslandNoiseY = InY * Preset->IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.Y;
+		const float IslandNoiseX = InX * Preset->IslandSettings.IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;
+		const float IslandNoiseY = InY * Preset->IslandSettings.IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.Y;
 		const float CoastlineNoise = FMath::PerlinNoise2D(FVector2D(IslandNoiseX, IslandNoiseY)); // -1 ~ 1
 
-		float IslandMask = 1.0f - (Distance + CoastlineNoise * Preset->IslandShapeNoiseStrength);
+		float IslandMask = 1.0f - (Distance + CoastlineNoise * Preset->IslandSettings.IslandShapeNoiseStrength);
 		
 		// Scale up so that the interior is solidly land, and more land area is visible
 		IslandMask *= 3.0f;
 		IslandMask = FMath::Clamp(IslandMask, 0.0f, 1.0f);
 
 		// Sharpen the coastline with a falloff exponent, then smooth the transition
-		IslandMask = FMath::Pow(IslandMask, Preset->IslandFalloffExponent);
+		IslandMask = FMath::Pow(IslandMask, Preset->IslandSettings.IslandFalloffExponent);
 		IslandMask = FMath::SmoothStep(0.0f, 1.0f, IslandMask);
 		IslandMask = FMath::Clamp(IslandMask, 0.0f, 1.0f);
 

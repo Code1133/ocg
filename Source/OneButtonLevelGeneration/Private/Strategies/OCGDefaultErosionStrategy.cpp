@@ -9,7 +9,7 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_ErosionPass);
 
-	if (Preset->NumErosionIterations <= 0 || !Preset->bErosion)
+	if (Preset->ErosionSettings.NumErosionIterations <= 0 || !Preset->ErosionSettings.bErosion)
 	{
 		return;
 	}
@@ -30,19 +30,19 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 	const float LandscapeScale = Preset->LandscapeScale * 100.0f;
 
 	// 3. Main Erosion loop
-	for (int32 i = 0; i < Preset->NumErosionIterations; ++i)
+	for (int32 i = 0; i < Preset->ErosionSettings.NumErosionIterations; ++i)
 	{
 		// Initialize droplet
 		float PosX = Stream.RandRange(1.0f, Preset->MapResolution.X - 2.0f);
 		float PosY = Stream.RandRange(1.0f, Preset->MapResolution.Y - 2.0f);
 		float DirX = 0.0f;
 		float DirY = 0.0f;
-		float Speed = Preset->InitialSpeed;
-		float Water = Preset->InitialWaterVolume;
+		float Speed = Preset->ErosionSettings.InitialSpeed;
+		float Water = Preset->ErosionSettings.InitialWaterVolume;
 		float Sediment = 0.0f;
 
 		// Simulate droplet
-		for (int32 Lifetime = 0; Lifetime < Preset->MaxDropletLifetime; ++Lifetime)
+		for (int32 Lifetime = 0; Lifetime < Preset->ErosionSettings.MaxDropletLifetime; ++Lifetime)
 		{
 			const int32 NodeX = static_cast<int32>(PosX);
 			const int32 NodeY = static_cast<int32>(PosY);
@@ -59,8 +59,8 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 			const float CurrentHeight = CalculateHeightAndGradient(Preset, HeightMapFloat, LandscapeScale, PosX, PosY, Gradient);
 
 			// Apply inertia and calculate droplet's direction
-			DirX = (DirX * Preset->DropletInertia) - (Gradient.X * (1.0f - Preset->DropletInertia));
-			DirY = (DirY * Preset->DropletInertia) - (Gradient.Y * (1.0f - Preset->DropletInertia));
+			DirX = (DirX * Preset->ErosionSettings.DropletInertia) - (Gradient.X * (1.0f - Preset->ErosionSettings.DropletInertia));
+			DirY = (DirY * Preset->ErosionSettings.DropletInertia) - (Gradient.Y * (1.0f - Preset->ErosionSettings.DropletInertia));
 
 			// Normalize direction
 			const float Len = FMath::Sqrt(DirX * DirX + DirY * DirY);
@@ -89,7 +89,7 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 			const float HeightDifference = NewHeight - CurrentHeight;
 
 			// Calculate sediment capacity
-			const float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * Preset->SedimentCapacityFactor, Preset->MinSedimentCapacity);
+			const float SedimentCapacity = FMath::Max(-HeightDifference * Speed * Water * Preset->ErosionSettings.SedimentCapacityFactor, Preset->ErosionSettings.MinSedimentCapacity);
 
 			// Apply sediment or erosion
 			if (Sediment > SedimentCapacity || HeightDifference > 0)
@@ -97,7 +97,7 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 				// Sediment: deposit carried material
 				const float AmountToDeposit = (HeightDifference > 0)
 					? FMath::Min(Sediment, HeightDifference)
-					: (Sediment - SedimentCapacity) * Preset->DepositSpeed;
+					: (Sediment - SedimentCapacity) * Preset->ErosionSettings.DepositSpeed;
 				Sediment -= AmountToDeposit;
 
 				// Apply sediment using pre-calculated erosion brush
@@ -111,7 +111,7 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 			else
 			{
 				// Erosion: pick up material from terrain
-				const float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * Preset->ErodeSpeed;
+				const float AmountToErode = FMath::Min((SedimentCapacity - Sediment), -HeightDifference) * Preset->ErosionSettings.ErodeSpeed;
 
 				// Apply erosion using pre-calculated erosion brush
 				const TArray<int32>& Indices = ErosionBrushIndices[DropletIndex];
@@ -124,8 +124,8 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 			}
 
 			// Update droplet's water amount and speed
-			Speed = FMath::Sqrt(FMath::Max(0.0f, Speed * Speed - HeightDifference * Preset->Gravity));
-			Water *= (1.0f - Preset->EvaporateSpeed);
+			Speed = FMath::Sqrt(FMath::Max(0.0f, Speed * Speed - HeightDifference * Preset->ErosionSettings.Gravity));
+			Water *= (1.0f - Preset->ErosionSettings.EvaporateSpeed);
 		}
 	}
 
@@ -161,7 +161,7 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 	const int32 NewSize = Preset->MapResolution.X * Preset->MapResolution.Y;
 
 	// if current erosion brush is initialized with current map resolution and erosion radius
-	if (CachedErosionRadius == Preset->ErosionRadius && ErosionBrushIndices.Num() == NewSize)
+	if (CachedErosionRadius == Preset->ErosionSettings.ErosionRadius && ErosionBrushIndices.Num() == NewSize)
 	{
 		return;
 	}
@@ -180,12 +180,12 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 		TArray<int32>& Indices = ErosionBrushIndices[i];
 		TArray<float>& Weights = ErosionBrushWeights[i];
 
-		for (int32 BrushY = -Preset->ErosionRadius; BrushY <= Preset->ErosionRadius; ++BrushY)
+		for (int32 BrushY = -Preset->ErosionSettings.ErosionRadius; BrushY <= Preset->ErosionSettings.ErosionRadius; ++BrushY)
 		{
-			for (int32 BrushX = -Preset->ErosionRadius; BrushX <= Preset->ErosionRadius; ++BrushX)
+			for (int32 BrushX = -Preset->ErosionSettings.ErosionRadius; BrushX <= Preset->ErosionSettings.ErosionRadius; ++BrushX)
 			{
 				const float Dist = FMath::Sqrt(static_cast<float>(BrushX * BrushX + BrushY * BrushY));
-				if (Dist <= Preset->ErosionRadius)
+				if (Dist <= Preset->ErosionSettings.ErosionRadius)
 				{
 					const int32 CoordX = CenterX + BrushX;
 					const int32 CoordY = CenterY + BrushY;
@@ -193,7 +193,7 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 					{
 						int32 Index = CoordY * Preset->MapResolution.X + CoordX;
 						Index = FMath::Clamp(Index, 0, NewSize - 1);
-						const float Weight = 1.0f - (Dist / Preset->ErosionRadius);
+						const float Weight = 1.0f - (Dist / Preset->ErosionSettings.ErosionRadius);
 						WeightSum += Weight;
 						Indices.Add(Index);
 						Weights.Add(Weight);
@@ -212,7 +212,7 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 		}
 	}
 
-	CachedErosionRadius = Preset->ErosionRadius;
+	CachedErosionRadius = Preset->ErosionSettings.ErosionRadius;
 }
 
 float UOCGDefaultErosionStrategy::CalculateHeightAndGradient(const UMapPreset* Preset, const TArray<float>& HeightMap,
