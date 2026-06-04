@@ -33,8 +33,8 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 			const int32 Index = y * CurResolution.X + x;
 
 			// Generate base temperature map with low frequency noise
-			const float TempNoiseInputX = x * Preset->TemperatureNoiseScale + PlainNoiseOffset.X;
-			const float TempNoiseInputY = y * Preset->TemperatureNoiseScale + PlainNoiseOffset.Y;
+			const float TempNoiseInputX = x * Preset->BasicNoiseSettings.TemperatureNoiseScale + PlainNoiseOffset.X;
+			const float TempNoiseInputY = y * Preset->BasicNoiseSettings.TemperatureNoiseScale + PlainNoiseOffset.Y;
 			float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;
 			float BaseTemp = FMath::Lerp(Preset->TemperatureSettings.MinTemp, Preset->TemperatureSettings.MaxTemp, TempNoiseAlpha);
 
@@ -96,7 +96,7 @@ void UOCGDefaultTemperatureStrategy::Initialize(const UMapPreset* Preset)
 		}
 	}
 
-	const float StandardNoiseOffset = Preset->StandardNoiseOffset * NoiseScale;
+	const float StandardNoiseOffset = Preset->AdvancedNoiseSettings.StandardNoiseOffset * NoiseScale;
 
 	// PlainNoiseOffset is the first pair drawn from the stream — must match component order
 	PlainNoiseOffset.X = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);

@@ -33,7 +33,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 	}
 
 	const uint16 SeaLevelHeight = Preset->bContainWater
-		? static_cast<uint16>(65535 * Preset->SeaLevel)
+		? static_cast<uint16>(65535 * Preset->HeightSettings.SeaLevel)
 		: 0;
 
 	// Assign each pixel to the nearest biome via weighted temp/humidity distance
@@ -199,7 +199,7 @@ void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorl
 	const float TotalWeight = ComputeTotalBiomeWeight(Preset);
 
 	const FIntPoint CurResolution = Preset->MapResolution;
-	const uint16 SeaLevelHeight = static_cast<uint16>(65535 * Preset->SeaLevel);
+	const uint16 SeaLevelHeight = static_cast<uint16>(65535 * Preset->HeightSettings.SeaLevel);
 
 	for (int32 Y = 0; Y < CurResolution.Y; ++Y)
 	{

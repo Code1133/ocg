@@ -15,7 +15,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	TArray<float> MinHeights;
 	TArray<float> BlurredMinHeights;
 
-	const float HeightRange = Preset->MaxHeight - Preset->MinHeight;
+	const float HeightRange = Preset->HeightSettings.MaxHeight - Preset->HeightSettings.MinHeight;
 	CalculateBiomeMinHeights(Preset, DataContainer.HeightMapData, DataContainer.BiomeLayerMap, MinHeights, Converter);
 
 	if (Preset->BiomeTerrainSettings.BiomeHeightBlendRadius > 0)
@@ -27,7 +27,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 		BlurredMinHeights = MinHeights;
 	}
 
-	const float SeaLevelHeightF = (Preset->bContainWater ? Preset->SeaLevel * HeightRange : 0.0f) + Preset->MinHeight;
+	const float SeaLevelHeightF = (Preset->bContainWater ? Preset->HeightSettings.SeaLevel * HeightRange : 0.0f) + Preset->HeightSettings.MinHeight;
 	const uint16 SeaLevelHeight = Converter.ToHeightMapValue(SeaLevelHeightF);
 
 	for (int32 Y = 0; Y < Preset->MapResolution.Y; ++Y)

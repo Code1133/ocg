@@ -82,6 +82,23 @@ void UMapPreset::PostLoad()
 			.BiomeNoiseAmplitude = BiomeNoiseAmplitude_DEPRECATED,
 			.BiomeHeightBlendRadius = BiomeHeightBlendRadius_DEPRECATED,
 		};
+		HeightSettings = {
+			.MinHeight = MinHeight_DEPRECATED,
+			.MaxHeight = MaxHeight_DEPRECATED,
+			.SeaLevel = SeaLevel_DEPRECATED,
+		};
+		BasicNoiseSettings = {
+			.ContinentNoiseScale = ContinentNoiseScale_DEPRECATED,
+			.TerrainNoiseScale = TerrainNoiseScale_DEPRECATED,
+			.TemperatureNoiseScale = TemperatureNoiseScale_DEPRECATED,
+		};
+		AdvancedNoiseSettings = {
+			.StandardNoiseOffset = StandardNoiseOffset_DEPRECATED,
+			.RedistributionFactor = RedistributionFactor_DEPRECATED,
+			.Octaves = Octaves_DEPRECATED,
+			.Lacunarity = Lacunarity_DEPRECATED,
+			.Persistence = Persistence_DEPRECATED,
+		};
 	}
 
 	UpdateInternalMeshFilterNames();

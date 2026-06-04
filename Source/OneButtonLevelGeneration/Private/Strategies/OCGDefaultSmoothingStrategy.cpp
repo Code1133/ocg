@@ -162,7 +162,7 @@ void UOCGDefaultSmoothingStrategy::ProcessPlane(
 				const float CurrentHeight = Plane.X * KernelX * LandscapeScale + Plane.Y * KernelY * LandscapeScale + Plane.Z;
 				const float CorrectedHeight = CorrectedSlopeX * KernelX * LandscapeScale + CorrectedSlopeY * KernelY * LandscapeScale + Plane.Z;
 				float NewWorldHeight = OriginalWorldHeight + (CorrectedHeight - CurrentHeight);
-				NewWorldHeight = FMath::Clamp(NewWorldHeight, Preset->MinHeight + HeightConverter.ZOffset, Preset->MaxHeight + HeightConverter.ZOffset);
+				NewWorldHeight = FMath::Clamp(NewWorldHeight, Preset->HeightSettings.MinHeight + HeightConverter.ZOffset, Preset->HeightSettings.MaxHeight + HeightConverter.ZOffset);
 
 				const uint16 NewHeight = HeightConverter.ToHeightMapValue(NewWorldHeight);
 				const uint16 OriginalHeight = HeightConverter.ToHeightMapValue(OriginalWorldHeight);

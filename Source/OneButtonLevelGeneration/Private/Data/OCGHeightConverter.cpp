@@ -5,10 +5,10 @@
 
 void FOCGHeightConverter::Initialize(const UMapPreset* Preset)
 {
-	ZScale = (Preset->MaxHeight - Preset->MinHeight) * 0.001953125f;
+	ZScale = (Preset->HeightSettings.MaxHeight - Preset->HeightSettings.MinHeight) * 0.001953125f;
 
-	const float AbsMaxHeight = FMath::Abs(Preset->MaxHeight);
-	const float AbsMinHeight = FMath::Abs(Preset->MinHeight);
+	const float AbsMaxHeight = FMath::Abs(Preset->HeightSettings.MaxHeight);
+	const float AbsMinHeight = FMath::Abs(Preset->HeightSettings.MinHeight);
 	const float AbsOffset    = FMath::Abs(AbsMaxHeight - AbsMinHeight) / 2.0f;
 	ZOffset = (AbsMaxHeight < AbsMinHeight) ? -AbsOffset : AbsOffset;
 }
@@ -16,6 +16,6 @@ void FOCGHeightConverter::Initialize(const UMapPreset* Preset)
 float FOCGHeightConverter::GetSeaLevelWorldHeight(const UMapPreset* Preset)
 {
 	return Preset->bContainWater
-		? Preset->MinHeight + Preset->SeaLevel * (Preset->MaxHeight - Preset->MinHeight)
-		: Preset->MinHeight;
+		? Preset->HeightSettings.MinHeight + Preset->HeightSettings.SeaLevel * (Preset->HeightSettings.MaxHeight - Preset->HeightSettings.MinHeight)
+		: Preset->HeightSettings.MinHeight;
 }
