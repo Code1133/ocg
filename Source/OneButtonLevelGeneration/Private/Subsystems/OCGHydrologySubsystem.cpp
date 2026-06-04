@@ -82,7 +82,7 @@ void UOCGHydrologySubsystem::ApplyHydrology(const UMapPreset* Preset, const FOCG
 		return;
 	}
 
-	if (Preset->bGenerateRiver)
+	if (Preset->RiverSettings.bGenerateRiver)
 	{
 		GenerateRivers(World, Landscape, Preset, DataContainer);
 	}
@@ -138,7 +138,7 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		return;
 	}
 
-	if (bIsRiverExists && CurrentRiverSeed == Preset->RiverSeed)
+	if (bIsRiverExists && CurrentRiverSeed == Preset->RiverSettings.RiverSeed)
 	{
 		return;
 	}
@@ -161,13 +161,13 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		}
 	}
 
-	CurrentRiverSeed = Preset->RiverSeed;
+	CurrentRiverSeed = Preset->RiverSettings.RiverSeed;
 
 	UOCGLandscapeGenSubsystem* LandscapeSubsystem = GEditor->GetEditorSubsystem<UOCGLandscapeGenSubsystem>();
 
 	CacheRiverStartPoints(HeightMapData, Preset, DataContainer.CurMinHeight, DataContainer.CurMaxHeight);
 
-	for (int32 RiverCount = 0; RiverCount < Preset->RiverCount; RiverCount++)
+	for (int32 RiverCount = 0; RiverCount < Preset->RiverSettings.RiverCount; RiverCount++)
 	{
 		const FIntPoint StartPoint = GetRandomStartPoint(RiverCount, Preset);
 
@@ -256,7 +256,7 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		Algo::Reverse(RiverPath);
 
 		TArray<FVector> SimplifiedPath;
-		SimplifyPathRDP(RiverPath, SimplifiedPath, Preset->RiverSplineSimplifyEpsilon);
+		SimplifyPathRDP(RiverPath, SimplifiedPath, Preset->RiverSettings.RiverSplineSimplifyEpsilon);
 
 		const FVector WaterBodyPos = LandscapeSubsystem->GetLandscapePointWorldPosition(StartPoint, Preset, &HeightMapData);
 		AWaterBodyRiver* WaterBodyRiver = World->SpawnActor<AWaterBodyRiver>(AWaterBodyRiver::StaticClass(), FTransform(WaterBodyPos));
@@ -556,8 +556,8 @@ void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverA
 	WaterBodyComponent->WaterHeightmapSettings = BrushDefaults.HeightmapSettings;
 	WaterBodyComponent->LayerWeightmapSettings = BrushDefaults.LayerWeightmapSettings;
 
-	WaterBodyComponent->SetWaterMaterial(Preset->RiverWaterMaterial.LoadSynchronous());
-	WaterBodyComponent->SetWaterStaticMeshMaterial(Preset->RiverWaterStaticMeshMaterial.LoadSynchronous());
+	WaterBodyComponent->SetWaterMaterial(Preset->RiverSettings.RiverWaterMaterial.LoadSynchronous());
+	WaterBodyComponent->SetWaterStaticMeshMaterial(Preset->RiverSettings.RiverWaterStaticMeshMaterial.LoadSynchronous());
 	WaterBodyComponent->SetHLODMaterial(Preset->WaterHLODMaterial.LoadSynchronous());
 	WaterBodyComponent->SetUnderwaterPostProcessMaterial(Preset->UnderwaterPostProcessMaterial.LoadSynchronous());
 
@@ -572,8 +572,8 @@ void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverA
 	}
 
 	UWaterBodyRiverComponent* RiverComp = CastChecked<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
-	RiverComp->SetLakeTransitionMaterial(Preset->RiverToLakeTransitionMaterial.LoadSynchronous());
-	RiverComp->SetOceanTransitionMaterial(Preset->RiverToOceanTransitionMaterial.LoadSynchronous());
+	RiverComp->SetLakeTransitionMaterial(Preset->RiverSettings.RiverToLakeTransitionMaterial.LoadSynchronous());
+	RiverComp->SetOceanTransitionMaterial(Preset->RiverSettings.RiverToOceanTransitionMaterial.LoadSynchronous());
 
 	InRiverActor->PostEditChange();
 	InRiverActor->PostEditMove(true);
@@ -612,9 +612,9 @@ void UOCGHydrologySubsystem::AddRiverProperties(AWaterBodyRiver* InRiverActor, c
 		return;
 	}
 
-	UCurveFloat* WidthCurve = Preset->RiverWidthCurve;
-	UCurveFloat* DepthCurve = Preset->RiverDepthCurve;
-	UCurveFloat* VelocityCurve = Preset->RiverVelocityCurve;
+	UCurveFloat* WidthCurve = Preset->RiverSettings.RiverWidthCurve;
+	UCurveFloat* DepthCurve = Preset->RiverSettings.RiverDepthCurve;
+	UCurveFloat* VelocityCurve = Preset->RiverSettings.RiverVelocityCurve;
 
 	float MinWidth = 0.0f, MaxWidth = 1.0f;
 	if (WidthCurve)
@@ -656,9 +656,9 @@ void UOCGHydrologySubsystem::AddRiverProperties(AWaterBodyRiver* InRiverActor, c
 		const float DepthMultiplier = EvalCurve(DepthCurve, NormalizedT, MinDepth, DepthRange);
 		const float VelocityMultiplier = EvalCurve(VelocityCurve, NormalizedT, MinVelocity, VelocityRange);
 
-		const float DesiredWidth = (Preset->RiverWidthBaseValue * WidthMultiplier + Preset->RiverWidthMin) * Preset->LandscapeScale;
-		const float DesiredDepth = Preset->RiverDepthBaseValue * DepthMultiplier + Preset->RiverDepthMin;
-		const float DesiredVelocity = Preset->RiverVelocityBaseValue * VelocityMultiplier + Preset->RiverVelocityMin;
+		const float DesiredWidth = (Preset->RiverSettings.RiverWidthBaseValue * WidthMultiplier + Preset->RiverSettings.RiverWidthMin) * Preset->LandscapeScale;
+		const float DesiredDepth = Preset->RiverSettings.RiverDepthBaseValue * DepthMultiplier + Preset->RiverSettings.RiverDepthMin;
+		const float DesiredVelocity = Preset->RiverSettings.RiverVelocityBaseValue * VelocityMultiplier + Preset->RiverSettings.RiverVelocityMin;
 
 		if (SplineMetadata->RiverWidth.Points.IsValidIndex(i))
 		{
@@ -690,7 +690,7 @@ void UOCGHydrologySubsystem::CacheRiverStartPoints(
 {
 	CachedRiverStartPoints.Empty();
 
-	const float ThresholdMultiplier = FMath::Clamp(Preset->RiverSourceElevationRatio, 0.0f, 1.0f);
+	const float ThresholdMultiplier = FMath::Clamp(Preset->RiverSettings.RiverSourceElevationRatio, 0.0f, 1.0f);
 	SeaHeight = CurMinHeight + (CurMaxHeight - CurMinHeight) * Preset->HeightSettings.SeaLevel - 5.0f;
 	const float HighThreshold = SeaHeight + (CurMaxHeight - SeaHeight) * ThresholdMultiplier;
 
@@ -714,7 +714,7 @@ void UOCGHydrologySubsystem::CacheRiverStartPoints(
 
 FIntPoint UOCGHydrologySubsystem::GetRandomStartPoint(int32 RiverIndex, const UMapPreset* Preset) const
 {
-	FRandomStream Stream(Preset->RiverSeed + RiverIndex * 9973);
+	FRandomStream Stream(Preset->RiverSettings.RiverSeed + RiverIndex * 9973);
 
 	if (CachedRiverStartPoints.Num() > 0)
 	{
