@@ -7,7 +7,7 @@
 
 void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer, const FOCGHeightConverter& Converter)
 {
-	if (!Preset->bModifyTerrainByBiome)
+	if (!Preset->BiomeTerrainSettings.bModifyTerrainByBiome)
 	{
 		return;
 	}
@@ -18,7 +18,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 	const float HeightRange = Preset->MaxHeight - Preset->MinHeight;
 	CalculateBiomeMinHeights(Preset, DataContainer.HeightMapData, DataContainer.BiomeLayerMap, MinHeights, Converter);
 
-	if (Preset->BiomeHeightBlendRadius > 0)
+	if (Preset->BiomeTerrainSettings.BiomeHeightBlendRadius > 0)
 	{
 		BlurBiomeMinHeights(Preset, MinHeights, BlurredMinHeights);
 	}
@@ -50,11 +50,11 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 			}
 
 			const uint16 BiomeMinHeight = Converter.ToHeightMapValue(BlurredMinHeights[Index]);
-			const uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, BiomeMinHeight, (1.0f - MtoPRatio) * Preset->PlainSmoothFactor);
+			const uint16 TargetPlainHeight = FMath::Lerp(CurrentHeight, BiomeMinHeight, (1.0f - MtoPRatio) * Preset->BiomeTerrainSettings.PlainSmoothFactor);
 
 			const float MaxAmplitude = (65535.0f - TargetPlainHeight) * Converter.ZScale / HeightRange / 128.0f;
-			const float Amplitude = MaxAmplitude * Preset->BiomeNoiseAmplitude;
-			const float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(X), static_cast<float>(Y)) * Preset->BiomeNoiseScale) * Amplitude + Amplitude;
+			const float Amplitude = MaxAmplitude * Preset->BiomeTerrainSettings.BiomeNoiseAmplitude;
+			const float DetailNoise = FMath::PerlinNoise2D(FVector2D(static_cast<float>(X), static_cast<float>(Y)) * Preset->BiomeTerrainSettings.BiomeNoiseScale) * Amplitude + Amplitude;
 			const float HeightToAdd = DetailNoise * HeightRange * 128.0f / Converter.ZScale;
 			const float MountainHeight = FMath::Clamp(HeightToAdd + TargetPlainHeight, 0.0f, 65535.0f);
 
@@ -99,7 +99,7 @@ void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPres
 
 void UOCGDefaultTerrainModifierStrategy::BlurBiomeMinHeights(const UMapPreset* Preset, const TArray<float>& InMinHeights, TArray<float>& OutMinHeights)
 {
-	const int32 BlendRadius = static_cast<int32>(Preset->BiomeHeightBlendRadius);
+	const int32 BlendRadius = static_cast<int32>(Preset->BiomeTerrainSettings.BiomeHeightBlendRadius);
 	const FIntPoint MapSize = Preset->MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
 	OutMinHeights.SetNumUninitialized(TotalPixels);

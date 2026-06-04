@@ -84,11 +84,11 @@ void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, 
 			}
 
 			// decide humidity based on distance
-			const float HumidityFromDistance = FMath::Exp(-DistanceToWater[i] * Preset->MoistureFalloffRate);
+			const float HumidityFromDistance = FMath::Exp(-DistanceToWater[i] * Preset->HumiditySettings.MoistureFalloffRate);
 
 			// apply temperature affect
 			const float NormalizedTemp = static_cast<float>(DataContainer.TemperatureMapData[i]) / 65535.0f;
-			return HumidityFromDistance * (1.0f - (NormalizedTemp * Preset->TemperatureInfluenceOnHumidity));
+			return HumidityFromDistance * (1.0f - (NormalizedTemp * Preset->HumiditySettings.TemperatureInfluenceOnHumidity));
 		}(), 0.0f, 1.0f);
 
 		HumidityMapFloat[i] = FinalHumidity;

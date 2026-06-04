@@ -464,7 +464,7 @@ ECheckBoxState SOCGWindow::IsIslandChecked() const
 {
 	if (CurrentPreset.IsValid())
 	{
-		return CurrentPreset->bIsland ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+		return CurrentPreset->IslandSettings.bIsland ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 	}
 	return ECheckBoxState::Undetermined;
 }
@@ -473,7 +473,7 @@ void SOCGWindow::OnIslandChanged(ECheckBoxState NewState)
 {
 	if (CurrentPreset.IsValid())
 	{
-		CurrentPreset->bIsland = (NewState == ECheckBoxState::Checked);
+		CurrentPreset->IslandSettings.bIsland = (NewState == ECheckBoxState::Checked);
 		(void)CurrentPreset->MarkPackageDirty();
 	}
 }

@@ -22,7 +22,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 
 	float GlobalMinTemp = TNumericLimits<float>::Max();
 	float GlobalMaxTemp = TNumericLimits<float>::Lowest();
-	const float TempRange = Preset->MaxTemp - Preset->MinTemp;
+	const float TempRange = Preset->TemperatureSettings.MaxTemp - Preset->TemperatureSettings.MinTemp;
 
 	const float SeaLevelHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset);
 
@@ -36,7 +36,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 			const float TempNoiseInputX = x * Preset->TemperatureNoiseScale + PlainNoiseOffset.X;
 			const float TempNoiseInputY = y * Preset->TemperatureNoiseScale + PlainNoiseOffset.Y;
 			float TempNoiseAlpha = FMath::PerlinNoise2D(FVector2D(TempNoiseInputX, TempNoiseInputY)) * 0.5f + 0.5f;
-			float BaseTemp = FMath::Lerp(Preset->MinTemp, Preset->MaxTemp, TempNoiseAlpha);
+			float BaseTemp = FMath::Lerp(Preset->TemperatureSettings.MinTemp, Preset->TemperatureSettings.MaxTemp, TempNoiseAlpha);
 
 			// Decrease temperature by altitude
 			const float WorldHeight = HeightConverter.ToWorldHeight(DataContainer.HeightMapData[Index]);
@@ -45,9 +45,9 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 				BaseTemp -= ((WorldHeight - SeaLevelHeight) / 1000.0f) * Preset->TempDropPer1000Units;
 			}
 
-			const float NormalizedBaseTemp = (BaseTemp - Preset->MinTemp) / TempRange;
-			BaseTemp = Preset->MinTemp + NormalizedBaseTemp * TempRange;
-			const float FinalTemp = FMath::Clamp(BaseTemp, Preset->MinTemp, Preset->MaxTemp);
+			const float NormalizedBaseTemp = (BaseTemp - Preset->TemperatureSettings.MinTemp) / TempRange;
+			BaseTemp = Preset->TemperatureSettings.MinTemp + NormalizedBaseTemp * TempRange;
+			const float FinalTemp = FMath::Clamp(BaseTemp, Preset->TemperatureSettings.MinTemp, Preset->TemperatureSettings.MaxTemp);
 
 			TempMapFloat[Index] = FinalTemp;
 

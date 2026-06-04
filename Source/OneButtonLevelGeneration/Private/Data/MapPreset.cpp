@@ -43,6 +43,47 @@ void UMapPreset::PostLoad()
 	//        const int32 Ver = GetLinkerCustomVersion(FOCGCustomVersion::GUID);
 	//        if (Ver < FOCGCustomVersion::NestedRiverSettings) { RiverSettings.Seed = RiverSeed_DEPRECATED; }
 
+	const int32 Ver = GetLinkerCustomVersion(FOCGCustomVersion::GUID);
+	if (Ver < FOCGCustomVersion::NestedSettings)
+	{
+		ErosionSettings = {
+			.bErosion = bErosion_DEPRECATED,
+			.NumErosionIterations = NumErosionIterations_DEPRECATED,
+			.ErosionRadius = ErosionRadius_DEPRECATED,
+			.DropletInertia = DropletInertia_DEPRECATED,
+			.SedimentCapacityFactor = SedimentCapacityFactor_DEPRECATED,
+			.MinSedimentCapacity = MinSedimentCapacity_DEPRECATED,
+			.ErodeSpeed = ErodeSpeed_DEPRECATED,
+			.DepositSpeed = DepositSpeed_DEPRECATED,
+			.EvaporateSpeed = EvaporateSpeed_DEPRECATED,
+			.Gravity = Gravity_DEPRECATED,
+			.MaxDropletLifetime = MaxDropletLifetime_DEPRECATED,
+			.InitialWaterVolume = InitialWaterVolume_DEPRECATED,
+			.InitialSpeed = InitialSpeed_DEPRECATED,
+		};
+		TemperatureSettings = {
+			.MinTemp = MinTemp_DEPRECATED,
+			.MaxTemp = MaxTemp_DEPRECATED,
+		};
+		HumiditySettings = {
+			.MoistureFalloffRate = MoistureFalloffRate_DEPRECATED,
+			.TemperatureInfluenceOnHumidity = TemperatureInfluenceOnHumidity_DEPRECATED,
+		};
+		IslandSettings = {
+			.bIsland = bIsland_DEPRECATED,
+			.IslandFalloffExponent = IslandFalloffExponent_DEPRECATED,
+			.IslandShapeNoiseScale = IslandShapeNoiseScale_DEPRECATED,
+			.IslandShapeNoiseStrength = IslandShapeNoiseStrength_DEPRECATED,
+		};
+		BiomeTerrainSettings = {
+			.bModifyTerrainByBiome = bModifyTerrainByBiome_DEPRECATED,
+			.PlainSmoothFactor = PlainSmoothFactor_DEPRECATED,
+			.BiomeNoiseScale = BiomeNoiseScale_DEPRECATED,
+			.BiomeNoiseAmplitude = BiomeNoiseAmplitude_DEPRECATED,
+			.BiomeHeightBlendRadius = BiomeHeightBlendRadius_DEPRECATED,
+		};
+	}
+
 	UpdateInternalMeshFilterNames();
 	UpdateInternalLandscapeFilterNames();
 }
