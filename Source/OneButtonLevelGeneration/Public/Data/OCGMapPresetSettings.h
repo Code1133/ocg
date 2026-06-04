@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "OCGMapPresetSettings.generated.h"
 
+class UMaterialInterface;
+class UCurveFloat;
+
 
 // --- Erosion (입자 기반 수력 침식) ---
 USTRUCT(BlueprintType)
@@ -266,4 +269,87 @@ struct FOCGBiomeTerrainSettings
 		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0", ClampMax = "50")
 	)
 	int32 BiomeHeightBlendRadius = 5;
+};
+
+// --- River Settings (강 생성, Experimental) ---
+USTRUCT(BlueprintType)
+struct FOCGRiverSettings
+{
+	GENERATED_BODY()
+
+	// Generates River. EXPERIMENTAL: has known issues; see team documentation before enabling.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (DisplayName = "Generate River (Experimental)"))
+	bool bGenerateRiver = false;
+
+	// Seed for the River
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	int32 RiverSeed = 0;
+
+	// Count of rivers to generate.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "1", ClampMax = "10", UIMin = "1", UIMax = "10"))
+	int32 RiverCount = 1;
+
+	// Determines river's start point. 1.0 means the river will start at the highest point, 0.5 means middle height.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5", UIMax = "1.0"))
+	float RiverSourceElevationRatio = 0.8f;
+
+	// Intensity of simplifying river path. Higher value means more simplification.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100", UIMax = "1000"))
+	float RiverSplineSimplifyEpsilon = 200.0f;
+
+	// Base of the river width.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverWidthBaseValue = 2048.0f;
+
+	// Base of the river depth.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverDepthBaseValue = 1024.0f;
+
+	// Base of the river velocity.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	float RiverVelocityBaseValue = 100.0f;
+
+	// Minimum width of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverWidthMin = 50.0f;
+
+	// Minimum depth of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverDepthMin = 20.0f;
+
+	// Minimum velocity of the river.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0"))
+	float RiverVelocityMin = 5.0f;
+
+	// Curve that defines the river's width based on distance from start point.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverWidthCurve = nullptr;
+
+	// Curve that defines the river's depth based on distance from start point.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverDepthCurve = nullptr;
+
+	// Curve that defines the river's velocity based on distance from start point.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TObjectPtr<UCurveFloat> RiverVelocityCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_River.Water_Material_River"))
+	};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_River_LOD.Water_Material_River_LOD"))
+	};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Lake_Transition.Water_Material_River_To_Lake_Transition"))
+	};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Ocean_Transition.Water_Material_River_To_Ocean_Transition"))
+	};
 };

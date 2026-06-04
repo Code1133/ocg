@@ -14,10 +14,6 @@ UMapPreset::UMapPreset()
 	, OceanWaterStaticMeshMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_Ocean_LOD.Water_Material_Ocean_LOD")))
 	, WaterHLODMaterial(FSoftObjectPath(TEXT("/Water/Materials/HLOD/HLODWater.HLODWater")))
 	, UnderwaterPostProcessMaterial(FSoftObjectPath(TEXT("/Water/Materials/PostProcessing/M_UnderWater_PostProcess_Volume.M_UnderWater_PostProcess_Volume")))
-	, RiverWaterMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_River.Water_Material_River")))
-	, RiverWaterStaticMeshMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_River_LOD.Water_Material_River_LOD")))
-	, RiverToLakeTransitionMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Lake_Transition.Water_Material_River_To_Lake_Transition")))
-	, RiverToOceanTransitionMaterial(FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Ocean_Transition.Water_Material_River_To_Ocean_Transition")))
 {
 }
 
@@ -99,6 +95,28 @@ void UMapPreset::PostLoad()
 			.Lacunarity = Lacunarity_DEPRECATED,
 			.Persistence = Persistence_DEPRECATED,
 		};
+		RiverSettings.bGenerateRiver           = bGenerateRiver_DEPRECATED;
+		RiverSettings.RiverSeed                = RiverSeed_DEPRECATED;
+		RiverSettings.RiverCount               = RiverCount_DEPRECATED;
+		RiverSettings.RiverSourceElevationRatio = RiverSourceElevationRatio_DEPRECATED;
+		RiverSettings.RiverSplineSimplifyEpsilon = RiverSplineSimplifyEpsilon_DEPRECATED;
+		RiverSettings.RiverWidthBaseValue      = RiverWidthBaseValue_DEPRECATED;
+		RiverSettings.RiverDepthBaseValue      = RiverDepthBaseValue_DEPRECATED;
+		RiverSettings.RiverVelocityBaseValue   = RiverVelocityBaseValue_DEPRECATED;
+		RiverSettings.RiverWidthMin            = RiverWidthMin_DEPRECATED;
+		RiverSettings.RiverDepthMin            = RiverDepthMin_DEPRECATED;
+		RiverSettings.RiverVelocityMin         = RiverVelocityMin_DEPRECATED;
+		RiverSettings.RiverWidthCurve          = RiverWidthCurve_DEPRECATED;
+		RiverSettings.RiverDepthCurve          = RiverDepthCurve_DEPRECATED;
+		RiverSettings.RiverVelocityCurve       = RiverVelocityCurve_DEPRECATED;
+		if (RiverWaterMaterial_DEPRECATED.IsValid())
+			RiverSettings.RiverWaterMaterial = RiverWaterMaterial_DEPRECATED;
+		if (RiverWaterStaticMeshMaterial_DEPRECATED.IsValid())
+			RiverSettings.RiverWaterStaticMeshMaterial = RiverWaterStaticMeshMaterial_DEPRECATED;
+		if (RiverToLakeTransitionMaterial_DEPRECATED.IsValid())
+			RiverSettings.RiverToLakeTransitionMaterial = RiverToLakeTransitionMaterial_DEPRECATED;
+		if (RiverToOceanTransitionMaterial_DEPRECATED.IsValid())
+			RiverSettings.RiverToOceanTransitionMaterial = RiverToOceanTransitionMaterial_DEPRECATED;
 	}
 
 	UpdateInternalMeshFilterNames();

@@ -425,7 +425,7 @@ TOptional<int32> SOCGWindow::GetRiverSeedValue() const
 {
 	if (CurrentPreset.IsValid())
 	{
-		return TOptional<int32>(CurrentPreset->RiverSeed);
+		return TOptional<int32>(CurrentPreset->RiverSettings.RiverSeed);
 	}
 	return TOptional<int32>();
 }
@@ -434,7 +434,7 @@ void SOCGWindow::OnRiverSeedCommitted(int32 NewVal, ETextCommit::Type /*CommitTy
 {
 	if (CurrentPreset.IsValid())
 	{
-		CurrentPreset->RiverSeed = NewVal;
+		CurrentPreset->RiverSettings.RiverSeed = NewVal;
 		(void)CurrentPreset->MarkPackageDirty();
 	}
 }
@@ -443,7 +443,7 @@ FReply SOCGWindow::OnRandomizeRiverSeedClicked()
 {
 	if (CurrentPreset.IsValid())
 	{
-		CurrentPreset->RiverSeed = FMath::RandRange(0, MAX_int32 - 1);
+		CurrentPreset->RiverSettings.RiverSeed = FMath::RandRange(0, MAX_int32 - 1);
 		(void)CurrentPreset->MarkPackageDirty();
 	}
 	return FReply::Handled();
@@ -454,7 +454,7 @@ FReply SOCGWindow::OnRandomizeAllSeedsClicked()
 	if (CurrentPreset.IsValid())
 	{
 		CurrentPreset->Seed      = FMath::RandRange(0, MAX_int32 - 1);
-		CurrentPreset->RiverSeed = FMath::RandRange(0, MAX_int32 - 1);
+		CurrentPreset->RiverSettings.RiverSeed = FMath::RandRange(0, MAX_int32 - 1);
 		(void)CurrentPreset->MarkPackageDirty();
 	}
 	return FReply::Handled();
@@ -562,7 +562,7 @@ bool SOCGWindow::CanExecuteAction() const
 
 bool SOCGWindow::CanRegenRiver() const
 {
-	return CurrentPreset.IsValid() && CurrentPreset->bGenerateRiver;
+	return CurrentPreset.IsValid() && CurrentPreset->RiverSettings.bGenerateRiver;
 }
 
 TSharedRef<SWidget> SOCGWindow::BuildSidebar()
