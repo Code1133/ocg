@@ -58,8 +58,8 @@ void UOCGDataGenerationSubsystem::ComputeHeightRange(const UMapPreset* Preset)
 	FOCGHeightConverter HeightConverter;
 	HeightConverter.Initialize(Preset);
 
-	float Max = Preset->MinHeight;
-	float Min = Preset->MaxHeight;
+	float Max = Preset->HeightSettings.MinHeight;
+	float Min = Preset->HeightSettings.MaxHeight;
 
 	for (const uint16 RawHeight : DataContainer.HeightMapData)
 	{

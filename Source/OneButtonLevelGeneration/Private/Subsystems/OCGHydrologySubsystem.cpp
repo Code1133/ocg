@@ -383,7 +383,7 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 		}
 	}
 
-	const float OceanSeaHeight = DataContainer.CurMinHeight + (DataContainer.CurMaxHeight - DataContainer.CurMinHeight) * Preset->SeaLevel - 5.0f;
+	const float OceanSeaHeight = DataContainer.CurMinHeight + (DataContainer.CurMaxHeight - DataContainer.CurMinHeight) * Preset->HeightSettings.SeaLevel - 5.0f;
 
 	Ocean->SetActorLocation(FVector(VolumeOrigin.X, VolumeOrigin.Y, OceanSeaHeight));
 
@@ -691,7 +691,7 @@ void UOCGHydrologySubsystem::CacheRiverStartPoints(
 	CachedRiverStartPoints.Empty();
 
 	const float ThresholdMultiplier = FMath::Clamp(Preset->RiverSourceElevationRatio, 0.0f, 1.0f);
-	SeaHeight = CurMinHeight + (CurMaxHeight - CurMinHeight) * Preset->SeaLevel - 5.0f;
+	SeaHeight = CurMinHeight + (CurMaxHeight - CurMinHeight) * Preset->HeightSettings.SeaLevel - 5.0f;
 	const float HighThreshold = SeaHeight + (CurMaxHeight - SeaHeight) * ThresholdMultiplier;
 
 	UOCGLandscapeGenSubsystem* LandscapeSubsystem = GEditor->GetEditorSubsystem<UOCGLandscapeGenSubsystem>();

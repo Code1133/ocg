@@ -165,6 +165,71 @@ struct FOCGIslandSettings
 	float IslandShapeNoiseStrength = 0.5f;
 };
 
+// --- Height (높이 범위 / 해수면) ---
+USTRUCT(BlueprintType)
+struct FOCGHeightSettings
+{
+	GENERATED_BODY()
+
+	// Landscapes Minimum Height (in cm)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Height")
+	float MinHeight = -15000.0f;
+
+	// Landscapes Maximum Height (in cm)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Height")
+	float MaxHeight = 20000.0f;
+
+	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Height", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float SeaLevel = 0.4f;
+};
+
+// --- Basic Noise (기본 노이즈 스케일) ---
+USTRUCT(BlueprintType)
+struct FOCGBasicNoiseSettings
+{
+	GENERATED_BODY()
+
+	// Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "0.0001", ClampMax = "0.005"))
+	float ContinentNoiseScale = 0.003f;
+
+	// Decides the frequency of Mountains
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "0.0001", ClampMax = "0.03"))
+	float TerrainNoiseScale = 0.01f;
+
+	// Decides the frequency of Temperature Change
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "0.0001", ClampMax = "0.01"))
+	float TemperatureNoiseScale = 0.002f;
+};
+
+// --- Advanced Noise (노이즈 세부 조정) ---
+USTRUCT(BlueprintType)
+struct FOCGAdvancedNoiseSettings
+{
+	GENERATED_BODY()
+
+	// Decides the difference between different noises (larger value gives more randomness)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0"))
+	float StandardNoiseOffset = 10000.0f;
+
+	// Decides how much the noise is spread out
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "1.0", ClampMax = "10.0"))
+	float RedistributionFactor = 2.5f;
+
+	// Larger Octaves gives more detail to the landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 Octaves = 3;
+
+	// Larger Lacunarity gives more tight detail
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "1.0", ClampMax = "5.0"))
+	float Lacunarity = 2.0f;
+
+	// Larger Persistence gives more height change detail
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float Persistence = 0.5f;
+};
+
 // --- Biome Terrain Modification (바이옴별 지형 변형) ---
 USTRUCT(BlueprintType)
 struct FOCGBiomeTerrainSettings

@@ -50,12 +50,12 @@ void UOCGDefaultHeightmapStrategy::Initialize(const UMapPreset* Preset)
 	InitializeNoiseOffsets(Preset);
 
 	// Set plain height to just above sea level; use 0 when there is no water.
-	PlainHeight = Preset->bContainWater ? Preset->SeaLevel * 1.005f : 0.0f;
+	PlainHeight = Preset->bContainWater ? Preset->HeightSettings.SeaLevel * 1.005f : 0.0f;
 }
 
 void UOCGDefaultHeightmapStrategy::InitializeNoiseOffsets(const UMapPreset* Preset)
 {
-	const float StandardNoiseOffset = Preset->StandardNoiseOffset * NoiseScale;
+	const float StandardNoiseOffset = Preset->AdvancedNoiseSettings.StandardNoiseOffset * NoiseScale;
 
 	PlainNoiseOffset.X    = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
 	PlainNoiseOffset.Y    = Stream.FRandRange(-StandardNoiseOffset, StandardNoiseOffset);
@@ -72,8 +72,8 @@ void UOCGDefaultHeightmapStrategy::InitializeNoiseOffsets(const UMapPreset* Pres
 float UOCGDefaultHeightmapStrategy::CalculateHeightForCoordinate(const UMapPreset* Preset, const int32 InX, const int32 InY) const
 {
 	// 1. Use low-frequency noise to generate large-scale continental and mountain outlines (-1 ~ 1)
-	const float MountainNoiseX = InX * Preset->ContinentNoiseScale * NoiseScale + MountainNoiseOffset.X;
-	const float MountainNoiseY = InY * Preset->ContinentNoiseScale * NoiseScale + MountainNoiseOffset.Y;
+	const float MountainNoiseX = InX * Preset->BasicNoiseSettings.ContinentNoiseScale * NoiseScale + MountainNoiseOffset.X;
+	const float MountainNoiseY = InY * Preset->BasicNoiseSettings.ContinentNoiseScale * NoiseScale + MountainNoiseOffset.Y;
 	float MountainHeight = FMath::Clamp(FMath::PerlinNoise2D(FVector2D(MountainNoiseX, MountainNoiseY)) * 2.0f, -1.0f, 1.0f);
 
 	// 2. Accumulate octave noise to add high-frequency terrain detail on top of step 1
@@ -82,28 +82,28 @@ float UOCGDefaultHeightmapStrategy::CalculateHeightForCoordinate(const UMapPrese
 	float TerrainNoise = 0.0f;
 	float MaxPossibleAmplitude = 0.0f;
 
-	for (int32 i = 0; i < Preset->Octaves; ++i)
+	for (int32 i = 0; i < Preset->AdvancedNoiseSettings.Octaves; ++i)
 	{
-		const float NoiseInputX = (InX * Preset->TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
-		const float NoiseInputY = (InY * Preset->TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.Y;
+		const float NoiseInputX = (InX * Preset->BasicNoiseSettings.TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.X;
+		const float NoiseInputY = (InY * Preset->BasicNoiseSettings.TerrainNoiseScale * NoiseScale * Frequency) + DetailNoiseOffset.Y;
 		TerrainNoise += FMath::PerlinNoise2D(FVector2D(NoiseInputX, NoiseInputY)) * Amplitude; // -1 ~ 1
 		MaxPossibleAmplitude += Amplitude;
-		Amplitude *= Preset->Persistence;
-		Frequency *= Preset->Lacunarity;
+		Amplitude *= Preset->AdvancedNoiseSettings.Persistence;
+		Frequency *= Preset->AdvancedNoiseSettings.Lacunarity;
 	}
 	// Normalize terrain noise to [-1, 1] then scale down so detail does not overpower the base shape
 	MountainHeight = FMath::Clamp(MountainHeight + (TerrainNoise / MaxPossibleAmplitude) * 0.3f, -1.0f, 1.0f);
 
 	// 3. Generate a blend mask to control the mountain-to-plain ratio (0 ~ 1)
-	const float BlendNoiseX = InX * Preset->ContinentNoiseScale * NoiseScale + BlendNoiseOffset.X;
-	const float BlendNoiseY = InY * Preset->ContinentNoiseScale * NoiseScale + BlendNoiseOffset.Y;
+	const float BlendNoiseX = InX * Preset->BasicNoiseSettings.ContinentNoiseScale * NoiseScale + BlendNoiseOffset.X;
+	const float BlendNoiseY = InY * Preset->BasicNoiseSettings.ContinentNoiseScale * NoiseScale + BlendNoiseOffset.Y;
 	float BlendNoise = FMath::PerlinNoise2D(FVector2D(BlendNoiseX, BlendNoiseY)) * 0.5f + 0.5f;
 
 	// Redistribute BlendNoise so mountain and plain regions are more distinct
-	if (Preset->RedistributionFactor > 1.0f && BlendNoise > 0.0f && BlendNoise < 1.0f)
+	if (Preset->AdvancedNoiseSettings.RedistributionFactor > 1.0f && BlendNoise > 0.0f && BlendNoise < 1.0f)
 	{
-		const float PowX   = FMath::Pow(BlendNoise,        Preset->RedistributionFactor);
-		const float Pow1_X = FMath::Pow(1.0f - BlendNoise, Preset->RedistributionFactor);
+		const float PowX   = FMath::Pow(BlendNoise,        Preset->AdvancedNoiseSettings.RedistributionFactor);
+		const float Pow1_X = FMath::Pow(1.0f - BlendNoise, Preset->AdvancedNoiseSettings.RedistributionFactor);
 		BlendNoise = PowX / (PowX + Pow1_X);
 	}
 	BlendNoise = FMath::SmoothStep(0.0f, 1.0f, BlendNoise);

@@ -135,20 +135,14 @@ public:
 	FFilePath HeightmapFilePath;
 
 	// --- Height ---
-	// Landscapes Minimum Height (in cm)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
-	float MinHeight = -15000.0f;
+	FOCGHeightSettings HeightSettings;
 
-	// Landscapes Maximum Height (in cm)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
-	float MaxHeight = 20000.0f;
-
-	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height",
-		meta = (ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float SeaLevel = 0.4f;
+#pragma region Deprecated Height Settings
+	UPROPERTY() float MinHeight_DEPRECATED = -15000.0f;
+	UPROPERTY() float MaxHeight_DEPRECATED = 20000.0f;
+	UPROPERTY() float SeaLevel_DEPRECATED = 0.4f;
+#pragma endregion
 
 	// --- Temperature ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature")
@@ -160,26 +154,14 @@ public:
 #pragma endregion
 
 	// --- Noise ---
-	// Decides the frequency of Mountains
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.005")
-	)
-	float ContinentNoiseScale = 0.003f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise")
+	FOCGBasicNoiseSettings BasicNoiseSettings;
 
-	// Decides the frequency of Mountains
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.03")
-	)
-	float TerrainNoiseScale = 0.01f;
-
-	// Decides the frequency of Temperature Change
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.01")
-	)
-	float TemperatureNoiseScale = 0.002f;
+#pragma region Deprecated Basic Noise Settings
+	UPROPERTY() float ContinentNoiseScale_DEPRECATED = 0.003f;
+	UPROPERTY() float TerrainNoiseScale_DEPRECATED = 0.01f;
+	UPROPERTY() float TemperatureNoiseScale_DEPRECATED = 0.002f;
+#pragma endregion
 
 	// ============================== World Settings : Advanced ==============================
 
@@ -275,34 +257,16 @@ public:
 #pragma endregion
 
 	// --- Noise ---
-	// Decides the difference between different noises (larger value gives more randomness)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0")
-	)
-	float StandardNoiseOffset = 10000.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise")
+	FOCGAdvancedNoiseSettings AdvancedNoiseSettings;
 
-	// Decides how much the noise is spread out
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "10.0")
-	)
-	float RedistributionFactor = 2.5f;
-
-	// Larger Octaves gives more detail to the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1", ClampMax = "10"))
-	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
-
-	// Larger Lancunarity gives more tight detail
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "5.0")
-	)
-	float Lacunarity = 2.0f; // 주파수 변화율 (클수록 더 작고 촘촘한 노이즈 추가)
-
-	// Larger Persistence give more height change detail
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise",
-		meta = (ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float Persistence = 0.5f; // 진폭 변화율 (작을수록 추가되는 노이즈의 높이가 낮아짐)
+#pragma region Deprecated Advanced Noise Settings
+	UPROPERTY() float StandardNoiseOffset_DEPRECATED = 10000.0f;
+	UPROPERTY() float RedistributionFactor_DEPRECATED = 2.5f;
+	UPROPERTY() int32 Octaves_DEPRECATED = 3;
+	UPROPERTY() float Lacunarity_DEPRECATED = 2.0f;
+	UPROPERTY() float Persistence_DEPRECATED = 0.5f;
+#pragma endregion
 
 	// --- Erosion ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion")
