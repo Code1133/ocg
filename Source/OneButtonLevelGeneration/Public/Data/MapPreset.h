@@ -20,26 +20,12 @@ class UPCGGraph;
  */
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMapPresetPropertyChanged, const class UMapPreset*, FName /*PropertyName*/);
 
-// 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
-UENUM(BlueprintType)
-enum class ELandscapeQuadsPerSection : uint8
-{
-    Q0	 = 0	UMETA(DisplayName = "0"),
-	Q7   = 7    UMETA(DisplayName = "7"),
-	Q15  = 15   UMETA(DisplayName = "15"),
-	Q31  = 31   UMETA(DisplayName = "31"),
-	Q63  = 63   UMETA(DisplayName = "63"),
-	Q127 = 127  UMETA(DisplayName = "127"),
-	Q255 = 255  UMETA(DisplayName = "255"),
-};
-
 UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
 	GENERATED_BODY()
-public:
-	UMapPreset();
 
+public:
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void PostLoad() override;
 
@@ -60,79 +46,25 @@ public:
 	// ============================== World Settings : Basics ==============================
 
 	// --- Landscape ---
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16)
-	)
-	int32 WorldPartitionGridSize = 2;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64)
-	)
-	int32 WorldPartitionRegionSize = 16;
-
-	// Horizontal size of your Landscape in Km (Changes Landscape Actor Scale)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 0.00001f)
-	)
-	float LandscapeSize = 1.009f;
-
-	UPROPERTY()
-	float LandscapeScale = 1;
-
-	// If true changing LandscapeScale changes the terrain formation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	bool ApplyScaleToNoise = true;
+	FOCGLandscapeSettings LandscapeSettings;
 
-	// Decides the grid spacing of debug landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1))
-	int32 DebugGridSpacing = 16;
-
-	// Decides the Blend radius(pixel) between different biomes
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "0", ClampMax = "50")
-	)
-	int32 BiomeBlendRadius = 10;
-
-	// Decides the Blend radius(pixel) between water and other biomes
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "0", ClampMax = "50")
-	)
-	int32 WaterBlendRadius = 10;
-
-	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
-
-	// The number of sections in a single landscape component. This along with the section size determines the size of each landscape component. A component is the base unit of rendering and culling.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta=(ClampMin="1", ClampMax="2", UIMin="1", UIMax="2")
-	)
-	int32 Landscape_SectionsPerComponent = 1;
-
-	// The number of components in the X and Y direction, determining the overall size of the landscape.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
-
-	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129")
-	)
-	FIntPoint MapResolution = FIntPoint(1009, 1009);
-
-	// The Material used for Landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	TObjectPtr<UMaterialInstance> LandscapeMaterial;
-
-	// You can use your own Height Map Texture to generate landscape. Texture resolution must be equal to Map Resolution.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (FilePathFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|16-bit RAW (*.r16;*.raw)|*.r16;*.raw"))
-	FFilePath HeightmapFilePath;
+#pragma region Deprecated Landscape Settings
+	UPROPERTY() int32 WorldPartitionGridSize_DEPRECATED = 2;
+	UPROPERTY() int32 WorldPartitionRegionSize_DEPRECATED = 16;
+	UPROPERTY() float LandscapeSize_DEPRECATED = 1.009f;
+	UPROPERTY() float LandscapeScale_DEPRECATED = 1;
+	UPROPERTY() bool ApplyScaleToNoise_DEPRECATED = true;
+	UPROPERTY() int32 DebugGridSpacing_DEPRECATED = 16;
+	UPROPERTY() int32 BiomeBlendRadius_DEPRECATED = 10;
+	UPROPERTY() int32 WaterBlendRadius_DEPRECATED = 10;
+	UPROPERTY() ELandscapeQuadsPerSection Landscape_QuadsPerSection_DEPRECATED = ELandscapeQuadsPerSection::Q63;
+	UPROPERTY() int32 Landscape_SectionsPerComponent_DEPRECATED = 1;
+	UPROPERTY() FIntPoint Landscape_ComponentCount_DEPRECATED = FIntPoint(16, 16);
+	UPROPERTY() FIntPoint MapResolution_DEPRECATED = FIntPoint(1009, 1009);
+	UPROPERTY() TObjectPtr<UMaterialInstance> LandscapeMaterial_DEPRECATED;
+	UPROPERTY() FFilePath HeightmapFilePath_DEPRECATED;
+#pragma endregion
 
 	// --- Height ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
@@ -166,55 +98,20 @@ public:
 	// ============================== World Settings : Advanced ==============================
 
 	// --- Height (Smoothing / Island / Biome Terrain) ---
+	// Smoothing Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bSmoothHeight = true;
+	FOCGSmoothingSettings SmoothingSettings;
 
-	// Larger Radius gives softer smoothing effect
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "5", ClampMax = "25")
-	)
-	int32 GaussianBlurRadius = 5;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
-	)
-	bool bSmoothBySlope = false;
-
-	// Larger Iteration takes more time but gives stronger smoothing
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "1", ClampMax = "5")
-	)
-	int32 SmoothingIteration = 3;
-
-	// Slope larger than this angle will be smoothed
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9")
-	)
-	float MaxSlopeAngle = 60.0f;
-
-	// Decides the strength of smoothing
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float SmoothingStrength = 0.5f;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
-	)
-	bool bSmoothByMediumHeight = false;
-
-	// Threshold Angle of the slope of the landscape
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5")
-	)
-	int32 MedianSmoothRadius = 3;
+#pragma region Deprecated Smoothing Settings
+	UPROPERTY() bool bSmoothHeight_DEPRECATED = true;
+	UPROPERTY() int32 GaussianBlurRadius_DEPRECATED = 5;
+	UPROPERTY() bool bSmoothBySlope_DEPRECATED = false;
+	UPROPERTY() int32 SmoothingIteration_DEPRECATED = 3;
+	UPROPERTY() float MaxSlopeAngle_DEPRECATED = 60.0f;
+	UPROPERTY() float SmoothingStrength_DEPRECATED = 0.5f;
+	UPROPERTY() bool bSmoothByMediumHeight_DEPRECATED = false;
+	UPROPERTY() int32 MedianSmoothRadius_DEPRECATED = 3;
+#pragma endregion
 
 	// Island Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
@@ -291,31 +188,15 @@ public:
 public:
 	// ============================== Ocean Settings ==============================
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings")
-	bool bContainWater = true;
+	FOCGOceanSettings OceanSettings;
 
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial;
+#pragma region Deprecated Ocean Settings
+	UPROPERTY() bool bContainWater_DEPRECATED = true;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial_DEPRECATED;
+#pragma endregion
 
 public:
 	// ============================== River Settings (Experimental) ==============================

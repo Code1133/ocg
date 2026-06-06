@@ -482,7 +482,7 @@ ECheckBoxState SOCGWindow::IsWaterChecked() const
 {
 	if (CurrentPreset.IsValid())
 	{
-		return CurrentPreset->bContainWater ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
+		return CurrentPreset->OceanSettings.bContainWater ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 	}
 	return ECheckBoxState::Undetermined;
 }
@@ -495,13 +495,13 @@ void SOCGWindow::OnWaterChanged(ECheckBoxState NewState)
 	}
 
 	UMapPreset* Preset = CurrentPreset.Get();
-	Preset->bContainWater = (NewState == ECheckBoxState::Checked);
+	Preset->OceanSettings.bContainWater = (NewState == ECheckBoxState::Checked);
 
-	// bContainWater 변경 -> UpdateInternalLandscapeFilterNames()를 트리거해야 합니다.
+	// OceanSettings.bContainWater 변경 -> UpdateInternalLandscapeFilterNames()를 트리거해야 합니다.
 	// PostEditChangeProperty를 직접 호출해 파생 상태(내부 필터 이름)를 동기화합니다.
 	if (FProperty* Prop = FindFProperty<FProperty>(
 		UMapPreset::StaticClass(),
-		GET_MEMBER_NAME_CHECKED(UMapPreset, bContainWater)))
+		GET_MEMBER_NAME_CHECKED(UMapPreset, OceanSettings)))
 	{
 		FPropertyChangedEvent Event(Prop, EPropertyChangeType::ValueSet);
 		Preset->PostEditChangeProperty(Event);

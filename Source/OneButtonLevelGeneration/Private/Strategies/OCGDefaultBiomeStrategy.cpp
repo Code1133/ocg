@@ -14,7 +14,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 	// Calculate total weight across all biomes for the distance metric normalization
 	const float TotalWeight = ComputeTotalBiomeWeight(Preset);
 
-	const FIntPoint CurResolution = Preset->MapResolution;
+	const FIntPoint CurResolution = Preset->LandscapeSettings.MapResolution;
 	const int32 PixelCount = CurResolution.X * CurResolution.Y;
 
 	// Initialize per-pixel maps
@@ -32,7 +32,7 @@ void UOCGDefaultBiomeStrategy::DecideAndBlendBiomes(const UMapPreset* Preset, FO
 		DataContainer.WeightLayers.Add(LayerName, MoveTemp(WeightLayer));
 	}
 
-	const uint16 SeaLevelHeight = Preset->bContainWater
+	const uint16 SeaLevelHeight = Preset->OceanSettings.bContainWater
 		? static_cast<uint16>(65535 * Preset->HeightSettings.SeaLevel)
 		: 0;
 
@@ -71,7 +71,7 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_BiomeBlend);
 
-	const FIntPoint CurResolution = Preset->MapResolution;
+	const FIntPoint CurResolution = Preset->LandscapeSettings.MapResolution;
 
 	// Reset WeightLayers to 0 and build the unblurred source map from BiomeNameMap
 	TMap<FName, TArray<uint8>> OriginalWeightMaps;
@@ -109,8 +109,8 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 		TArray<float>& HorizontalPassLayer = HorizontalPassMaps.FindChecked(LayerName);
 
 		const int32 BlendRadius = (LayerName == WaterLayerName)
-		    ? Preset->WaterBlendRadius
-		    : Preset->BiomeBlendRadius;
+		    ? Preset->LandscapeSettings.WaterBlendRadius
+		    : Preset->LandscapeSettings.BiomeBlendRadius;
 
 		for (int32 Y = 0; Y < CurResolution.Y; ++Y)
 		{
@@ -140,8 +140,8 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 		TArray<uint8>& FinalLayer = DataContainer.WeightLayers.FindChecked(LayerName);
 
 		const int32 BlendRadius = (LayerName == WaterLayerName)
-		    ? Preset->WaterBlendRadius
-		    : Preset->BiomeBlendRadius;
+		    ? Preset->LandscapeSettings.WaterBlendRadius
+		    : Preset->LandscapeSettings.BiomeBlendRadius;
 
 		const float BlendFactor = 1.0f / ((BlendRadius * 2 + 1) * (BlendRadius * 2 + 1));
 
@@ -191,14 +191,14 @@ void UOCGDefaultBiomeStrategy::BlendBiomes(const UMapPreset* Preset, FOCGWorldDa
 
 void UOCGDefaultBiomeStrategy::FinalizeBiomes(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
-	if (!Preset->bContainWater)
+	if (!Preset->OceanSettings.bContainWater)
 	{
 		return;
 	}
 
 	const float TotalWeight = ComputeTotalBiomeWeight(Preset);
 
-	const FIntPoint CurResolution = Preset->MapResolution;
+	const FIntPoint CurResolution = Preset->LandscapeSettings.MapResolution;
 	const uint16 SeaLevelHeight = static_cast<uint16>(65535 * Preset->HeightSettings.SeaLevel);
 
 	for (int32 Y = 0; Y < CurResolution.Y; ++Y)

@@ -11,7 +11,7 @@ void UOCGDefaultHeightmapStrategy::GenerateHeightMap(const UMapPreset* Preset, F
 
 	Initialize(Preset);
 
-	const FIntPoint CurMapResolution = Preset->MapResolution;
+	const FIntPoint CurMapResolution = Preset->LandscapeSettings.MapResolution;
 	DataContainer.HeightMapData.SetNumUninitialized(CurMapResolution.X * CurMapResolution.Y);
 
 	// Fill Height Map
@@ -36,11 +36,11 @@ void UOCGDefaultHeightmapStrategy::Initialize(const UMapPreset* Preset)
 	Stream.Initialize(Preset->Seed);
 
 	NoiseScale = 1.0f;
-	if (Preset->ApplyScaleToNoise)
+	if (Preset->LandscapeSettings.ApplyScaleToNoise)
 	{
 		// Alter noise scale based on LandscapeScale; use log so the scale does not increase linearly.
 		// A linearly increasing scale results in excessively high values.
-		const float LandscapeScale = Preset->LandscapeScale;
+		const float LandscapeScale = Preset->LandscapeSettings.LandscapeScale;
 		if (LandscapeScale > 0.0f)
 		{
 			NoiseScale = FMath::LogX(25.0f, LandscapeScale) + 1.0f;
@@ -50,7 +50,7 @@ void UOCGDefaultHeightmapStrategy::Initialize(const UMapPreset* Preset)
 	InitializeNoiseOffsets(Preset);
 
 	// Set plain height to just above sea level; use 0 when there is no water.
-	PlainHeight = Preset->bContainWater ? Preset->HeightSettings.SeaLevel * 1.005f : 0.0f;
+	PlainHeight = Preset->OceanSettings.bContainWater ? Preset->HeightSettings.SeaLevel * 1.005f : 0.0f;
 }
 
 void UOCGDefaultHeightmapStrategy::InitializeNoiseOffsets(const UMapPreset* Preset)
@@ -115,8 +115,8 @@ float UOCGDefaultHeightmapStrategy::CalculateHeightForCoordinate(const UMapPrese
 	if (Preset->IslandSettings.bIsland)
 	{
 		// Normalized distance from the center of the map, perturbed by noise to avoid a perfect circle
-		const float Nx = (static_cast<float>(InX) / Preset->MapResolution.X) * 2.0f - 1.0f;
-		const float Ny = (static_cast<float>(InY) / Preset->MapResolution.Y) * 2.0f - 1.0f;
+		const float Nx = (static_cast<float>(InX) / Preset->LandscapeSettings.MapResolution.X) * 2.0f - 1.0f;
+		const float Ny = (static_cast<float>(InY) / Preset->LandscapeSettings.MapResolution.Y) * 2.0f - 1.0f;
 		const float Distance = FMath::Sqrt(Nx * Nx + Ny * Ny);
 
 		const float IslandNoiseX = InX * Preset->IslandSettings.IslandShapeNoiseScale * NoiseScale + IslandNoiseOffset.X;

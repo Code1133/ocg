@@ -3,11 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
 #include "OCGMapPresetSettings.generated.h"
 
 class UMaterialInterface;
+class UMaterialInstance;
 class UCurveFloat;
 
+// 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
+UENUM(BlueprintType)
+enum class ELandscapeQuadsPerSection : uint8
+{
+	Q0	 = 0	UMETA(DisplayName = "0"),
+	Q7   = 7    UMETA(DisplayName = "7"),
+	Q15  = 15   UMETA(DisplayName = "15"),
+	Q31  = 31   UMETA(DisplayName = "31"),
+	Q63  = 63   UMETA(DisplayName = "63"),
+	Q127 = 127  UMETA(DisplayName = "127"),
+	Q255 = 255  UMETA(DisplayName = "255"),
+};
 
 // --- Erosion (입자 기반 수력 침식) ---
 USTRUCT(BlueprintType)
@@ -352,4 +366,185 @@ struct FOCGRiverSettings
 	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial{
 		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Ocean_Transition.Water_Material_River_To_Ocean_Transition"))
 	};
+};
+
+// --- Smoothing (스무딩 / 평활화) ---
+USTRUCT(BlueprintType)
+struct FOCGSmoothingSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
+	bool bSmoothHeight = true;
+
+	// Larger Radius gives softer smoothing effect
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "5", ClampMax = "25")
+	)
+	int32 GaussianBlurRadius = 5;
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
+	)
+	bool bSmoothBySlope = false;
+
+	// Larger Iteration takes more time but gives stronger smoothing
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "1", ClampMax = "5")
+	)
+	int32 SmoothingIteration = 3;
+
+	// Slope larger than this angle will be smoothed
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9")
+	)
+	float MaxSlopeAngle = 60.0f;
+
+	// Decides the strength of smoothing
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
+	)
+	float SmoothingStrength = 0.5f;
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
+	)
+	bool bSmoothByMediumHeight = false;
+
+	// Threshold Angle of the slope of the landscape
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
+		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5")
+	)
+	int32 MedianSmoothRadius = 3;
+};
+
+// --- Ocean (해양 워터 설정) ---
+USTRUCT(BlueprintType)
+struct FOCGOceanSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings")
+	bool bContainWater = true;
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
+		meta = (EditCondition = "bContainWater", EditConditionHides)
+	)
+	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_Ocean.Water_Material_Ocean"))
+	};
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
+		meta = (EditCondition = "bContainWater", EditConditionHides)
+	)
+	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_Ocean_LOD.Water_Material_Ocean_LOD"))
+	};
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
+		meta = (EditCondition = "bContainWater", EditConditionHides)
+	)
+	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/HLOD/HLODWater.HLODWater"))
+	};
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
+		meta = (EditCondition = "bContainWater", EditConditionHides)
+	)
+	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial{
+		FSoftObjectPath(TEXT("/Water/Materials/PostProcessing/M_UnderWater_PostProcess_Volume.M_UnderWater_PostProcess_Volume"))
+	};
+};
+
+// --- Landscape (지형 기본 설정) ---
+USTRUCT(BlueprintType)
+struct FOCGLandscapeSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16)
+	)
+	int32 WorldPartitionGridSize = 2;
+
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64)
+	)
+	int32 WorldPartitionRegionSize = 16;
+
+	// Horizontal size of your Landscape in Km (Changes Landscape Actor Scale)
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = 0.00001f)
+	)
+	float LandscapeSize = 1.009f;
+
+	// Computed from LandscapeSize and MapResolution — not user-editable
+	UPROPERTY()
+	float LandscapeScale = 1;
+
+	// If true changing LandscapeScale changes the terrain formation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	bool ApplyScaleToNoise = true;
+
+	// Decides the grid spacing of debug landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1))
+	int32 DebugGridSpacing = 16;
+
+	// Decides the Blend radius(pixel) between different biomes
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = "0", ClampMax = "50")
+	)
+	int32 BiomeBlendRadius = 10;
+
+	// Decides the Blend radius(pixel) between water and other biomes
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = "0", ClampMax = "50")
+	)
+	int32 WaterBlendRadius = 10;
+
+	// The number of quads in a single landscape section.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
+
+	// The number of sections in a single landscape component.
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = "1", ClampMax = "2", UIMin = "1", UIMax = "2")
+	)
+	int32 Landscape_SectionsPerComponent = 1;
+
+	// The number of components in the X and Y direction.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
+
+	// The Resolution of landscape in X and Y direction
+	UPROPERTY(
+		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
+		meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129")
+	)
+	FIntPoint MapResolution = FIntPoint(1009, 1009);
+
+	// The Material used for Landscape
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
+	TObjectPtr<UMaterialInstance> LandscapeMaterial;
+
+	// You can use your own Height Map Texture to generate landscape.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (FilePathFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|16-bit RAW (*.r16;*.raw)|*.r16;*.raw"))
+	FFilePath HeightmapFilePath;
 };

@@ -11,7 +11,7 @@ void UOCGDefaultHumidityStrategy::GenerateHumidityMap(const UMapPreset* Preset, 
 
 	Initialize(Preset);
 
-	const FIntPoint CurResolution = Preset->MapResolution;
+	const FIntPoint CurResolution = Preset->LandscapeSettings.MapResolution;
 	if (DataContainer.HumidityMapData.Num() != CurResolution.X * CurResolution.Y)
 	{
 		DataContainer.HumidityMapData.SetNumUninitialized(CurResolution.X * CurResolution.Y);

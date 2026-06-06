@@ -707,7 +707,7 @@ void FOCGLandscapeUtils::ManageLandscapeRegions(UWorld* World, const ALandscape*
 
 	if (InMapPreset)
 	{
-		bLandscapeLargerThanRegion = static_cast<int32>(InLandscapeSetting.WorldPartitionRegionSize) < InMapPreset->Landscape_ComponentCount.X || static_cast<int32>(InLandscapeSetting.WorldPartitionRegionSize) < InMapPreset->Landscape_ComponentCount.Y;
+		bLandscapeLargerThanRegion = static_cast<int32>(InLandscapeSetting.WorldPartitionRegionSize) < InMapPreset->LandscapeSettings.Landscape_ComponentCount.X || static_cast<int32>(InLandscapeSetting.WorldPartitionRegionSize) < InMapPreset->LandscapeSettings.Landscape_ComponentCount.Y;
 	}
 	const bool bNeedsLandscapeRegions = bIsWorldPartition && bLandscapeLargerThanRegion;
 
@@ -729,7 +729,7 @@ void FOCGLandscapeUtils::ManageLandscapeRegions(UWorld* World, const ALandscape*
     	{
     		TRACE_CPUPROFILER_EVENT_SCOPE(AddComponentsToRegion);
 
-    		const int32 RegionSizeTexels = InLandscapeSetting.QuadsPerSection * InMapPreset->WorldPartitionRegionSize * InMapPreset->Landscape_SectionsPerComponent;
+    		const int32 RegionSizeTexels = InLandscapeSetting.QuadsPerSection * InMapPreset->LandscapeSettings.WorldPartitionRegionSize * InMapPreset->LandscapeSettings.Landscape_SectionsPerComponent;
     		const double RegionSizeX = RegionSizeTexels * LandscapeProxy->GetActorScale3D().X;
 
 		    if (ALocationVolume* RegionVolume = CreateLandscapeRegionVolume(World, LandscapeProxy, RegionCoordinate, RegionSizeX))
@@ -751,7 +751,7 @@ void FOCGLandscapeUtils::ManageLandscapeRegions(UWorld* World, const ALandscape*
 
     	SaveObjects(MakeArrayView(MakeArrayView(TArrayView<ALandscape*>(TArray<ALandscape*> { LandscapeInfo->LandscapeActor.Get() }))));
 
-    	ForEachComponentByRegion(InMapPreset->WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
+    	ForEachComponentByRegion(InMapPreset->LandscapeSettings.WorldPartitionRegionSize, NewComponents, AddComponentsToRegion);
 
     	for (ALocationVolume* RegionVolume : RegionVolumes)
     	{
@@ -1278,9 +1278,9 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> FOCGLandscapeUtils::PrepareLandsc
 
     // 1. Get the layer name from the weightmap data and the material.
 	TArray<FName> LayerNames;
-	if (InMapPreset->LandscapeMaterial && InMapPreset->LandscapeMaterial->Parent)
+	if (InMapPreset->LandscapeSettings.LandscapeMaterial && InMapPreset->LandscapeSettings.LandscapeMaterial->Parent)
 	{
-		LayerNames = FOCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeMaterial->Parent));
+		LayerNames = FOCGMaterialEditTool::ExtractLandscapeLayerName(Cast<UMaterial>(InMapPreset->LandscapeSettings.LandscapeMaterial->Parent));
 	}
 
     // 2. Iterate through each layer and find or create the LayerInfoObject.
