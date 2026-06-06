@@ -11,7 +11,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 
 	Initialize(Preset);
 
-	const FIntPoint CurResolution = Preset->MapResolution;
+	const FIntPoint CurResolution = Preset->LandscapeSettings.MapResolution;
 	if (DataContainer.TemperatureMapData.Num() != CurResolution.X * CurResolution.Y)
 	{
 		DataContainer.TemperatureMapData.SetNumUninitialized(CurResolution.X * CurResolution.Y);
@@ -85,11 +85,11 @@ void UOCGDefaultTemperatureStrategy::Initialize(const UMapPreset* Preset)
 	Stream.Initialize(Preset->Seed);
 
 	float NoiseScale = 1.0f;
-	if (Preset->ApplyScaleToNoise)
+	if (Preset->LandscapeSettings.ApplyScaleToNoise)
 	{
 		// Alter noise scale based on LandscapeScale; use log so the scale does not increase linearly.
 		// A linearly increasing scale results in excessively high values.
-		const float LandscapeScale = Preset->LandscapeScale;
+		const float LandscapeScale = Preset->LandscapeSettings.LandscapeScale;
 		if (LandscapeScale > 0.0f)
 		{
 			NoiseScale = FMath::LogX(25.0f, LandscapeScale) + 1.0f;

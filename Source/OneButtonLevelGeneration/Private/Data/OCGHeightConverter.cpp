@@ -15,7 +15,7 @@ void FOCGHeightConverter::Initialize(const UMapPreset* Preset)
 
 float FOCGHeightConverter::GetSeaLevelWorldHeight(const UMapPreset* Preset)
 {
-	return Preset->bContainWater
+	return Preset->OceanSettings.bContainWater
 		? Preset->HeightSettings.MinHeight + Preset->HeightSettings.SeaLevel * (Preset->HeightSettings.MaxHeight - Preset->HeightSettings.MinHeight)
 		: Preset->HeightSettings.MinHeight;
 }

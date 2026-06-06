@@ -31,7 +31,7 @@ UObject* UMapPresetFactory::FactoryCreateNew(
 	{
 		if (UMaterialInstance* Mat = Settings->DefaultLandscapeMaterialPath.LoadSynchronous())
 		{
-			NewPreset->LandscapeMaterial = Mat;
+			NewPreset->LandscapeSettings.LandscapeMaterial = Mat;
 		}
 		else
 		{

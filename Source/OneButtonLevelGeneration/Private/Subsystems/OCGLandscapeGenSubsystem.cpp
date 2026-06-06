@@ -157,7 +157,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 	TargetLandscape->bCanHaveLayersContent = true;
 #endif
 
-	if (TargetLandscape->LandscapeMaterial != Preset->LandscapeMaterial)
+	if (TargetLandscape->LandscapeMaterial != Preset->LandscapeSettings.LandscapeMaterial)
 	{
 		FScopedSlowTask SlowTask(5.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ChangingMaterial", "Change Landscape Material"));
 		SlowTask.MakeDialog();
@@ -165,7 +165,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		SlowTask.EnterProgressFrame(1.0f);
 		TargetLandscape->PreEditChange(MaterialProperty);
 		SlowTask.EnterProgressFrame(1.0f);
-		TargetLandscape->LandscapeMaterial = Preset->LandscapeMaterial;
+		TargetLandscape->LandscapeMaterial = Preset->LandscapeSettings.LandscapeMaterial;
 		SlowTask.EnterProgressFrame(1.0f);
 		FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
 		SlowTask.EnterProgressFrame(1.0f);
@@ -185,11 +185,11 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
 	}
 
-	const FIntPoint MapResolution = Preset->MapResolution;
-	const float OffsetX = (-MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeScale;
-	const float OffsetY = (-MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
+	const FIntPoint MapResolution = Preset->LandscapeSettings.MapResolution;
+	const float OffsetX = (-MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
+	const float OffsetY = (-MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
 	TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, HeightConverter.ZOffset));
-	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeScale, 100.0f * Preset->LandscapeScale, HeightConverter.ZScale));
+	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeSettings.LandscapeScale, 100.0f * Preset->LandscapeSettings.LandscapeScale, HeightConverter.ZScale));
 
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer =
 		FOCGLandscapeUtils::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
@@ -204,7 +204,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 			FGuid::NewGuid(),
 			0, 0,
 			MapResolution.X - 1, MapResolution.Y - 1,
-			Preset->Landscape_SectionsPerComponent,
+			Preset->LandscapeSettings.Landscape_SectionsPerComponent,
 			LandscapeSetting.QuadsPerSection,
 			HeightmapDataPerLayer,
 			nullptr,
@@ -246,12 +246,12 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 		return FVector::ZeroVector;
 	}
 
-	const float OffsetX = (-Preset->MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeScale;
-	const float OffsetY = (-Preset->MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeScale;
+	const float OffsetX = (-Preset->LandscapeSettings.MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
+	const float OffsetY = (-Preset->LandscapeSettings.MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
 
 	FVector WorldLocation = VolumeOrigin + FVector(
-		2.0f * (MapPoint.X / static_cast<float>(Preset->MapResolution.X - 1)) * VolumeExtent.X + OffsetX,
-		2.0f * (MapPoint.Y / static_cast<float>(Preset->MapResolution.Y - 1)) * VolumeExtent.Y + OffsetY,
+		2.0f * (MapPoint.X / static_cast<float>(Preset->LandscapeSettings.MapResolution.X - 1)) * VolumeExtent.X + OffsetX,
+		2.0f * (MapPoint.Y / static_cast<float>(Preset->LandscapeSettings.MapResolution.Y - 1)) * VolumeExtent.Y + OffsetY,
 		0.0f
 	);
 
@@ -261,7 +261,7 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 	}
 	else if (InHeightMapData)
 	{
-		const int32 Index = MapPoint.Y * Preset->MapResolution.X + MapPoint.X;
+		const int32 Index = MapPoint.Y * Preset->LandscapeSettings.MapResolution.X + MapPoint.X;
 		if (InHeightMapData->IsValidIndex(Index))
 		{
 			// 이 fallback은 의도적으로 ZOffset을 적용하지 않음. (ToWorldHeight를 사용하면 동작이 달라짐)
@@ -276,17 +276,17 @@ FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoin
 
 void UOCGLandscapeGenSubsystem::InitializeLandscapeSetting(const UMapPreset* Preset)
 {
-	LandscapeSetting.WorldPartitionGridSize   = Preset->WorldPartitionGridSize;
-	LandscapeSetting.WorldPartitionRegionSize = Preset->WorldPartitionRegionSize;
-	LandscapeSetting.QuadsPerSection          = static_cast<uint32>(Preset->Landscape_QuadsPerSection);
-	LandscapeSetting.ComponentCountX          = (Preset->MapResolution.X - 1) / (LandscapeSetting.QuadsPerSection * Preset->Landscape_SectionsPerComponent);
-	LandscapeSetting.ComponentCountY          = (Preset->MapResolution.Y - 1) / (LandscapeSetting.QuadsPerSection * Preset->Landscape_SectionsPerComponent);
-	LandscapeSetting.QuadsPerComponent        = Preset->Landscape_SectionsPerComponent * LandscapeSetting.QuadsPerSection;
+	LandscapeSetting.WorldPartitionGridSize   = Preset->LandscapeSettings.WorldPartitionGridSize;
+	LandscapeSetting.WorldPartitionRegionSize = Preset->LandscapeSettings.WorldPartitionRegionSize;
+	LandscapeSetting.QuadsPerSection          = static_cast<uint32>(Preset->LandscapeSettings.Landscape_QuadsPerSection);
+	LandscapeSetting.ComponentCountX          = (Preset->LandscapeSettings.MapResolution.X - 1) / (LandscapeSetting.QuadsPerSection * Preset->LandscapeSettings.Landscape_SectionsPerComponent);
+	LandscapeSetting.ComponentCountY          = (Preset->LandscapeSettings.MapResolution.Y - 1) / (LandscapeSetting.QuadsPerSection * Preset->LandscapeSettings.Landscape_SectionsPerComponent);
+	LandscapeSetting.QuadsPerComponent        = Preset->LandscapeSettings.Landscape_SectionsPerComponent * LandscapeSetting.QuadsPerSection;
 	LandscapeSetting.SizeX                    = LandscapeSetting.ComponentCountX * LandscapeSetting.QuadsPerComponent + 1;
 	LandscapeSetting.SizeY                    = LandscapeSetting.ComponentCountY * LandscapeSetting.QuadsPerComponent + 1;
 
-	if ((Preset->MapResolution.X - 1) % (LandscapeSetting.QuadsPerSection * Preset->Landscape_SectionsPerComponent) != 0 ||
-		(Preset->MapResolution.Y - 1) % (LandscapeSetting.QuadsPerSection * Preset->Landscape_SectionsPerComponent) != 0)
+	if ((Preset->LandscapeSettings.MapResolution.X - 1) % (LandscapeSetting.QuadsPerSection * Preset->LandscapeSettings.Landscape_SectionsPerComponent) != 0 ||
+		(Preset->LandscapeSettings.MapResolution.Y - 1) % (LandscapeSetting.QuadsPerSection * Preset->LandscapeSettings.Landscape_SectionsPerComponent) != 0)
 	{
 		UE_LOG(LogOCGModule, Warning, TEXT("LandscapeSize is not a recommended value."));
 	}

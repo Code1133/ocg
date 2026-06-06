@@ -7,7 +7,7 @@
 
 void UOCGDefaultSmoothingStrategy::SmoothHeightMap(const UMapPreset* Preset, FOCGWorldDataContainer& DataContainer)
 {
-	if (!Preset->bSmoothHeight)
+	if (!Preset->SmoothingSettings.bSmoothHeight)
 	{
 		return;
 	}
@@ -27,8 +27,8 @@ void UOCGDefaultSmoothingStrategy::ApplyGaussianBlur(const UMapPreset* Preset, T
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_SmoothGaussian);
 
-	const int32 Radius = Preset->GaussianBlurRadius;
-	const FIntPoint MapSize = Preset->MapResolution;
+	const int32 Radius = Preset->SmoothingSettings.GaussianBlurRadius;
+	const FIntPoint MapSize = Preset->LandscapeSettings.MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
 
 	TArray<uint16> OutBlurredMap;
@@ -82,18 +82,18 @@ void UOCGDefaultSmoothingStrategy::ApplySpikeSmooth(const UMapPreset* Preset, TA
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_SmoothSpike);
 
-	if (!Preset->bSmoothBySlope)
+	if (!Preset->SmoothingSettings.bSmoothBySlope)
 	{
 		return;
 	}
 
-	const FIntPoint MapSize = Preset->MapResolution;
-	const int32 KernelRadius = static_cast<int32>(Preset->GaussianBlurRadius / 2.0f);
+	const FIntPoint MapSize = Preset->LandscapeSettings.MapResolution;
+	const int32 KernelRadius = static_cast<int32>(Preset->SmoothingSettings.GaussianBlurRadius / 2.0f);
 	const int32 KernelSize = 2 * KernelRadius + 1;
-	const float MaxAllowedSlope = FMath::Tan(FMath::DegreesToRadians(Preset->MaxSlopeAngle));
+	const float MaxAllowedSlope = FMath::Tan(FMath::DegreesToRadians(Preset->SmoothingSettings.MaxSlopeAngle));
 	const int32 Step = FMath::Max(static_cast<int32>(KernelRadius / 2.0f), 1);
 
-	for (int32 Iteration = 0; Iteration < Preset->SmoothingIteration; ++Iteration)
+	for (int32 Iteration = 0; Iteration < Preset->SmoothingSettings.SmoothingIteration; ++Iteration)
 	{
 		int32 SmoothedRegion = 0;
 		TArray<uint16> OriginalHeightMap = InOutHeightMap;
@@ -126,7 +126,7 @@ void UOCGDefaultSmoothingStrategy::ProcessPlane(
 	TArray<uint16>& OutHeightMap
 )
 {
-	const float LandscapeScale = Preset->LandscapeScale * 100.0f;
+	const float LandscapeScale = Preset->LandscapeSettings.LandscapeScale * 100.0f;
 	const float Length = KernelSize * LandscapeScale;
 
 	const float TLHeight = HeightConverter.ToWorldHeight(InOriginalHeightMap[(CenterY - KernelRadius) * MapSize.X + (CenterX - KernelRadius)]);
@@ -166,7 +166,7 @@ void UOCGDefaultSmoothingStrategy::ProcessPlane(
 
 				const uint16 NewHeight = HeightConverter.ToHeightMapValue(NewWorldHeight);
 				const uint16 OriginalHeight = HeightConverter.ToHeightMapValue(OriginalWorldHeight);
-				OutHeightMap[Index] = static_cast<uint16>(FMath::Lerp(static_cast<float>(OriginalHeight), static_cast<float>(NewHeight), Preset->SmoothingStrength));
+				OutHeightMap[Index] = static_cast<uint16>(FMath::Lerp(static_cast<float>(OriginalHeight), static_cast<float>(NewHeight), Preset->SmoothingSettings.SmoothingStrength));
 			}
 		}
 	}
@@ -176,13 +176,13 @@ void UOCGDefaultSmoothingStrategy::MedianSmooth(const UMapPreset* Preset, TArray
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_SmoothMedian);
 
-	if (!Preset->bSmoothByMediumHeight)
+	if (!Preset->SmoothingSettings.bSmoothByMediumHeight)
 	{
 		return;
 	}
 
-	const int32 Radius = Preset->MedianSmoothRadius;
-	const FIntPoint MapSize = Preset->MapResolution;
+	const int32 Radius = Preset->SmoothingSettings.MedianSmoothRadius;
+	const FIntPoint MapSize = Preset->LandscapeSettings.MapResolution;
 
 	TArray<uint16> OriginalHeightMap = InOutHeightMap;
 	TArray<uint16> Window;

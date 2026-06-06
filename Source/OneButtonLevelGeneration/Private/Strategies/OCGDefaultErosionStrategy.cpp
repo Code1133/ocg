@@ -27,14 +27,14 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 	}
 
 	const float SeaLevelHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset);
-	const float LandscapeScale = Preset->LandscapeScale * 100.0f;
+	const float LandscapeScale = Preset->LandscapeSettings.LandscapeScale * 100.0f;
 
 	// 3. Main Erosion loop
 	for (int32 i = 0; i < Preset->ErosionSettings.NumErosionIterations; ++i)
 	{
 		// Initialize droplet
-		float PosX = Stream.RandRange(1.0f, Preset->MapResolution.X - 2.0f);
-		float PosY = Stream.RandRange(1.0f, Preset->MapResolution.Y - 2.0f);
+		float PosX = Stream.RandRange(1.0f, Preset->LandscapeSettings.MapResolution.X - 2.0f);
+		float PosY = Stream.RandRange(1.0f, Preset->LandscapeSettings.MapResolution.Y - 2.0f);
 		float DirX = 0.0f;
 		float DirY = 0.0f;
 		float Speed = Preset->ErosionSettings.InitialSpeed;
@@ -46,10 +46,10 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 		{
 			const int32 NodeX = static_cast<int32>(PosX);
 			const int32 NodeY = static_cast<int32>(PosY);
-			const int32 DropletIndex = NodeY * Preset->MapResolution.X + NodeX;
+			const int32 DropletIndex = NodeY * Preset->LandscapeSettings.MapResolution.X + NodeX;
 
 			// If droplet is out of map, end simulation
-			if (NodeX < 0 || NodeX >= Preset->MapResolution.X - 1 || NodeY < 0 || NodeY >= Preset->MapResolution.Y - 1)
+			if (NodeX < 0 || NodeX >= Preset->LandscapeSettings.MapResolution.X - 1 || NodeY < 0 || NodeY >= Preset->LandscapeSettings.MapResolution.Y - 1)
 			{
 				break;
 			}
@@ -74,8 +74,8 @@ void UOCGDefaultErosionStrategy::ApplyErosion(const UMapPreset* Preset, FOCGWorl
 			PosX += DirX;
 			PosY += DirY;
 
-			if (PosX <= 0 || PosX >= Preset->MapResolution.X - 1 ||
-				PosY <= 0 || PosY >= Preset->MapResolution.Y - 1)
+			if (PosX <= 0 || PosX >= Preset->LandscapeSettings.MapResolution.X - 1 ||
+				PosY <= 0 || PosY >= Preset->LandscapeSettings.MapResolution.Y - 1)
 			{
 				break;
 			}
@@ -158,7 +158,7 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_ErosionBrushInit);
 
-	const int32 NewSize = Preset->MapResolution.X * Preset->MapResolution.Y;
+	const int32 NewSize = Preset->LandscapeSettings.MapResolution.X * Preset->LandscapeSettings.MapResolution.Y;
 
 	// if current erosion brush is initialized with current map resolution and erosion radius
 	if (CachedErosionRadius == Preset->ErosionSettings.ErosionRadius && ErosionBrushIndices.Num() == NewSize)
@@ -173,8 +173,8 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 
 	for (int32 i = 0; i < NewSize; ++i)
 	{
-		const int32 CenterX = i % Preset->MapResolution.X;
-		const int32 CenterY = i / Preset->MapResolution.Y;
+		const int32 CenterX = i % Preset->LandscapeSettings.MapResolution.X;
+		const int32 CenterY = i / Preset->LandscapeSettings.MapResolution.Y;
 
 		float WeightSum = 0.0f;
 		TArray<int32>& Indices = ErosionBrushIndices[i];
@@ -189,9 +189,9 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 				{
 					const int32 CoordX = CenterX + BrushX;
 					const int32 CoordY = CenterY + BrushY;
-					if (CoordX >= 0 && CoordX < Preset->MapResolution.X && CoordY >= 0 && CoordY < Preset->MapResolution.Y)
+					if (CoordX >= 0 && CoordX < Preset->LandscapeSettings.MapResolution.X && CoordY >= 0 && CoordY < Preset->LandscapeSettings.MapResolution.Y)
 					{
-						int32 Index = CoordY * Preset->MapResolution.X + CoordX;
+						int32 Index = CoordY * Preset->LandscapeSettings.MapResolution.X + CoordX;
 						Index = FMath::Clamp(Index, 0, NewSize - 1);
 						const float Weight = 1.0f - (Dist / Preset->ErosionSettings.ErosionRadius);
 						WeightSum += Weight;
@@ -226,9 +226,9 @@ float UOCGDefaultErosionStrategy::CalculateHeightAndGradient(const UMapPreset* P
 	const float FracY = PosY - CoordY;
 
 	// 4 close indices
-	const int32 Index_00 = CoordY * Preset->MapResolution.X + CoordX;    // Closest index
+	const int32 Index_00 = CoordY * Preset->LandscapeSettings.MapResolution.X + CoordX;    // Closest index
 	const int32 Index_10 = Index_00 + 1;                                   // Index of pixel at right
-	const int32 Index_01 = Index_00 + Preset->MapResolution.X;            // Index of pixel at bottom
+	const int32 Index_01 = Index_00 + Preset->LandscapeSettings.MapResolution.X;            // Index of pixel at bottom
 	const int32 Index_11 = Index_01 + 1;                                   // Index of pixel at bottom right
 
 	// Heights at each index

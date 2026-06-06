@@ -27,14 +27,14 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 		BlurredMinHeights = MinHeights;
 	}
 
-	const float SeaLevelHeightF = (Preset->bContainWater ? Preset->HeightSettings.SeaLevel * HeightRange : 0.0f) + Preset->HeightSettings.MinHeight;
+	const float SeaLevelHeightF = (Preset->OceanSettings.bContainWater ? Preset->HeightSettings.SeaLevel * HeightRange : 0.0f) + Preset->HeightSettings.MinHeight;
 	const uint16 SeaLevelHeight = Converter.ToHeightMapValue(SeaLevelHeightF);
 
-	for (int32 Y = 0; Y < Preset->MapResolution.Y; ++Y)
+	for (int32 Y = 0; Y < Preset->LandscapeSettings.MapResolution.Y; ++Y)
 	{
-		for (int32 X = 0; X < Preset->MapResolution.X; ++X)
+		for (int32 X = 0; X < Preset->LandscapeSettings.MapResolution.X; ++X)
 		{
-			const int32 Index = Y * Preset->MapResolution.X + X;
+			const int32 Index = Y * Preset->LandscapeSettings.MapResolution.X + X;
 			const int32 CurrentLayerIdx = DataContainer.BiomeLayerMap[Index];
 			if (CurrentLayerIdx <= 0) continue; // 0 = Water, skip
 
@@ -67,7 +67,7 @@ void UOCGDefaultTerrainModifierStrategy::ModifyTerrainByBiome(const UMapPreset* 
 
 void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPreset* Preset, const TArray<uint16>& InHeightMap, const TArray<int32>& InBiomeLayerMap, TArray<float>& OutMinHeights, const FOCGHeightConverter& Converter)
 {
-	const FIntPoint MapSize = Preset->MapResolution;
+	const FIntPoint MapSize = Preset->LandscapeSettings.MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
 
 	TArray<int32> RegionIDMap;
@@ -100,7 +100,7 @@ void UOCGDefaultTerrainModifierStrategy::CalculateBiomeMinHeights(const UMapPres
 void UOCGDefaultTerrainModifierStrategy::BlurBiomeMinHeights(const UMapPreset* Preset, const TArray<float>& InMinHeights, TArray<float>& OutMinHeights)
 {
 	const int32 BlendRadius = static_cast<int32>(Preset->BiomeTerrainSettings.BiomeHeightBlendRadius);
-	const FIntPoint MapSize = Preset->MapResolution;
+	const FIntPoint MapSize = Preset->LandscapeSettings.MapResolution;
 	const int32 TotalPixels = MapSize.X * MapSize.Y;
 	OutMinHeights.SetNumUninitialized(TotalPixels);
 
