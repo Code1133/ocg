@@ -19,6 +19,8 @@ on:
 jobs:
   package:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -53,7 +55,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ steps.parse_version.outputs.VERSION }}"
-          name: "v${{ steps.parse_version.outputs.VERSION }} - Unreal Engine Support"
+          name: "v${{ steps.parse_version.outputs.VERSION }}"
           draft: ${{ github.event.inputs.is_draft }}
           body: |
             ## Release Assets
