@@ -165,7 +165,7 @@ def package_plugin(
 
                         # 확장자 필터링
                         if path.is_file() and path.suffix not in exclude_exts:
-                            rel_path = path.relative_to(plugin_dir)
+                            rel_path = Path(plugin_name.lower()) / path.relative_to(plugin_dir)
 
                             if path == uplugin_path:
                                 z.write(temp_uplugin_path, rel_path)
