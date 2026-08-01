@@ -1,0 +1,64 @@
+name: Build & Release Plugin Zips
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine_versions:
+        description: "Target Engine Versions (comma-separated)"
+        required: true
+        default: "5.5, 5.6, 5.7, 5.8"
+      create_release:
+        description: "Create GitHub Release and attach zips?"
+        type: boolean
+        default: true
+      is_draft:
+        description: "Create GitHub Release as Draft?"
+        type: boolean
+        default: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # *.uplugin 파일을 찾아 VersionName 파싱
+      - name: Parse Plugin Version
+        id: parse_version
+        run: |
+          python -c "from pathlib import Path; import json; ufile = list(Path('.').glob('*.uplugin'))[0]; data = json.loads(ufile.read_text(encoding='utf-8')); print(f'VERSION={data.get(\"VersionName\", \"1.0.0\")}')" >> $GITHUB_OUTPUT
+
+      - name: Run Packaging Script
+        run: |
+          python .github/scripts/package_plugin.py \
+            --dir "./" \
+            --engines "${{ github.event.inputs.engine_versions }}" \
+            --output "./dist"
+
+        # GHA 빌드 보관용
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zips-v${{ steps.parse_version.outputs.VERSION }}
+          path: ./dist/*.zip
+
+      - name: Create GitHub Release
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.parse_version.outputs.VERSION }}"
+          name: "v${{ steps.parse_version.outputs.VERSION }} - Unreal Engine Support"
+          draft: ${{ github.event.inputs.is_draft }}
+          body: |
+            ## Release Assets
+            Unreal Engine Version specific packages.
+            - Supported Engine Versions: ${{ github.event.inputs.engine_versions }}
+          files: ./dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
