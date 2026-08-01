@@ -10,7 +10,7 @@
  <a href="https://code1133.github.io/ocg/"><img src="https://img.shields.io/badge/Docs-Online-blue?style=for-the-badge" alt="Docs" /></a>
  <a href="https://github.com/Code1133/ocg/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT" /></a>
  <!-- <a href="https://github.com/Code1133/ocg"><img src="https://img.shields.io/github/stars/Code1133/ocg?style=for-the-badge" alt="GitHub stars" /></a> -->
- <a href="https://github.com/Code1133/ocg/releases"><img src="https://img.shields.io/badge/Version-1.2.0-purple?style=for-the-badge" alt="Version" /></a>
+ <a href="https://github.com/Code1133/ocg/releases"><img src="https://img.shields.io/badge/Version-1.2.1-purple?style=for-the-badge" alt="Version" /></a>
  <a href="https://github.com/Code1133/ocg/issues"><img src="https://img.shields.io/github/issues/Code1133/ocg?style=for-the-badge" alt="Issues" /></a>
  <a href="https://www.fab.com/listings/a0a5678a-2747-4550-aa54-0fa8f2a78460"><img src="https://img.shields.io/badge/FAB-Available-orange?style=for-the-badge" alt="FAB Listing" /></a>
 </p>

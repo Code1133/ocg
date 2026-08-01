@@ -8,7 +8,18 @@ nav_order: 20
 
 # CHANGELOG
 
-This page documents the changes for the One-Click Level Generator.
+This page documents the full version history and updates for the **One-Click Level Generator (OCG)**.
+
+---
+
+## Version 1.2.1 *(2026-08-01)*
+
+### Improvements & Fixes
+
+- Added support for **Unreal Engine 5.8**.
+- Refactored internal tab factory registration logic for UE 5.8 private API changes.
+
+---
 
 ## Version 1.2.0
 
@@ -22,6 +33,8 @@ This page documents the changes for the One-Click Level Generator.
 - Added compatibility for Unreal Engine 5.6 and earlier in landscape utility methods
 - Added compatibility for Unreal Engine 5.6 in river generation logic
 
+---
+
 ## Version 1.1.1
 
 ### New Features
@@ -31,6 +44,8 @@ This page documents the changes for the One-Click Level Generator.
 ### Fixed Bugs
 
 - Fixed a bug where multiple rivers would be generated at the same location when creating more than two rivers.
+
+---
 
 ## Version 1.1.0
 
@@ -55,6 +70,8 @@ This page documents the changes for the One-Click Level Generator.
 - Fixed an issue where debug points would not appear even when enabled in PCG settings.
 - Fixed inconsistent terrain generation with the same seed during initial creation in the OCG Window.
 - Fixed a crash that occurred when clearing a MapPreset in the OCG Window.
+
+---
 
 ## Version 1.0.0
 
