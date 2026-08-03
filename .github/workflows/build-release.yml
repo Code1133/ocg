@@ -45,7 +45,7 @@ jobs:
 
         # GHA 빌드 보관용
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plugin-zips-v${{ steps.parse_version.outputs.VERSION }}
           path: ./dist/*.zip
