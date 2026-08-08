@@ -24,7 +24,7 @@ bool FOCGGolden_Default::RunTest(const FString& Parameters)
 	UMapPreset* Preset = TryLoadPreset(this, TEXT("/OneButtonLevelGeneration/Test/MP_Golden_Default.MP_Golden_Default"));
 	if (!Preset)
 	{
-		return true; // skip - asset not created yet
+		return false; // 골든 에셋이 없는경우 실패로 처리
 	}
 
 	UOCGDataGenerationSubsystem* DataGen = GEditor->GetEditorSubsystem<UOCGDataGenerationSubsystem>();

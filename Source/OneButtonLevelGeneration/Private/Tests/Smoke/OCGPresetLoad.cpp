@@ -12,7 +12,7 @@
  * Product: 5개 골든 MapPreset 에셋이 로드되는지, 그리고
  * MP_Golden_NoErosion 생성이 1초 이내에 완료되는지 검증합니다.
  *
- * 에셋이 아직 생성되지 않은 경우 Error 없이 Warning으로 건너뜁니다.
+ * 에셋이 없으면 Error를 출력하고 실패시킵니다.
  * 생성 시간 임계값(1초)은 순수 데이터 생성(DataGen) 단계만을 측정합니다.
  * 랜드스케이프/하이드롤로지 적용은 포함되지 않습니다.
  *
@@ -33,13 +33,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 namespace
 {
-	/** 에셋을 로드하고 없으면 Warning 후 false를 반환합니다. */
+	/** 에셋을 로드하고 없으면 Error 후 false를 반환합니다. */
 	bool TrySmokeLoadPreset(FAutomationTestBase* Test, const TCHAR* Path, UMapPreset*& OutPreset)
 	{
 		OutPreset = LoadObject<UMapPreset>(nullptr, Path);
 		if (!OutPreset)
 		{
-			Test->AddWarning(FString::Printf(TEXT("Preset not found, skipping: %s"), Path));
+			Test->AddError(FString::Printf(TEXT("Golden preset asset is missing: %s"), Path));
 			return false;
 		}
 		return true;
@@ -67,11 +67,11 @@ bool FOCGPresetLoad::RunTest(const FString& Parameters)
 		}
 	}
 
-	// 에셋이 하나도 없으면 환경 미구성이므로 전체 건너뜀 (실패 아님)
+	// 골든 에셋은 저장소에 항상 존재하므로, 하나도 없다면 무언가 문제가 있는 것.
 	if (LoadedCount == 0)
 	{
-		AddInfo(TEXT("No golden presets found — skipping PresetLoad smoke test."));
-		return true;
+		AddError(TEXT("No golden presets found. Check that Content/Test assets are present."));
+		return false;
 	}
 
 	AddInfo(FString::Printf(TEXT("Loaded %d / %llu golden presets."), LoadedCount, UE_ARRAY_COUNT(PresetPaths)));
@@ -80,8 +80,8 @@ bool FOCGPresetLoad::RunTest(const FString& Parameters)
 	UMapPreset* NoErosionPreset = nullptr;
 	if (!TrySmokeLoadPreset(this, TEXT("/OneButtonLevelGeneration/Test/MP_Golden_NoErosion.MP_Golden_NoErosion"), NoErosionPreset))
 	{
-		// 에셋 없으면 타이밍 체크는 건너뜀
-		return true;
+		// 골든 에셋이 없는경우 실패로 처리
+		return false;
 	}
 
 	if (!GEditor)

@@ -9,7 +9,7 @@ UMapPreset* TryLoadPreset(FAutomationTestBase* Test, const TCHAR* AssetPath)
 	UMapPreset* Preset = LoadObject<UMapPreset>(nullptr, AssetPath);
 	if (!Preset)
 	{
-		Test->AddWarning(FString::Printf(TEXT("Preset not found, skipping: %s"), AssetPath));
+		Test->AddError(FString::Printf(TEXT("Golden preset asset is missing: %s"), AssetPath));
 	}
 	return Preset;
 }

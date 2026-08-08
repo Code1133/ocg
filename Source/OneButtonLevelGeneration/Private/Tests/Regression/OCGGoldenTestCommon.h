@@ -9,10 +9,10 @@ class UMapPreset;
 /**
  * 콘텐츠 패키지 경로에서 UMapPreset 에셋을 로드합니다.
  *
- * 에셋이 없으면 Error 대신 Warning을 출력하고 nullptr을 반환합니다.
- * 호출자는 nullptr 반환을 테스트 실패가 아닌 '테스트 건너뛰기(Skip)' 신호로 처리해야 합니다.
+ * 에셋이 없으면 Error를 출력하고 nullptr을 반환합니다.
+ * 호출자는 nullptr 반환 시 false를 반환하여 테스트를 실패시켜야 합니다.
  *
- * @param Test 경고 메시지를 출력할 현재 실행 중인 자동화 테스트 인스턴스
+ * @param Test 에러 메시지를 출력할 현재 실행 중인 자동화 테스트 인스턴스
  * @param AssetPath 콘텐츠 패키지의 전체 경로 (예: "/OneButtonLevelGeneration/Test/MP_Golden_Default")
  * @return 로드된 프리셋 객체, 에셋이 존재하지 않는 경우 nullptr
  */
