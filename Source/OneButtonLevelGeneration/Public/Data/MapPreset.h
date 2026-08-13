@@ -32,6 +32,16 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	/**
+	 * 중첩 struct 내부 필드 변경을 처리합니다.
+	 *
+	 * MapResolution(FIntPoint)처럼 struct 안의 struct는 FPropertyChangedEvent로 이름을 얻을 수 없기에,
+	 * PostEditChangeChainProperty로 이를 해결합니다.
+	 *
+	 * @note 코드에서 PostEditChange()를 직접 호출하면 체인이 비어 본 함수가 호출되지 않습니다.
+	 */
+	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedChainEvent) override;
+
+	/**
 	 * 프로퍼티 변경 시 브로드캐스트되는 정적 델리게이트.
 	 * OCGEditorSubsystem이 Initialize/Deinitialize에서 구독 관리를 담당합니다.
 	 */

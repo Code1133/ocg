@@ -174,11 +174,75 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		UpdateInternalLandscapeFilterNames();
 	}
 
+	// Biomes 변경 -> 바이옴 수 제한 적용
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
+	{
+		UpdateInternalLandscapeFilterNames();
+
+		if (OceanSettings.bContainWater)
+		{
+			if (Biomes.Num() > 7)
+			{
+				Biomes.SetNum(7);
+				UE_LOG(LogOCGModule, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 7);
+			}
+		}
+		else
+		{
+			if (Biomes.Num() > 8)
+			{
+				Biomes.SetNum(8);
+				UE_LOG(LogOCGModule, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 8);
+			}
+		}
+	}
+}
+
+namespace
+{
+	using FChainNode = TDoubleLinkedList<FProperty*>::TDoubleLinkedListNode;
+
+	/**
+	 * 체인에서 [직속 멤버, struct 내부 필드] 이름을 얻습니다.
+	 * 예: [LandscapeSettings, MapResolution, X] -> (LandscapeSettings, MapResolution)
+	 *
+	 * @note 이벤트의 MemberProperty는 체인과 일치하지 않을 수 있어 체인에서 직접 읽습니다.
+	 * @return 직속 멤버 자체가 통째로 교체된 경우(체인 길이 1) false
+	 */
+	bool GetChainPropertyNames(const FPropertyChangedChainEvent& ChainEvent, FName& OutMemberName, FName& OutSubName)
+	{
+		const FChainNode* MemberNode = ChainEvent.PropertyChain.GetActiveMemberNode();
+		if (!MemberNode || !MemberNode->GetValue())
+		{
+			return false;
+		}
+
+		const FChainNode* SubNode = MemberNode->GetNextNode();
+		if (!SubNode || !SubNode->GetValue())
+		{
+			return false;
+		}
+
+		OutMemberName = MemberNode->GetValue()->GetFName();
+		OutSubName = SubNode->GetValue()->GetFName();
+		return true;
+	}
+}
+
+void UMapPreset::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedChainEvent)
+{
+	Super::PostEditChangeChainProperty(PropertyChangedChainEvent);
+
+	FName PropertyName = NAME_None;
+	FName SubPropertyName = NAME_None;
+	if (!GetChainPropertyNames(PropertyChangedChainEvent, PropertyName, SubPropertyName))
+	{
+		return;
+	}
+
 	// Landscape Settings 변경
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, LandscapeSettings))
 	{
-		const FName SubPropertyName = PropertyChangedEvent.GetPropertyName();
-
 		// LandscapeMaterial -> 내부 레이어 필터 이름 갱신
 		if (SubPropertyName == GET_MEMBER_NAME_CHECKED(FOCGLandscapeSettings, LandscapeMaterial))
 		{
@@ -285,33 +349,9 @@ void UMapPreset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 		}
 	}
 
-	// Biomes 변경 -> 바이옴 수 제한 적용
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, Biomes))
-	{
-		UpdateInternalLandscapeFilterNames();
-
-		if (OceanSettings.bContainWater)
-		{
-			if (Biomes.Num() > 7)
-			{
-				Biomes.SetNum(7);
-				UE_LOG(LogOCGModule, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 7);
-			}
-		}
-		else
-		{
-			if (Biomes.Num() > 8)
-			{
-				Biomes.SetNum(8);
-				UE_LOG(LogOCGModule, Warning, TEXT("Biomes arrays are allowed up to %d. you have deleted excesses"), 8);
-			}
-		}
-	}
-
 	// Smoothing Settings 변경
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ThisClass, SmoothingSettings))
 	{
-		const FName SubPropertyName = PropertyChangedEvent.GetPropertyName();
 		if (SubPropertyName == GET_MEMBER_NAME_CHECKED(FOCGSmoothingSettings, bSmoothHeight))
 		{
 			if (!SmoothingSettings.bSmoothHeight)
