@@ -1,6 +1,7 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
 
+#include "OCGDeveloperSettings.h"
 #include "OCGLog.h"
 #include "OCGStats.h"
 #include "Data/MapPreset.h"
@@ -81,9 +82,10 @@ void UOCGLandscapeGenSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	ColorRVT = Cast<URuntimeVirtualTexture>(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Color.RVT_Color")).TryLoad());
-	HeightRVT = Cast<URuntimeVirtualTexture>(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Height.RVT_Height")).TryLoad());
-	DisplacementRVT = Cast<URuntimeVirtualTexture>(FSoftObjectPath(TEXT("/OneButtonLevelGeneration/RVT/RVT_Displacement.RVT_Displacement")).TryLoad());
+	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
+	ColorRVT = Settings->DefaultColorRVT.LoadSynchronous();
+	HeightRVT = Settings->DefaultHeightRVT.LoadSynchronous();
+	DisplacementRVT = Settings->DefaultDisplacementRVT.LoadSynchronous();
 
 	if (!ColorRVT)        { UE_LOG(LogOCGModule, Warning, TEXT("Failed to load ColorRVT"));        }
 	if (!HeightRVT)       { UE_LOG(LogOCGModule, Warning, TEXT("Failed to load HeightRVT"));       }

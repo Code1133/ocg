@@ -102,10 +102,10 @@ void UMapPreset::PostLoad()
 			.RiverWidthCurve = RiverWidthCurve_DEPRECATED,
 			.RiverDepthCurve = RiverDepthCurve_DEPRECATED,
 			.RiverVelocityCurve = RiverVelocityCurve_DEPRECATED,
-			.RiverWaterMaterial = RiverWaterMaterial_DEPRECATED.IsValid() ? RiverWaterMaterial_DEPRECATED : nullptr,
-			.RiverWaterStaticMeshMaterial = RiverWaterStaticMeshMaterial_DEPRECATED.IsValid() ? RiverWaterStaticMeshMaterial_DEPRECATED : nullptr,
-			.RiverToLakeTransitionMaterial = RiverToLakeTransitionMaterial_DEPRECATED.IsValid() ? RiverToLakeTransitionMaterial_DEPRECATED : nullptr,
-			.RiverToOceanTransitionMaterial = RiverToOceanTransitionMaterial_DEPRECATED.IsValid() ? RiverToOceanTransitionMaterial_DEPRECATED : nullptr,
+			.RiverWaterMaterial = RiverWaterMaterial_DEPRECATED,
+			.RiverWaterStaticMeshMaterial = RiverWaterStaticMeshMaterial_DEPRECATED,
+			.RiverToLakeTransitionMaterial = RiverToLakeTransitionMaterial_DEPRECATED,
+			.RiverToOceanTransitionMaterial = RiverToOceanTransitionMaterial_DEPRECATED,
 		};
 		SmoothingSettings = {
 			.bSmoothHeight = bSmoothHeight_DEPRECATED,
@@ -119,10 +119,10 @@ void UMapPreset::PostLoad()
 		};
 		OceanSettings = {
 			.bContainWater = bContainWater_DEPRECATED,
-			.OceanWaterMaterial = OceanWaterMaterial_DEPRECATED.IsValid() ? OceanWaterMaterial_DEPRECATED : nullptr,
-			.OceanWaterStaticMeshMaterial = OceanWaterStaticMeshMaterial_DEPRECATED.IsValid() ? OceanWaterStaticMeshMaterial_DEPRECATED : nullptr,
-			.WaterHLODMaterial = WaterHLODMaterial_DEPRECATED.IsValid() ? WaterHLODMaterial_DEPRECATED : nullptr,
-			.UnderwaterPostProcessMaterial = UnderwaterPostProcessMaterial_DEPRECATED.IsValid() ? UnderwaterPostProcessMaterial_DEPRECATED : nullptr,
+			.OceanWaterMaterial = OceanWaterMaterial_DEPRECATED,
+			.OceanWaterStaticMeshMaterial = OceanWaterStaticMeshMaterial_DEPRECATED,
+			.WaterHLODMaterial = WaterHLODMaterial_DEPRECATED,
+			.UnderwaterPostProcessMaterial = UnderwaterPostProcessMaterial_DEPRECATED,
 		};
 		LandscapeSettings = {
 			.WorldPartitionGridSize = WorldPartitionGridSize_DEPRECATED,

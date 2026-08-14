@@ -97,9 +97,18 @@ private:
 	 */
 	void OnMapPresetPropertyChanged(const UMapPreset* Preset, FName PropertyName);
 
+	/** 설정된 에셋 경로 검증을 예약합니다. */
+	void ScheduleSettingsValidation();
+
 private:
+	// Regenerate나 OCG Window에서 사용할 최근 사용된 프리셋
 	UPROPERTY()
 	TSoftObjectPtr<UMapPreset> LastUsedPresetAsset;
 
+	// OCG.Generate 명령어 등록
+	// @todo 근데 이거 굳이 필요한가?
 	IConsoleCommand* GenerateConsoleCommand = nullptr;
+
+	// 에셋 로딩 완료 후 트리거용 핸들
+	FDelegateHandle OnFilesLoadedHandle;
 };

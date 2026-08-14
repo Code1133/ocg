@@ -1,6 +1,7 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Subsystems/OCGHydrologySubsystem.h"
 
+#include "OCGDeveloperSettings.h"
 #include "OCGLog.h"
 #include "OCGStats.h"
 #include "Data/MapPreset.h"
@@ -29,6 +30,27 @@
 #include "WaterEditorSettings.h"
 #include "WaterSplineComponent.h"
 #include "WaterZoneActor.h"
+
+namespace
+{
+	/** 프리셋 값이 비어 있으면 프로젝트 기본값으로 로드합니다. */
+	template <typename T>
+	T* ResolveAsset(
+		const TSoftObjectPtr<T>& PresetValue,
+		const TSoftObjectPtr<T>& ProjectDefault,
+		const TCHAR* DebugName
+    )
+	{
+		const TSoftObjectPtr<T>& Chosen = PresetValue.IsNull() ? ProjectDefault : PresetValue;
+		if (Chosen.IsNull())
+		{
+			UE_LOG(LogOCGModule, Warning,
+				TEXT("%s is unset in both the preset and project settings."), DebugName);
+			return nullptr;
+		}
+		return Chosen.LoadSynchronous();
+	}
+}
 
 namespace Compat
 {
@@ -347,10 +369,16 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(Ocean)->GetWaterBodyComponent();
 	check(WaterBodyComponent);
 
-	WaterBodyComponent->SetWaterMaterial(Preset->OceanSettings.OceanWaterMaterial.LoadSynchronous());
-	WaterBodyComponent->SetWaterStaticMeshMaterial(Preset->OceanSettings.OceanWaterStaticMeshMaterial.LoadSynchronous());
-	WaterBodyComponent->SetHLODMaterial(Preset->OceanSettings.WaterHLODMaterial.LoadSynchronous());
-	WaterBodyComponent->SetUnderwaterPostProcessMaterial(Preset->OceanSettings.UnderwaterPostProcessMaterial.LoadSynchronous());
+	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
+
+	WaterBodyComponent->SetWaterMaterial(ResolveAsset(
+		Preset->OceanSettings.OceanWaterMaterial, Settings->DefaultOceanWaterMaterial, TEXT("Ocean water")));
+	WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
+		Preset->OceanSettings.OceanWaterStaticMeshMaterial, Settings->DefaultOceanWaterStaticMeshMaterial, TEXT("Ocean water static mesh")));
+	WaterBodyComponent->SetHLODMaterial(ResolveAsset(
+		Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
+	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
+		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
 
 	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults =
 		GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.SplineDefaults;
@@ -556,10 +584,16 @@ void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverA
 	WaterBodyComponent->WaterHeightmapSettings = BrushDefaults.HeightmapSettings;
 	WaterBodyComponent->LayerWeightmapSettings = BrushDefaults.LayerWeightmapSettings;
 
-	WaterBodyComponent->SetWaterMaterial(Preset->RiverSettings.RiverWaterMaterial.LoadSynchronous());
-	WaterBodyComponent->SetWaterStaticMeshMaterial(Preset->RiverSettings.RiverWaterStaticMeshMaterial.LoadSynchronous());
-	WaterBodyComponent->SetHLODMaterial(Preset->OceanSettings.WaterHLODMaterial.LoadSynchronous());
-	WaterBodyComponent->SetUnderwaterPostProcessMaterial(Preset->OceanSettings.UnderwaterPostProcessMaterial.LoadSynchronous());
+	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
+
+	WaterBodyComponent->SetWaterMaterial(ResolveAsset(
+		Preset->RiverSettings.RiverWaterMaterial, Settings->DefaultRiverWaterMaterial, TEXT("River water")));
+	WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
+		Preset->RiverSettings.RiverWaterStaticMeshMaterial, Settings->DefaultRiverWaterStaticMeshMaterial, TEXT("River water static mesh")));
+	WaterBodyComponent->SetHLODMaterial(ResolveAsset(
+		Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
+	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
+		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
 
 	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults = GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.SplineDefaults;
 
@@ -572,8 +606,10 @@ void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverA
 	}
 
 	UWaterBodyRiverComponent* RiverComp = CastChecked<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
-	RiverComp->SetLakeTransitionMaterial(Preset->RiverSettings.RiverToLakeTransitionMaterial.LoadSynchronous());
-	RiverComp->SetOceanTransitionMaterial(Preset->RiverSettings.RiverToOceanTransitionMaterial.LoadSynchronous());
+	RiverComp->SetLakeTransitionMaterial(ResolveAsset(
+		Preset->RiverSettings.RiverToLakeTransitionMaterial, Settings->DefaultRiverToLakeTransitionMaterial, TEXT("River to lake transition")));
+	RiverComp->SetOceanTransitionMaterial(ResolveAsset(
+		Preset->RiverSettings.RiverToOceanTransitionMaterial, Settings->DefaultRiverToOceanTransitionMaterial, TEXT("River to ocean transition")));
 
 	InRiverActor->PostEditChange();
 	InRiverActor->PostEditMove(true);

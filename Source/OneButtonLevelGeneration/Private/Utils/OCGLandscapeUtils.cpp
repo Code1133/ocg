@@ -5,6 +5,7 @@
 
 #include <OCGLog.h>
 
+#include "OCGDeveloperSettings.h"
 #include "PCGComponent.h"
 #include "Data/MapData.h"
 #include "Data/MapPreset.h"
@@ -102,7 +103,10 @@ FORCEINLINE void SetSectionBase(ALandscapeProxy* LandscapeProxy, FIntPoint Secti
 #endif
 }
 
-FString FOCGLandscapeUtils::LayerInfoSavePath = TEXT("/Game/Landscape/LayerInfos");
+FString FOCGLandscapeUtils::GetLayerInfoSavePath()
+{
+	return GetDefault<UOCGDeveloperSettings>()->LayerInfoSavePath.Path;
+}
 
 static int32 NumLandscapeRegions(const ULandscapeInfo* InLandscapeInfo)
 {
@@ -585,7 +589,7 @@ void FOCGLandscapeUtils::UpdateTargetLayers(ALandscape* InLandscape,
 
 	{
 		const FName LayerName = TEXT("ErasePCG_Layer");
-		ULandscapeLayerInfoObject* LayerInfoObject = FOCGLandscapeUtils::CreateLayerInfo(FOCGLandscapeUtils::LayerInfoSavePath, LayerName.ToString(), DefaultLayerInfo);
+		ULandscapeLayerInfoObject* LayerInfoObject = FOCGLandscapeUtils::CreateLayerInfo(FOCGLandscapeUtils::GetLayerInfoSavePath(), LayerName.ToString(), DefaultLayerInfo);
 		if (LayerInfoObject)
 		{
 			Compat::SetNoWeightBlend(LayerInfoObject, true);
@@ -660,7 +664,7 @@ void FOCGLandscapeUtils::AddTargetLayers(ALandscape* InLandscape,
 
 	{
 		const FName LayerName = TEXT("ErasePCG_Layer");
-		ULandscapeLayerInfoObject* LayerInfoObject = FOCGLandscapeUtils::CreateLayerInfo(FOCGLandscapeUtils::LayerInfoSavePath, LayerName.ToString(), DefaultLayerInfo);
+		ULandscapeLayerInfoObject* LayerInfoObject = FOCGLandscapeUtils::CreateLayerInfo(FOCGLandscapeUtils::GetLayerInfoSavePath(), LayerName.ToString(), DefaultLayerInfo);
 		if (LayerInfoObject)
 		{
 			Compat::SetNoWeightBlend(LayerInfoObject, true);
@@ -1311,7 +1315,7 @@ TMap<FGuid, TArray<FLandscapeImportLayerInfo>> FOCGLandscapeUtils::PrepareLandsc
 		if (!LayerInfoObject)
 		{
 			UE_LOG(LogOCGModule, Log, TEXT("LayerInfo for '%s' not found. Creating a new one."), *LayerInfo.LayerName.ToString());
-			LayerInfoObject = CreateLayerInfo(InTargetLandscape, LayerInfoSavePath, LayerInfo.LayerName.ToString(), DefaultLayerInfo);
+			LayerInfoObject = CreateLayerInfo(InTargetLandscape, GetLayerInfoSavePath(), LayerInfo.LayerName.ToString(), DefaultLayerInfo);
 		}
 		else
 		{

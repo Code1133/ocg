@@ -90,8 +90,11 @@ struct ONEBUTTONLEVELGENERATION_API FOCGLandscapeUtils
 	static FGuid GetLandscapeLayerGuid(const ALandscape* Landscape, FName LayerName);
 
 private:
-	/** 생성되는 LayerInfo 에셋의 기본 저장 경로(/Game/Landscape/LayerInfos). */
-	static FString LayerInfoSavePath;
+	/**
+	 * LayerInfo 에셋 저장 경로.
+	 * @note Project Settings > One-Click Level Generation에서 지정합니다.
+	 */
+	static FString GetLayerInfoSavePath();
 
 	/** 랜드스케이프 그리드(컴포넌트 단위) 크기를 변경합니다. */
 	static bool ChangeGridSize(const UWorld* InWorld, ULandscapeInfo* InLandscapeInfo, uint32 InNewGridSizeInComponents);

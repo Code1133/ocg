@@ -348,24 +348,16 @@ struct FOCGRiverSettings
 	TObjectPtr<UCurveFloat> RiverVelocityCurve = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_River.Water_Material_River"))
-	};
+	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_River_LOD.Water_Material_River_LOD"))
-	};
+	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Lake_Transition.Water_Material_River_To_Lake_Transition"))
-	};
+	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Transitions/Water_Material_River_To_Ocean_Transition.Water_Material_River_To_Ocean_Transition"))
-	};
+	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
 };
 
 // --- Smoothing (스무딩 / 평활화) ---
@@ -438,33 +430,25 @@ struct FOCGOceanSettings
 		EditAnywhere, BlueprintReadWrite, Category = "Ocean",
 		meta = (EditCondition = "bContainWater", EditConditionHides)
 	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/Water_Material_Ocean.Water_Material_Ocean"))
-	};
+	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial;
 
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "Ocean",
 		meta = (EditCondition = "bContainWater", EditConditionHides)
 	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/WaterSurface/LODs/Water_Material_Ocean_LOD.Water_Material_Ocean_LOD"))
-	};
+	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial;
 
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "Ocean",
 		meta = (EditCondition = "bContainWater", EditConditionHides)
 	)
-	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/HLOD/HLODWater.HLODWater"))
-	};
+	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial;
 
 	UPROPERTY(
 		EditAnywhere, BlueprintReadWrite, Category = "Ocean",
 		meta = (EditCondition = "bContainWater", EditConditionHides)
 	)
-	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial{
-		FSoftObjectPath(TEXT("/Water/Materials/PostProcessing/M_UnderWater_PostProcess_Volume.M_UnderWater_PostProcess_Volume"))
-	};
+	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial;
 };
 
 // --- Landscape (지형 기본 설정) ---

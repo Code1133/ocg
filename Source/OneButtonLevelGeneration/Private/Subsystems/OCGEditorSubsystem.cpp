@@ -1,6 +1,7 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Subsystems/OCGEditorSubsystem.h"
 
+#include "OCGDeveloperSettings.h"
 #include "OCGLog.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGBiomeSettings.h"
@@ -18,6 +19,7 @@
 #include "PCGGraph.h"
 #include "ToolMenus.h"
 #include "AssetRegistry/AssetData.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "HAL/IConsoleManager.h"
 #include "Misc/MessageDialog.h"
 #include "Styling/AppStyle.h"
@@ -52,11 +54,40 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	RestoreLastUsedPreset();
 	RegisterToolbarEntry();
 	RegisterConsoleCommand();
+	ScheduleSettingsValidation();
+}
+
+void UOCGEditorSubsystem::ScheduleSettingsValidation()
+{
+	IAssetRegistry& AssetRegistry =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+
+	// 에셋이 로딩 중이라면, 완료되고 나서 검증
+	if (AssetRegistry.IsLoadingAssets())
+	{
+		OnFilesLoadedHandle = AssetRegistry.OnFilesLoaded().AddWeakLambda(this, []
+		{
+			GetDefault<UOCGDeveloperSettings>()->ValidateConfiguredAssets();
+		});
+	}
+	else
+	{
+		GetDefault<UOCGDeveloperSettings>()->ValidateConfiguredAssets();
+	}
 }
 
 void UOCGEditorSubsystem::Deinitialize()
 {
 	UMapPreset::OnPropertyChanged.RemoveAll(this);
+
+	if (OnFilesLoadedHandle.IsValid())
+	{
+		if (const FAssetRegistryModule* Module = FModuleManager::GetModulePtr<FAssetRegistryModule>(TEXT("AssetRegistry")))
+		{
+			Module->Get().OnFilesLoaded().Remove(OnFilesLoadedHandle);
+		}
+		OnFilesLoadedHandle.Reset();
+	}
 
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(OCGWindowTabName);
 
