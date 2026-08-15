@@ -21,11 +21,11 @@ class ONEBUTTONLEVELGENERATION_API UOCGDeveloperSettings : public UDeveloperSett
 
 public:
 	/** Default material for landscape generation */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Asset References", meta = (AllowedClasses = "/Script/Engine.MaterialInstanceConstant"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Asset References")
 	TSoftObjectPtr<UMaterialInstance> DefaultLandscapeMaterialPath;
 
 	/** Default PCG Graph for level generation */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Asset References", meta = (AllowedClasses = "/Script/PCG.PCGGraph"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Asset References")
 	TSoftObjectPtr<UPCGGraph> DefaultPCGGraphPath;
 
 	// --- Water Materials ---

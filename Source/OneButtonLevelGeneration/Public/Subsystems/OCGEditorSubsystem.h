@@ -6,13 +6,12 @@
 #include "OCGEditorSubsystem.generated.h"
 
 class UMapPreset;
-struct IConsoleCommand;
 class FSpawnTabArgs;
 class SDockTab;
 
 /**
  * OCG 생성 파이프라인의 단일 진입점 에디터 서브시스템
- * 툴바 버튼, 콘솔 커맨드 등록을 담당하며 4단계 파이프라인 실행을 조율합니다.
+ * 툴바 버튼 등록을 담당하며 4단계 파이프라인 실행을 조율합니다.
  */
 UCLASS()
 class ONEBUTTONLEVELGENERATION_API UOCGEditorSubsystem : public UEditorSubsystem
@@ -28,18 +27,6 @@ public:
 	 * @param Preset 생성 설정 에셋
 	 */
 	void ExecuteGeneration(const UMapPreset* Preset);
-
-	/**
-	 * 마지막으로 사용된 Preset으로 생성을 재실행합니다.
-	 * 저장된 Preset이 없으면 경고 로그를 남기고 반환합니다.
-	 */
-	void RegenerateLast();
-
-	/**
-	 * 마지막으로 사용된 Preset을 반환합니다.
-	 * @return 아직 로드되지 않은 경우 nullptr
-	 */
-	const UMapPreset* GetLastUsedPreset() const;
 
 	/**
 	 * OCG Window 탭을 열거나 이미 열려 있으면 포커스를 줍니다.
@@ -63,17 +50,12 @@ public:
 private:
 	void RegisterToolbarEntry();
 	void UnregisterToolbarEntry();
-	void RegisterConsoleCommand();
-	void UnregisterConsoleCommand();
 
 	/** 툴바 버튼 클릭 시 OCG Window 탭을 엽니다. */
 	void OnGenerateClicked();
 
 	/** SDockTab 스포너: OCG Window Slate 위젯을 담은 탭을 생성합니다. */
 	TSharedRef<SDockTab> SpawnOCGWindowTab(const FSpawnTabArgs& Args);
-
-	/** 콘솔 커맨드 "OCG.Generate [/Game/Path/To/Preset]" 핸들러. */
-	void OnConsoleGenerate(const TArray<FString>& Args);
 
 	/**
 	 * Preset 유효성을 검사합니다. 실패 시 다이얼로그를 표시하고 false를 반환합니다.
@@ -101,13 +83,9 @@ private:
 	void ScheduleSettingsValidation();
 
 private:
-	// Regenerate나 OCG Window에서 사용할 최근 사용된 프리셋
+	// 최근 사용된 프리셋. ForcePCGRegenerate가 대상 볼륨을 찾을 때 사용합니다.
 	UPROPERTY()
 	TSoftObjectPtr<UMapPreset> LastUsedPresetAsset;
-
-	// OCG.Generate 명령어 등록
-	// @todo 근데 이거 굳이 필요한가?
-	IConsoleCommand* GenerateConsoleCommand = nullptr;
 
 	// 에셋 로딩 완료 후 트리거용 핸들
 	FDelegateHandle OnFilesLoadedHandle;

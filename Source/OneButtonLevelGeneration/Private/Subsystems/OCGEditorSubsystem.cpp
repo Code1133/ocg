@@ -20,7 +20,6 @@
 #include "ToolMenus.h"
 #include "AssetRegistry/AssetData.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "HAL/IConsoleManager.h"
 #include "Misc/MessageDialog.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/Docking/SDockTab.h"
@@ -53,7 +52,6 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	RestoreLastUsedPreset();
 	RegisterToolbarEntry();
-	RegisterConsoleCommand();
 	ScheduleSettingsValidation();
 }
 
@@ -91,7 +89,6 @@ void UOCGEditorSubsystem::Deinitialize()
 
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(OCGWindowTabName);
 
-	UnregisterConsoleCommand();
 	UnregisterToolbarEntry();
 
 	Super::Deinitialize();
@@ -126,32 +123,6 @@ void UOCGEditorSubsystem::ExecuteGeneration(const UMapPreset* Preset)
 	LastUsedPresetAsset = TSoftObjectPtr<UMapPreset>(const_cast<UMapPreset*>(Preset));
 
 	UE_LOG(LogOCGModule, Log, TEXT("ExecuteGeneration: Pipeline complete."));
-}
-
-void UOCGEditorSubsystem::RegenerateLast()
-{
-	if (!LastUsedPresetAsset.ToSoftObjectPath().IsValid())
-	{
-		UE_LOG(LogOCGModule, Warning, TEXT("RegenerateLast: No last used preset saved."));
-		return;
-	}
-
-	UMapPreset* Preset = LastUsedPresetAsset.IsValid()
-		? LastUsedPresetAsset.Get()
-		: LastUsedPresetAsset.LoadSynchronous();
-
-	if (!Preset)
-	{
-		UE_LOG(LogOCGModule, Warning, TEXT("RegenerateLast: Failed to load last preset '%s'."), *LastUsedPresetAsset.ToSoftObjectPath().ToString());
-		return;
-	}
-
-	ExecuteGeneration(Preset);
-}
-
-const UMapPreset* UOCGEditorSubsystem::GetLastUsedPreset() const
-{
-	return LastUsedPresetAsset.Get();
 }
 
 void UOCGEditorSubsystem::OpenOCGWindow()
@@ -266,57 +237,11 @@ void UOCGEditorSubsystem::UnregisterToolbarEntry()
 	UToolMenus::Get()->RemoveSection(OCGToolbarMenuName, OCGToolbarSectionName);
 }
 
-void UOCGEditorSubsystem::RegisterConsoleCommand()
-{
-	GenerateConsoleCommand = IConsoleManager::Get().RegisterConsoleCommand(
-		TEXT("OCG.Generate"),
-		TEXT("Run the OCG generation pipeline. Usage: OCG.Generate /Game/Path/To/Preset  (omit path to regenerate last)"),
-		FConsoleCommandWithArgsDelegate::CreateUObject(this, &UOCGEditorSubsystem::OnConsoleGenerate),
-		ECVF_Default
-	);
-}
-
-void UOCGEditorSubsystem::UnregisterConsoleCommand()
-{
-	if (GenerateConsoleCommand)
-	{
-		IConsoleManager::Get().UnregisterConsoleObject(GenerateConsoleCommand);
-		GenerateConsoleCommand = nullptr;
-	}
-}
-
 void UOCGEditorSubsystem::OnGenerateClicked()
 {
 	// v2: 에셋 피커 다이얼로그 대신 OCG Window 탭을 엽니다.
 	// Preset 선택과 Generate 실행은 OCG Window 내에서 처리합니다.
 	OpenOCGWindow();
-}
-
-void UOCGEditorSubsystem::OnConsoleGenerate(const TArray<FString>& Args)
-{
-	if (Args.IsEmpty())
-	{
-		RegenerateLast();
-		return;
-	}
-
-	FString AssetPath = Args[0];
-	// 패키지 경로만 전달된 경우 (예: /Game/MyPreset) 에셋 오브젝트 이름을 자동 보완
-	if (!AssetPath.Contains(TEXT(".")))
-	{
-		FString AssetName;
-		AssetPath.Split(TEXT("/"), nullptr, &AssetName, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
-		AssetPath = AssetPath + TEXT(".") + AssetName;
-	}
-
-	UMapPreset* Preset = Cast<UMapPreset>(StaticLoadObject(UMapPreset::StaticClass(), nullptr, *AssetPath));
-	if (!Preset)
-	{
-		UE_LOG(LogOCGModule, Warning, TEXT("OCG.Generate: Failed to load preset '%s'"), *AssetPath);
-		return;
-	}
-
-	ExecuteGeneration(Preset);
 }
 
 bool UOCGEditorSubsystem::ValidatePreset(const UMapPreset* Preset) const
