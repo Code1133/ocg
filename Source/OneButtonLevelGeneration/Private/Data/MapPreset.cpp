@@ -53,6 +53,9 @@ void UMapPreset::PostLoad()
 			.MinTemp = MinTemp_DEPRECATED,
 			.MaxTemp = MaxTemp_DEPRECATED,
 		};
+		AdvancedTemperatureSettings = {
+			.TempDropPer1000Units = TempDropPer1000Units_DEPRECATED,
+		};
 		HumiditySettings = {
 			.MoistureFalloffRate = MoistureFalloffRate_DEPRECATED,
 			.TemperatureInfluenceOnHumidity = TemperatureInfluenceOnHumidity_DEPRECATED,

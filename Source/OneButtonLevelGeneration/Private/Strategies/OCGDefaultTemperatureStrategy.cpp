@@ -42,7 +42,7 @@ void UOCGDefaultTemperatureStrategy::GenerateTemperatureMap(const UMapPreset* Pr
 			const float WorldHeight = HeightConverter.ToWorldHeight(DataContainer.HeightMapData[Index]);
 			if (WorldHeight > SeaLevelHeight)
 			{
-				BaseTemp -= ((WorldHeight - SeaLevelHeight) / 1000.0f) * Preset->TempDropPer1000Units;
+				BaseTemp -= ((WorldHeight - SeaLevelHeight) / 1000.0f) * Preset->AdvancedTemperatureSettings.TempDropPer1000Units;
 			}
 
 			const float NormalizedBaseTemp = (BaseTemp - Preset->TemperatureSettings.MinTemp) / TempRange;

@@ -147,12 +147,12 @@ public:
 #pragma endregion
 
 	// --- Temperature ---
-	// Decides the amount of temperature drop per 1000 units of height
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature",
-		meta = (ClampMin = "0.0")
-	)
-	float TempDropPer1000Units = 0.1f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature")
+	FOCGAdvancedTemperatureSettings AdvancedTemperatureSettings;
+
+#pragma region Deprecated Advanced Temperature Settings
+	UPROPERTY() float TempDropPer1000Units_DEPRECATED = 0.1f;
+#pragma endregion
 
 	// --- Humidity ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity")

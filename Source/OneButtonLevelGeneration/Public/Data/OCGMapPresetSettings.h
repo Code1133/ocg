@@ -132,6 +132,17 @@ struct FOCGTemperatureSettings
 	float MaxTemp = 80.0f;
 };
 
+// --- Advanced Temperature ---
+USTRUCT(BlueprintType)
+struct FOCGAdvancedTemperatureSettings
+{
+	GENERATED_BODY()
+
+	// Decides the amount of temperature drop per 1000 units of height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Temperature", meta = (ClampMin = "0.0"))
+	float TempDropPer1000Units = 0.1f;
+};
+
 // --- Humidity (습도) ---
 USTRUCT(BlueprintType)
 struct FOCGHumiditySettings
