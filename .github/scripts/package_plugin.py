@@ -124,12 +124,22 @@ def package_plugin(
     }
     exclude_exts = {
         ".db",
-        ".DS_Store",
-        ".gitignore",
         ".opendb",
         ".py",
         ".sln",
         ".user",
+    }
+
+    # dot파일은 이름 전체가 stem이라 suffix가 빈 문자열이 되는데,
+    # 확장자 집합에 넣으면 걸러지지 않으므로 이름으로 직접 매칭
+    exclude_names = {
+        ".DS_Store",
+        ".gitignore",
+    }
+
+    # Release 배포시 제외할 폴더 목록
+    exclude_rel_dirs = {
+        Path("Content/Test"),  # 골든 회귀 테스트 픽스처
     }
 
     uplugin_data["VersionName"] = plugin_version
@@ -163,9 +173,19 @@ def package_plugin(
                         if any(part in exclude_dirs for part in path.parts):
                             continue
 
-                        # 확장자 필터링
-                        if path.is_file() and path.suffix not in exclude_exts:
-                            rel_path = Path(plugin_name.lower()) / path.relative_to(plugin_dir)
+                        rel_to_plugin = path.relative_to(plugin_dir)
+
+                        # 배포 제외 경로 필터링
+                        if any(rel_to_plugin.is_relative_to(d) for d in exclude_rel_dirs):
+                            continue
+
+                        # 확장자/파일명 필터링
+                        if (
+                            path.is_file()
+                            and path.suffix not in exclude_exts
+                            and path.name not in exclude_names
+                        ):
+                            rel_path = Path(plugin_name.lower()) / rel_to_plugin
 
                             if path == uplugin_path:
                                 z.write(temp_uplugin_path, rel_path)
