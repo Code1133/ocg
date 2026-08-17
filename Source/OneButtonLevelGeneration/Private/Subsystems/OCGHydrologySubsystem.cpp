@@ -117,36 +117,6 @@ void UOCGHydrologySubsystem::ApplyHydrology(const UMapPreset* Preset, const FOCG
 	}
 }
 
-void UOCGHydrologySubsystem::RegenerateOcean(const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer)
-{
-	if (!Preset || !Preset->OceanSettings.bContainWater)
-	{
-		return;
-	}
-
-	UOCGLandscapeGenSubsystem* LandscapeSubsystem = GEditor->GetEditorSubsystem<UOCGLandscapeGenSubsystem>();
-	if (!LandscapeSubsystem)
-	{
-		return;
-	}
-
-	ALandscape* Landscape = LandscapeSubsystem->GetLandscape();
-	if (!Landscape)
-	{
-		return;
-	}
-
-	UWorld* World = Landscape->GetWorld();
-	if (!World)
-	{
-		return;
-	}
-
-	const FVector VolumeOrigin = LandscapeSubsystem->GetVolumeOrigin();
-	const FVector VolumeExtent = LandscapeSubsystem->GetVolumeExtent();
-	CreateOcean(World, Landscape, Preset, DataContainer, VolumeOrigin, VolumeExtent);
-}
-
 void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandscape, const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer)
 {
 	SCOPE_CYCLE_COUNTER(STAT_OCG_RiverPathFind);

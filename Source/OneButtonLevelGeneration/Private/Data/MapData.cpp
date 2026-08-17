@@ -430,5 +430,4 @@ bool OCGMapDataUtils::GetImageResolution(FIntPoint& OutResolution, const FString
 	const int32 Height = ImageWrapper->GetHeight();
 	OutResolution = FIntPoint(Width, Height);
 	return true;
-	return false;
 }

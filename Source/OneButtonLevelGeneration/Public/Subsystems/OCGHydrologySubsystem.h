@@ -31,14 +31,6 @@ public:
 	 */
 	void ApplyHydrology(const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer);
 
-	/**
-	 * Ocean 워터 바디만 재생성합니다. bContainWater가 false이면 무시합니다.
-	 *
-	 * @param Preset 생성 설정 에셋
-	 * @param DataContainer CurMinHeight / CurMaxHeight 참조용 컨테이너
-	 */
-	void RegenerateOcean(const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer);
-
 private:
 	void GenerateRivers(UWorld* World, ALandscape* InLandscape, const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer);
 	void CreateOcean(UWorld* World, ALandscape* InLandscape, const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer, const FVector& VolumeOrigin, const FVector& VolumeExtent);
