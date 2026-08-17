@@ -174,7 +174,7 @@ void UOCGDefaultErosionStrategy::InitializeErosionBrush(const UMapPreset* Preset
 	for (int32 i = 0; i < NewSize; ++i)
 	{
 		const int32 CenterX = i % Preset->LandscapeSettings.MapResolution.X;
-		const int32 CenterY = i / Preset->LandscapeSettings.MapResolution.Y;
+		const int32 CenterY = i / Preset->LandscapeSettings.MapResolution.X;
 
 		float WeightSum = 0.0f;
 		TArray<int32>& Indices = ErosionBrushIndices[i];
