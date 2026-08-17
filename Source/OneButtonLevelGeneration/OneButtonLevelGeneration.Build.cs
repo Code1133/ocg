@@ -51,6 +51,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"Slate",
 				"SlateCore",
 				"ToolMenus",
+				"ToolWidgets",
 				"UnrealEd",
 				"VirtualTexturingEditor",
 				"WaterEditor",

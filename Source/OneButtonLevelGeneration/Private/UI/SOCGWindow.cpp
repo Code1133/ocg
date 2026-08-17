@@ -9,6 +9,7 @@
 #include "PropertyCustomizationHelpers.h"
 #include "PropertyEditorDelegates.h"
 #include "PropertyEditorModule.h"
+#include "SWarningOrErrorBox.h"
 #include "Styling/AppStyle.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/Input/SButton.h"
@@ -38,7 +39,12 @@ namespace OCGNav
 	static const FName PCG             = TEXT("pcg");
 	static const FName OCG             = TEXT("ocg");
 
-	/** Nav ID -> 표시할 MapPreset UPROPERTY Category 목록 */
+	/**
+	 * Nav ID -> 표시할 MapPreset UPROPERTY Category 목록
+	 *
+	 * 문자열이 MapPreset.h의 Category와 일치해야 합니다.
+	 * 한쪽만 바꾸면 컴파일은 되고 해당 탭에서 항목만 사라집니다.
+	 */
 	static const TMap<FName, TArray<FName>> CategoryMap =
 	{
 		{
@@ -112,6 +118,26 @@ void SOCGWindow::Construct(const FArguments& InArgs)
 		.Padding(0.0f, 0.0f, 0.0f, 2.0f)
 		[
 			BuildActionBar()
+		]
+
+		// Experimental 고지. Water 탭에서 강 생성이 켜져 있을 때만 표시합니다.
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(0.0f, 0.0f, 0.0f, 2.0f)
+		[
+			SNew(SWarningOrErrorBox)
+			.MessageStyle(EMessageStyle::Warning)
+			.Message(LOCTEXT("RiverExperimentalWarning",
+				"River generation is experimental. It supports only basic flow and shape, "
+				"and its results may change in future updates."
+			))
+			.Visibility_Lambda([this]()
+			{
+				const bool bShow = ActiveNavItem == OCGNav::Water
+					&& CurrentPreset.IsValid()
+					&& CurrentPreset->RiverSettings.bGenerateRiver;
+				return bShow ? EVisibility::Visible : EVisibility::Collapsed;
+			})
 		]
 
 		// Body: Sidebar (좌) + DetailsView (우)
@@ -356,8 +382,8 @@ TSharedRef<SWidget> SOCGWindow::BuildActionBar()
 				.Text(LOCTEXT("RegenRiver", "Regen River"))
 				.ToolTipText(LOCTEXT("RegenRiverTip",
 					"Re-run only the Hydrology step using cached heightmap data.\n"
-					"Requires bGenerateRiver = true in the preset.\n"
-					"EXPERIMENTAL: river generation has known issues; see team documentation."
+					"Requires \"Generate River (Experimental)\" to be enabled in the preset.\n"
+					"EXPERIMENTAL: supports only basic flow and shape."
 				))
 				.OnClicked_Raw(this, &SOCGWindow::OnRegenRiverClicked)
 				.IsEnabled_Raw(this, &SOCGWindow::CanRegenRiver)

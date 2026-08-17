@@ -302,7 +302,7 @@ struct FOCGRiverSettings
 {
 	GENERATED_BODY()
 
-	// Generates River. EXPERIMENTAL: has known issues; see team documentation before enabling.
+	// Generates rivers. EXPERIMENTAL: supports only basic flow and shape. Complex water networks need manual work.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (DisplayName = "Generate River (Experimental)"))
 	bool bGenerateRiver = false;
 

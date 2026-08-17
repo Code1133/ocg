@@ -210,6 +210,8 @@ public:
 
 public:
 	// ============================== River Settings (Experimental) ==============================
+	// Category 문자열은 SOCGWindow.cpp의 OCGNav::CategoryMap과 일치해야 합니다.
+	// 한쪽만 바꾸면 컴파일은 되고 Water 탭에서 강 설정만 사라집니다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)")
 	FOCGRiverSettings RiverSettings;
 
