@@ -28,6 +28,7 @@
 #include "WaterBodyRiverActor.h"
 #include "WaterBodyRiverComponent.h"
 #include "WaterEditorSettings.h"
+#include "WaterRuntimeSettings.h"
 #include "WaterSplineComponent.h"
 #include "WaterZoneActor.h"
 
@@ -350,6 +351,9 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
 		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
 
+	// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
+	WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
+
 	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults =
 		GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.SplineDefaults;
 
@@ -564,6 +568,9 @@ void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverA
 		Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
 	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
 		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
+
+	// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
+	WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
 
 	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults = GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.SplineDefaults;
 
