@@ -61,14 +61,12 @@ private:
 	FIntPoint GetRandomStartPoint(int32 RiverIndex, const UMapPreset* Preset) const;
 
 private:
-	UPROPERTY()
-	TObjectPtr<AWaterBodyOcean> CachedOcean;
+	TWeakObjectPtr<AWaterBodyOcean> CachedOcean;
 
 	UPROPERTY()
 	TSoftObjectPtr<AWaterBodyOcean> CachedOceanAsset;
 
-	UPROPERTY()
-	TArray<TObjectPtr<AWaterBodyRiver>> GeneratedRivers;
+	TArray<TWeakObjectPtr<AWaterBodyRiver>> GeneratedRivers;
 
 	UPROPERTY()
 	TArray<TSoftObjectPtr<AWaterBodyRiver>> CachedRivers;

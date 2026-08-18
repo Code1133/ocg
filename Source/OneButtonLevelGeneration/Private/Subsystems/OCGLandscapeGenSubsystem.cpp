@@ -123,7 +123,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		for (TActorIterator<ALandscapeStreamingProxy> It(World); It; ++It)
 		{
 			ALandscapeStreamingProxy* Proxy = *It;
-			if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape)
+			if (Proxy && Proxy->GetLandscapeActor() == TargetLandscape.Get())
 			{
 				ProxiesToDelete.Add(Proxy);
 			}
@@ -132,9 +132,9 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		{
 			if (Proxy) Proxy->Destroy();
 		}
-		if (TargetLandscape)
+		if (TargetLandscape.IsValid())
 		{
-			for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape))
+			for (ALocationVolume* Volume : GetLandscapeRegionVolumes(TargetLandscape.Get()))
 			{
 				Volume->Destroy();
 			}
@@ -142,8 +142,8 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		}
 
 		TargetLandscape = World->SpawnActor<ALandscape>();
-		TargetLandscapeAsset = TargetLandscape;
-		if (!TargetLandscape)
+		TargetLandscapeAsset = TargetLandscape.Get();
+		if (!TargetLandscape.IsValid())
 		{
 			UE_LOG(LogOCGModule, Error, TEXT("Failed to spawn ALandscape."));
 			return;
@@ -155,23 +155,30 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		}
 	}
 
+	ALandscape* Landscape = TargetLandscape.Get();
+	if (!Landscape)
+	{
+		UE_LOG(LogOCGModule, Error, TEXT("Landscape is not available."));
+		return;
+	}
+
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION <= 6
-	TargetLandscape->bCanHaveLayersContent = true;
+	Landscape->bCanHaveLayersContent = true;
 #endif
 
-	if (TargetLandscape->LandscapeMaterial != Preset->LandscapeSettings.LandscapeMaterial)
+	if (Landscape->LandscapeMaterial != Preset->LandscapeSettings.LandscapeMaterial)
 	{
 		FScopedSlowTask SlowTask(5.0f, NSLOCTEXT("ONEBUTTONLEVELGENERATION_API", "ChangingMaterial", "Change Landscape Material"));
 		SlowTask.MakeDialog();
 		FProperty* MaterialProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "LandscapeMaterial");
 		SlowTask.EnterProgressFrame(1.0f);
-		TargetLandscape->PreEditChange(MaterialProperty);
+		Landscape->PreEditChange(MaterialProperty);
 		SlowTask.EnterProgressFrame(1.0f);
-		TargetLandscape->LandscapeMaterial = Preset->LandscapeSettings.LandscapeMaterial;
+		Landscape->LandscapeMaterial = Preset->LandscapeSettings.LandscapeMaterial;
 		SlowTask.EnterProgressFrame(1.0f);
 		FPropertyChangedEvent MaterialPropertyChangedEvent(MaterialProperty);
 		SlowTask.EnterProgressFrame(1.0f);
-		TargetLandscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
+		Landscape->PostEditChangeProperty(MaterialPropertyChangedEvent);
 		SlowTask.EnterProgressFrame();
 	}
 
@@ -179,22 +186,22 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		FMath::CeilLogTwo((LandscapeSetting.SizeX * LandscapeSetting.SizeY) / (2048 * 2048) + 1),
 		static_cast<uint32>(2)
     );
-	if (TargetLandscape->StaticLightingLOD != CurStaticLightingLOD)
+	if (Landscape->StaticLightingLOD != CurStaticLightingLOD)
 	{
 		FProperty* StaticLightingLODProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "StaticLightingLOD");
-		TargetLandscape->StaticLightingLOD = CurStaticLightingLOD;
+		Landscape->StaticLightingLOD = CurStaticLightingLOD;
 		FPropertyChangedEvent StaticLightingLODPropertyChangedEvent(StaticLightingLODProperty);
-		TargetLandscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
+		Landscape->PostEditChangeProperty(StaticLightingLODPropertyChangedEvent);
 	}
 
 	const FIntPoint MapResolution = Preset->LandscapeSettings.MapResolution;
 	const float OffsetX = (-MapResolution.X / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
 	const float OffsetY = (-MapResolution.Y / 2.0f) * 100.0f * Preset->LandscapeSettings.LandscapeScale;
-	TargetLandscape->SetActorLocation(FVector(OffsetX, OffsetY, HeightConverter.ZOffset));
-	TargetLandscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeSettings.LandscapeScale, 100.0f * Preset->LandscapeSettings.LandscapeScale, HeightConverter.ZScale));
+	Landscape->SetActorLocation(FVector(OffsetX, OffsetY, HeightConverter.ZOffset));
+	Landscape->SetActorScale3D(FVector(100.0f * Preset->LandscapeSettings.LandscapeScale, 100.0f * Preset->LandscapeSettings.LandscapeScale, HeightConverter.ZScale));
 
 	TMap<FGuid, TArray<FLandscapeImportLayerInfo>> MaterialLayerDataPerLayer =
-		FOCGLandscapeUtils::PrepareLandscapeLayerData(TargetLandscape, DataContainer.WeightLayers, Preset);
+		FOCGLandscapeUtils::PrepareLandscapeLayerData(Landscape, DataContainer.WeightLayers, Preset);
 	const FGuid LayerGuid = FGuid();
 
 	if (bIsNewLandscape)
@@ -202,7 +209,7 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 		TMap<FGuid, TArray<uint16>> HeightmapDataPerLayer;
 		HeightmapDataPerLayer.Add(LayerGuid, DataContainer.HeightMapData);
 
-		TargetLandscape->Import(
+		Landscape->Import(
 			FGuid::NewGuid(),
 			0, 0,
 			MapResolution.X - 1, MapResolution.Y - 1,
@@ -215,34 +222,34 @@ void UOCGLandscapeGenSubsystem::ApplyLandscape(const UMapPreset* Preset, FOCGWor
 			TArrayView<const FLandscapeLayer>()
 		);
 
-		ULandscapeInfo* LandscapeInfo = TargetLandscape->GetLandscapeInfo();
-		TargetLandscape->SetActorLabel(ALandscape::StaticClass()->GetName());
-		LandscapeInfo->UpdateLayerInfoMap(TargetLandscape);
-		FOCGLandscapeUtils::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
+		ULandscapeInfo* LandscapeInfo = Landscape->GetLandscapeInfo();
+		Landscape->SetActorLabel(ALandscape::StaticClass()->GetName());
+		LandscapeInfo->UpdateLayerInfoMap(Landscape);
+		FOCGLandscapeUtils::AddTargetLayers(Landscape, MaterialLayerDataPerLayer);
 		// ManageLandscapeRegions takes non-const UMapPreset* for legacy reasons; does not modify it
-		FOCGLandscapeUtils::ManageLandscapeRegions(World, TargetLandscape, const_cast<UMapPreset*>(Preset), LandscapeSetting);
+		FOCGLandscapeUtils::ManageLandscapeRegions(World, Landscape, const_cast<UMapPreset*>(Preset), LandscapeSetting);
 
 		FProperty* RVTProperty = FindFProperty<FProperty>(ALandscapeProxy::StaticClass(), "RuntimeVirtualTextures");
-		TargetLandscape->RuntimeVirtualTextures.Add(ColorRVT);
-		TargetLandscape->RuntimeVirtualTextures.Add(HeightRVT);
-		TargetLandscape->RuntimeVirtualTextures.Add(DisplacementRVT);
+		Landscape->RuntimeVirtualTextures.Add(ColorRVT);
+		Landscape->RuntimeVirtualTextures.Add(HeightRVT);
+		Landscape->RuntimeVirtualTextures.Add(DisplacementRVT);
 		FPropertyChangedEvent RVTPropertyChangedEvent(RVTProperty);
-		TargetLandscape->PostEditChangeProperty(RVTPropertyChangedEvent);
+		Landscape->PostEditChangeProperty(RVTPropertyChangedEvent);
 	}
 	else
 	{
-		FOCGLandscapeUtils::ClearTargetLayers(TargetLandscape);
-		FOCGLandscapeUtils::AddTargetLayers(TargetLandscape, MaterialLayerDataPerLayer);
-		FOCGLandscapeUtils::ImportMapDatas(World, TargetLandscape, DataContainer.HeightMapData, *MaterialLayerDataPerLayer.Find(LayerGuid));
+		FOCGLandscapeUtils::ClearTargetLayers(Landscape);
+		FOCGLandscapeUtils::AddTargetLayers(Landscape, MaterialLayerDataPerLayer);
+		FOCGLandscapeUtils::ImportMapDatas(World, Landscape, DataContainer.HeightMapData, *MaterialLayerDataPerLayer.Find(LayerGuid));
 	}
 
-	TargetLandscape->ReregisterAllComponents();
-	CreateRuntimeVirtualTextureVolume(TargetLandscape);
+	Landscape->ReregisterAllComponents();
+	CreateRuntimeVirtualTextureVolume(Landscape);
 }
 
 FVector UOCGLandscapeGenSubsystem::GetLandscapePointWorldPosition(const FIntPoint& MapPoint, const UMapPreset* Preset, const TArray<uint16>* InHeightMapData) const
 {
-	if (!TargetLandscape || !Preset)
+	if (!TargetLandscape.IsValid() || !Preset)
 	{
 		UE_LOG(LogOCGModule, Error, TEXT("TargetLandscape or Preset is not set."));
 		return FVector::ZeroVector;
@@ -304,25 +311,30 @@ bool UOCGLandscapeGenSubsystem::ShouldCreateNewLandscape(const UMapPreset* Prese
 	    return true;
     }
 
-	if (!TargetLandscape)
+	// 복구까지 실패하면 새로 만들어야 합니다.
+	return ResolveLandscape() == nullptr;
+}
+
+ALandscape* UOCGLandscapeGenSubsystem::ResolveLandscape()
+{
+	if (TargetLandscape.IsValid())
 	{
-		if (TargetLandscapeAsset.ToSoftObjectPath().IsValid())
-		{
-			TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.Get());
-			if (!IsValid(TargetLandscape))
-			{
-				TargetLandscape = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
-				if (IsValid(TargetLandscape)) { return false; }
-			}
-			else
-			{
-				return false;
-			}
-		}
-		return true;
+		return TargetLandscape.Get();
 	}
 
-	return false;
+	if (!TargetLandscapeAsset.ToSoftObjectPath().IsValid())
+	{
+		return nullptr;
+	}
+
+	ALandscape* Resolved = Cast<ALandscape>(TargetLandscapeAsset.Get());
+	if (!IsValid(Resolved))
+	{
+		Resolved = Cast<ALandscape>(TargetLandscapeAsset.LoadSynchronous());
+	}
+
+	TargetLandscape = IsValid(Resolved) ? Resolved : nullptr;
+	return TargetLandscape.Get();
 }
 
 bool UOCGLandscapeGenSubsystem::IsLandscapeSettingChanged(const FLandscapeSetting& Prev, const FLandscapeSetting& Curr)
@@ -348,9 +360,9 @@ bool UOCGLandscapeGenSubsystem::CreateRuntimeVirtualTextureVolume(ALandscape* In
 	{
 		CachedRuntimeVirtualTextureVolumes.Add(RVTVolumeAsset.LoadSynchronous());
 	}
-	for (ARuntimeVirtualTextureVolume* RVTVolume : CachedRuntimeVirtualTextureVolumes)
+	for (const TWeakObjectPtr<ARuntimeVirtualTextureVolume>& RVTVolume : CachedRuntimeVirtualTextureVolumes)
 	{
-		if (RVTVolume) RVTVolume->Destroy();
+		if (RVTVolume.IsValid()) RVTVolume->Destroy();
 	}
 	CachedRuntimeVirtualTextureVolumes.Empty();
 

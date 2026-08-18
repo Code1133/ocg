@@ -37,7 +37,7 @@ public:
 	 * 스폰된 Landscape 액터를 반환합니다.
 	 * @return 현재 생성된 Landscape 액터. 아직 생성되지 않았으면 nullptr
 	 */
-	FORCEINLINE ALandscape* GetLandscape() const { return TargetLandscape; }
+	ALandscape* GetLandscape() { return ResolveLandscape(); }
 
 	/**
 	 * RVT 볼륨의 월드 원점을 반환합니다.
@@ -69,9 +69,11 @@ private:
 	static bool IsLandscapeSettingChanged(const FLandscapeSetting& Prev, const FLandscapeSetting& Curr);
 	bool CreateRuntimeVirtualTextureVolume(ALandscape* InLandscape);
 
+	/** 캐시된 Landscape Actor를 가져옵니다. (없으면 TargetLandscapeAsset으로 Load) */
+	[[nodiscard]] ALandscape* ResolveLandscape();
+
 private:
-	UPROPERTY()
-	TObjectPtr<ALandscape> TargetLandscape;
+	TWeakObjectPtr<ALandscape> TargetLandscape;
 
 	UPROPERTY()
 	TSoftObjectPtr<ALandscape> TargetLandscapeAsset;
@@ -82,8 +84,7 @@ private:
 	FVector VolumeExtent = FVector::ZeroVector;
 	FVector VolumeOrigin = FVector::ZeroVector;
 
-	UPROPERTY()
-	TArray<TObjectPtr<ARuntimeVirtualTextureVolume>> CachedRuntimeVirtualTextureVolumes;
+	TArray<TWeakObjectPtr<ARuntimeVirtualTextureVolume>> CachedRuntimeVirtualTextureVolumes;
 
 	UPROPERTY()
 	TArray<TSoftObjectPtr<ARuntimeVirtualTextureVolume>> CachedRuntimeVirtualTextureVolumeAssets;

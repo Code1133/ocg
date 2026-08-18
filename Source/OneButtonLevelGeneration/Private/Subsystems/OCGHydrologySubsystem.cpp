@@ -314,7 +314,7 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 
 void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape, const UMapPreset* Preset, const FOCGWorldDataContainer& DataContainer, const FVector& VolumeOrigin, const FVector& VolumeExtent)
 {
-	if (CachedOcean)
+	if (CachedOcean.IsValid())
 	{
 		CachedOcean->Destroy();
 		CachedOcean = nullptr;
@@ -411,11 +411,11 @@ void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
 	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
 	const bool bHadRivers = !GeneratedRivers.IsEmpty() || !CachedRivers.IsEmpty();
 
-	for (AWaterBodyRiver* River : GeneratedRivers)
+	for (const TWeakObjectPtr<AWaterBodyRiver>& River : GeneratedRivers)
 	{
-		if (River && EditorWorld)
+		if (River.IsValid() && EditorWorld)
 		{
-			EditorWorld->EditorDestroyActor(River, true);
+			EditorWorld->EditorDestroyActor(River.Get(), true);
 		}
 	}
 	GeneratedRivers.Empty();
