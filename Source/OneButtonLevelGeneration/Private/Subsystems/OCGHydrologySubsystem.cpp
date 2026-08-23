@@ -5,6 +5,7 @@
 #include "OCGLog.h"
 #include "OCGStats.h"
 #include "Data/MapPreset.h"
+#include "Data/OCGHeightConverter.h"
 #include "Data/OCGWorldDataContainer.h"
 #include "Subsystems/OCGLandscapeGenSubsystem.h"
 #include "Utils/OCGLandscapeUtils.h"
@@ -275,7 +276,7 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		WaterBodyRiver->Modify();
 		if (ULevel* Level = WaterBodyRiver->GetLevel())
 		{
-			Level->MarkPackageDirty();
+			(void)Level->MarkPackageDirty();
 		}
 
 		GeneratedRivers.Add(WaterBodyRiver);
@@ -332,66 +333,85 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 	}
 	Ocean->SetIsSpatiallyLoaded(false);
 	Ocean->Modify();
-	if (ULevel* Level = Ocean->GetLevel())
+	if (const ULevel* Level = Ocean->GetLevel())
 	{
-		Level->MarkPackageDirty();
+		(void)Level->MarkPackageDirty();
 	}
 
-	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(Ocean)->GetWaterBodyComponent();
+	// --- WaterBodyActorFactory.cpp의 UWaterBodyActorFactory::PostSpawnActor(...) 참고 ---
+	UWaterBodyComponent* WaterBodyComponent = Ocean->GetWaterBodyComponent();
 	check(WaterBodyComponent);
 
-	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
+	const UWaterEditorSettings* WaterSettings = GetDefault<UWaterEditorSettings>();
 
-	WaterBodyComponent->SetWaterMaterial(ResolveAsset(
-		Preset->OceanSettings.OceanWaterMaterial, Settings->DefaultOceanWaterMaterial, TEXT("Ocean water")));
-	WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
-		Preset->OceanSettings.OceanWaterStaticMeshMaterial, Settings->DefaultOceanWaterStaticMeshMaterial, TEXT("Ocean water static mesh")));
-	WaterBodyComponent->SetHLODMaterial(ResolveAsset(
-		Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
-	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
-		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
+	{
+		const FWaterBrushActorDefaults& WaterBrushActorDefaults = WaterSettings->WaterBodyOceanDefaults.BrushDefaults;
+		WaterBodyComponent->CurveSettings = WaterBrushActorDefaults.CurveSettings;
+		WaterBodyComponent->WaterHeightmapSettings = WaterBrushActorDefaults.HeightmapSettings;
+		WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults.LayerWeightmapSettings;
+	}
 
-	// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
-	WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
+	{
+		const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
 
-	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults =
-		GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.SplineDefaults;
+		WaterBodyComponent->SetWaterMaterial(ResolveAsset(
+			Preset->OceanSettings.OceanWaterMaterial, Settings->DefaultOceanWaterMaterial, TEXT("Ocean water")));
+		WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
+			Preset->OceanSettings.OceanWaterStaticMeshMaterial, Settings->DefaultOceanWaterStaticMeshMaterial, TEXT("Ocean water static mesh")));
+		WaterBodyComponent->SetHLODMaterial(ResolveAsset(
+			Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
+		WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
+			Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
 
-	if (AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
+		// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
+		WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
+
+		auto ShouldOverrideWaterSplineDefaults = [](const UWaterSplineComponent* WaterSpline) -> bool
+		{
+			check(WaterSpline);
+			const AWaterBody* OwningBody = WaterSpline->GetTypedOuter<AWaterBody>();
+			return OwningBody && OwningBody->GetClass()->ClassGeneratedBy == nullptr;
+		};
+
+		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
+		if (ShouldOverrideWaterSplineDefaults(WaterSpline))
+		{
+			WaterSpline->WaterSplineDefaults = WaterSettings->WaterBodyOceanDefaults.SplineDefaults;
+		}
+	}
+
+	// If the water body is spawned into a zone which is using local only tessellation, we must default to enabling static meshes.
+	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
 	{
 		if (WaterZone->IsLocalOnlyTessellationEnabled())
 		{
 			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
 		}
-		WaterZone->SetZoneExtent(FVector2D(VolumeExtent.X * 2.0, VolumeExtent.Y * 2.0));
 	}
 
-	if (const UWaterWavesBase* DefaultWaves = GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.WaterWaves)
+	// --- UWaterBodyOceanActorFactory::PostSpawnActor(...) ---
+	if (const UWaterWavesBase* DefaultWaterWaves = GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.WaterWaves)
 	{
-		UWaterWavesBase* Waves = DuplicateObject(DefaultWaves, Ocean, MakeUniqueObjectName(Ocean, DefaultWaves->GetClass(), TEXT("OceanWaterWaves")));
-		Ocean->SetWaterWaves(Waves);
+		UWaterWavesBase* WaterWaves = DuplicateObject(DefaultWaterWaves, Ocean, MakeUniqueObjectName(Ocean, DefaultWaterWaves->GetClass(), TEXT("OceanWaterWaves")));
+		Ocean->SetWaterWaves(WaterWaves);
 	}
 
-	WaterBodyComponent->GetWaterSpline()->ResetSpline({ FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector });
+	// Spline의 위치를 FVector::ZeroVector로 하여, 바다가 쫙 깔리게 설정
+	WaterBodyComponent->GetWaterSpline()->ResetSpline({ FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector });
 
-	if (const AWaterZone* OwningZone = WaterBodyComponent->GetWaterZone())
+	if (const AWaterZone* OwningWaterZone = WaterBodyComponent->GetWaterZone())
 	{
-		if (UWaterBodyOceanComponent* OceanComp = Cast<UWaterBodyOceanComponent>(WaterBodyComponent))
+		if (UWaterBodyOceanComponent* OceanComponent = Cast<UWaterBodyOceanComponent>(WaterBodyComponent))
 		{
-			const double ExistingCollisionH = OceanComp->GetCollisionExtents().Z;
-			OceanComp->bAffectsLandscape = false;
-			OceanComp->SetCollisionExtents(FVector(OwningZone->GetZoneExtent() / 2.0, ExistingCollisionH));
-			OceanComp->FillWaterZoneWithOcean();
+			const double ExistingCollisionHeight = OceanComponent->GetCollisionExtents().Z;
+			OceanComponent->bAffectsLandscape = false;
+			OceanComponent->SetCollisionExtents(FVector(OwningWaterZone->GetZoneExtent() / 2.0, ExistingCollisionHeight));
+			OceanComponent->FillWaterZoneWithOcean();
 		}
 	}
 
-	const float OceanSeaHeight = DataContainer.CurMinHeight + (DataContainer.CurMaxHeight - DataContainer.CurMinHeight) * Preset->HeightSettings.SeaLevel - 5.0f;
-
+	const float OceanSeaHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset) - 5.0f;
 	Ocean->SetActorLocation(FVector(VolumeOrigin.X, VolumeOrigin.Y, OceanSeaHeight));
-
-	const float ScaleX = (VolumeExtent.X * 2.0f) / 100.0f;
-	const float ScaleY = (VolumeExtent.Y * 2.0f) / 100.0f;
-	Ocean->SetActorScale3D(FVector(ScaleX, ScaleY, 1.0f));
 
 	Ocean->PostEditChange();
 	Ocean->PostEditMove(true);
@@ -403,7 +423,7 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 	WaterBodyComponent->UpdateWaterBodyRenderData();
 
 	CachedOcean = Ocean;
-	CachedOceanAsset = TSoftObjectPtr<AWaterBodyOcean>(Ocean);
+	CachedOceanAsset = Ocean;
 }
 
 void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
@@ -447,7 +467,7 @@ void UOCGHydrologySubsystem::ClearAllRivers(ALandscape* InLandscape)
 	{
 		if (ULevel* CurrentLevel = EditorWorld->GetCurrentLevel())
 		{
-			CurrentLevel->MarkPackageDirty();
+			(void)CurrentLevel->MarkPackageDirty();
 		}
 	}
 
