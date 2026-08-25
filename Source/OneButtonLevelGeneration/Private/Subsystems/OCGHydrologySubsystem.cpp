@@ -1,7 +1,6 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Subsystems/OCGHydrologySubsystem.h"
 
-#include "OCGDeveloperSettings.h"
 #include "OCGLog.h"
 #include "OCGStats.h"
 #include "Data/MapPreset.h"
@@ -35,22 +34,82 @@
 
 namespace
 {
-	/** 프리셋 값이 비어 있으면 프로젝트 기본값으로 로드합니다. */
-	template <typename T>
-	T* ResolveAsset(
-		const TSoftObjectPtr<T>& PresetValue,
-		const TSoftObjectPtr<T>& ProjectDefault,
-		const TCHAR* DebugName
-    )
+/** */
+[[nodiscard]] UMaterialInterface* ResolveWaterMaterial(const TSoftObjectPtr<UMaterialInterface>& CustomMaterial, UMaterialInterface* DefaultMaterial)
+{
+	if (UMaterialInterface* Material = CustomMaterial.LoadSynchronous())
 	{
-		const TSoftObjectPtr<T>& Chosen = PresetValue.IsNull() ? ProjectDefault : PresetValue;
-		if (Chosen.IsNull())
+		return Material;
+	}
+	return DefaultMaterial;
+}
+
+/** */
+[[nodiscard]] bool ShouldOverrideWaterSplineDefaults(const UWaterSplineComponent* WaterSpline)
+{
+	check(WaterSpline);
+	if (const AWaterBody* OwningBody = WaterSpline->GetTypedOuter<AWaterBody>())
+	{
+		return OwningBody->GetClass()->ClassGeneratedBy == nullptr;
+	}
+	return false;
+}
+
+/**
+ *
+ */
+template <typename TWaterBodyDefaults>
+	requires std::derived_from<TWaterBodyDefaults, FWaterBodyDefaults>
+	&& requires(TWaterBodyDefaults WaterBodyDefaults)
+	{
+		WaterBodyDefaults.BrushDefaults;
+		WaterBodyDefaults.SplineDefaults;
+	}
+void ApplyCommonWaterComponentSettings(
+	UWaterBodyComponent* WaterBodyComponent,
+	const TWaterBodyDefaults& WaterBodyDefaults,
+	const TSoftObjectPtr<UMaterialInterface>& WaterMaterial,
+	const TSoftObjectPtr<UMaterialInterface>& MeshMaterial,
+	const TSoftObjectPtr<UMaterialInterface>& HLODMaterial,
+	const TSoftObjectPtr<UMaterialInterface>& PPMaterial
+)
+{
+	// --- WaterBodyActorFactory.cpp의 UWaterBodyActorFactory::PostSpawnActor(...) 참고 ---
+	check(WaterBodyComponent);
+
+	// Water Brush Settings
+	{
+		const FWaterBrushActorDefaults& WaterBrushActorDefaults = WaterBodyDefaults.BrushDefaults;
+		WaterBodyComponent->CurveSettings = WaterBrushActorDefaults.CurveSettings;
+		WaterBodyComponent->WaterHeightmapSettings = WaterBrushActorDefaults.HeightmapSettings;
+		WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults.LayerWeightmapSettings;
+	}
+
+	// Water Material Settings
+	{
+		// MapPreset에 설정된 Material이 있다면 로드하고, 없으면 엔진 디폴트 사용
+		WaterBodyComponent->SetWaterMaterial(ResolveWaterMaterial(WaterMaterial, WaterBodyDefaults.GetWaterMaterial()));
+		WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveWaterMaterial(MeshMaterial, WaterBodyDefaults.GetWaterStaticMeshMaterial()));
+		WaterBodyComponent->SetHLODMaterial(ResolveWaterMaterial(HLODMaterial, WaterBodyDefaults.GetWaterHLODMaterial()));
+		WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveWaterMaterial(PPMaterial, WaterBodyDefaults.GetUnderwaterPostProcessMaterial()));
+
+		// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
+		WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
+
+		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
+		if (ShouldOverrideWaterSplineDefaults(WaterSpline))
 		{
-			UE_LOG(LogOCGModule, Warning,
-				TEXT("%s is unset in both the preset and project settings."), DebugName);
-			return nullptr;
+			WaterSpline->WaterSplineDefaults = WaterBodyDefaults.SplineDefaults;
 		}
-		return Chosen.LoadSynchronous();
+	}
+
+	// If the water body is spawned into a zone which is using local only tessellation, we must default to enabling static meshes.
+	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
+	{
+		if (WaterZone->IsLocalOnlyTessellationEnabled())
+		{
+			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
+		}
 	}
 }
 
@@ -66,7 +125,8 @@ namespace Compat
 #endif
 	}
 #endif
-}
+} // namespace Compat
+} // annonimus namespace
 
 void UOCGHydrologySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -280,7 +340,7 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 		}
 
 		GeneratedRivers.Add(WaterBodyRiver);
-		CachedRivers.Add(TSoftObjectPtr<AWaterBodyRiver>(WaterBodyRiver));
+		CachedRivers.Add(WaterBodyRiver);
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 6
 		const auto* WaterEditLayer = InLandscape->GetEditLayerConst(1);
@@ -343,51 +403,14 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 	check(WaterBodyComponent);
 
 	const UWaterEditorSettings* WaterSettings = GetDefault<UWaterEditorSettings>();
-
-	{
-		const FWaterBrushActorDefaults& WaterBrushActorDefaults = WaterSettings->WaterBodyOceanDefaults.BrushDefaults;
-		WaterBodyComponent->CurveSettings = WaterBrushActorDefaults.CurveSettings;
-		WaterBodyComponent->WaterHeightmapSettings = WaterBrushActorDefaults.HeightmapSettings;
-		WaterBodyComponent->LayerWeightmapSettings = WaterBrushActorDefaults.LayerWeightmapSettings;
-	}
-
-	{
-		const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
-
-		WaterBodyComponent->SetWaterMaterial(ResolveAsset(
-			Preset->OceanSettings.OceanWaterMaterial, Settings->DefaultOceanWaterMaterial, TEXT("Ocean water")));
-		WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
-			Preset->OceanSettings.OceanWaterStaticMeshMaterial, Settings->DefaultOceanWaterStaticMeshMaterial, TEXT("Ocean water static mesh")));
-		WaterBodyComponent->SetHLODMaterial(ResolveAsset(
-			Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
-		WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
-			Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
-
-		// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
-		WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
-
-		auto ShouldOverrideWaterSplineDefaults = [](const UWaterSplineComponent* WaterSpline) -> bool
-		{
-			check(WaterSpline);
-			const AWaterBody* OwningBody = WaterSpline->GetTypedOuter<AWaterBody>();
-			return OwningBody && OwningBody->GetClass()->ClassGeneratedBy == nullptr;
-		};
-
-		UWaterSplineComponent* WaterSpline = WaterBodyComponent->GetWaterSpline();
-		if (ShouldOverrideWaterSplineDefaults(WaterSpline))
-		{
-			WaterSpline->WaterSplineDefaults = WaterSettings->WaterBodyOceanDefaults.SplineDefaults;
-		}
-	}
-
-	// If the water body is spawned into a zone which is using local only tessellation, we must default to enabling static meshes.
-	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
-	{
-		if (WaterZone->IsLocalOnlyTessellationEnabled())
-		{
-			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
-		}
-	}
+	ApplyCommonWaterComponentSettings(
+		WaterBodyComponent,
+		WaterSettings->WaterBodyOceanDefaults,
+		Preset->OceanSettings.OceanWaterMaterial,
+		Preset->OceanSettings.OceanWaterStaticMeshMaterial,
+		Preset->OceanSettings.WaterHLODMaterial,
+		Preset->OceanSettings.UnderwaterPostProcessMaterial
+	);
 
 	// --- UWaterBodyOceanActorFactory::PostSpawnActor(...) ---
 	if (const UWaterWavesBase* DefaultWaterWaves = GetDefault<UWaterEditorSettings>()->WaterBodyOceanDefaults.WaterWaves)
@@ -568,45 +591,33 @@ void UOCGHydrologySubsystem::ApplyWaterWeight(ALandscape* InLandscape, const UMa
 	FOCGLandscapeUtils::AddWeightMap(InLandscape, FirstLayer, BlurredWeightMap);
 }
 
+// TODO: CreateOcean하고 로직이 겹치는데?
 void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath, const UMapPreset* Preset)
 {
-	UWaterBodyComponent* WaterBodyComponent = CastChecked<AWaterBody>(InRiverActor)->GetWaterBodyComponent();
+	UWaterBodyComponent* WaterBodyComponent = InRiverActor->GetWaterBodyComponent();
 	check(Preset && WaterBodyComponent);
 
-	const FWaterBrushActorDefaults& BrushDefaults = GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.BrushDefaults;
-	WaterBodyComponent->CurveSettings = BrushDefaults.CurveSettings;
-	WaterBodyComponent->WaterHeightmapSettings = BrushDefaults.HeightmapSettings;
-	WaterBodyComponent->LayerWeightmapSettings = BrushDefaults.LayerWeightmapSettings;
+	const UWaterEditorSettings* WaterSettings = GetDefault<UWaterEditorSettings>();
+	ApplyCommonWaterComponentSettings(
+		WaterBodyComponent,
+		WaterSettings->WaterBodyRiverDefaults,
+		Preset->RiverSettings.RiverWaterMaterial,
+		Preset->RiverSettings.RiverWaterStaticMeshMaterial,
+		Preset->RiverSettings.WaterHLODMaterial,
+		Preset->RiverSettings.UnderwaterPostProcessMaterial
+	);
 
-	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
-
-	WaterBodyComponent->SetWaterMaterial(ResolveAsset(
-		Preset->RiverSettings.RiverWaterMaterial, Settings->DefaultRiverWaterMaterial, TEXT("River water")));
-	WaterBodyComponent->SetWaterStaticMeshMaterial(ResolveAsset(
-		Preset->RiverSettings.RiverWaterStaticMeshMaterial, Settings->DefaultRiverWaterStaticMeshMaterial, TEXT("River water static mesh")));
-	WaterBodyComponent->SetHLODMaterial(ResolveAsset(
-		Preset->OceanSettings.WaterHLODMaterial, Settings->DefaultWaterHLODMaterial, TEXT("Water HLOD")));
-	WaterBodyComponent->SetUnderwaterPostProcessMaterial(ResolveAsset(
-		Preset->OceanSettings.UnderwaterPostProcessMaterial, Settings->DefaultUnderwaterPostProcessMaterial, TEXT("Underwater post process")));
-
-	// UWaterBodyActorFactory를 거치지 않고 직접 스폰하므로, 여기서 직접 InfoMaterial을 지정
-	WaterBodyComponent->SetWaterInfoMaterial(GetDefault<UWaterRuntimeSettings>()->GetDefaultWaterInfoMaterial());
-
-	WaterBodyComponent->GetWaterSpline()->WaterSplineDefaults = GetDefault<UWaterEditorSettings>()->WaterBodyRiverDefaults.SplineDefaults;
-
-	if (const AWaterZone* WaterZone = WaterBodyComponent->GetWaterZone())
+	// --- UWaterBodyOceanActorFactory::PostSpawnActor(...) ---
 	{
-		if (WaterZone->IsLocalOnlyTessellationEnabled())
-		{
-			WaterBodyComponent->SetWaterBodyStaticMeshEnabled(true);
-		}
-	}
+		const FWaterBodyRiverDefaults& WaterBodyRiverDefaults = WaterSettings->WaterBodyRiverDefaults;
+		UWaterBodyRiverComponent* WaterBodyRiverComponent = CastChecked<UWaterBodyRiverComponent>(WaterBodyComponent);
 
-	UWaterBodyRiverComponent* RiverComp = CastChecked<UWaterBodyRiverComponent>(InRiverActor->GetWaterBodyComponent());
-	RiverComp->SetLakeTransitionMaterial(ResolveAsset(
-		Preset->RiverSettings.RiverToLakeTransitionMaterial, Settings->DefaultRiverToLakeTransitionMaterial, TEXT("River to lake transition")));
-	RiverComp->SetOceanTransitionMaterial(ResolveAsset(
-		Preset->RiverSettings.RiverToOceanTransitionMaterial, Settings->DefaultRiverToOceanTransitionMaterial, TEXT("River to ocean transition")));
+		UMaterialInterface* CustomLakeTransitionMat = Preset->RiverSettings.RiverToLakeTransitionMaterial.LoadSynchronous();
+		WaterBodyRiverComponent->SetLakeTransitionMaterial(CustomLakeTransitionMat ? CustomLakeTransitionMat : WaterBodyRiverDefaults.GetRiverToLakeTransitionMaterial());
+
+		UMaterialInterface* CustomOceanTransitionMat = Preset->RiverSettings.RiverToOceanTransitionMaterial.LoadSynchronous();
+		WaterBodyRiverComponent->SetOceanTransitionMaterial(CustomOceanTransitionMat ? CustomOceanTransitionMat : WaterBodyRiverDefaults.GetRiverToOceanTransitionMaterial());
+	}
 
 	InRiverActor->PostEditChange();
 	InRiverActor->PostEditMove(true);

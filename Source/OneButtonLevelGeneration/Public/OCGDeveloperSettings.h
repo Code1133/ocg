@@ -28,32 +28,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Asset References")
 	TSoftObjectPtr<UPCGGraph> DefaultPCGGraphPath;
 
-	// --- Water Materials --- TODO: Remove this
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultOceanWaterMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultOceanWaterStaticMeshMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultWaterHLODMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultUnderwaterPostProcessMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultRiverWaterMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultRiverWaterStaticMeshMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultRiverToLakeTransitionMaterial;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Water Materials", meta = (DeprecatedProperty))
-	TSoftObjectPtr<UMaterialInterface> DefaultRiverToOceanTransitionMaterial;
-
 	// --- Runtime Virtual Texture ---
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Runtime Virtual Texture")

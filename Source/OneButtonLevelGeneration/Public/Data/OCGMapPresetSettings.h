@@ -369,6 +369,12 @@ struct FOCGRiverSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
 	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River", meta = (EditCondition = "bGenerateRiver", EditConditionHides))
+	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial;
 };
 
 // --- Smoothing (스무딩 / 평활화) ---
