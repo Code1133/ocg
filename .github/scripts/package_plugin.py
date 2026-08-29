@@ -137,9 +137,11 @@ def package_plugin(
         ".gitignore",
     }
 
-    # Release 배포시 제외할 폴더 목록
-    exclude_rel_dirs = {
-        Path("Content/Test"),  # 골든 회귀 테스트 픽스처
+    # 이름이 Test/Tests인 폴더는 위치를 가리지 않고 제외
+    # 골든 픽스처(Content/Test)와 자동화 테스트 소스(Source/**/Private/Tests)가 함께 걸린다.
+    exclude_dir_names = {
+        "Test",
+        "Tests",
     }
 
     uplugin_data["VersionName"] = plugin_version
@@ -175,8 +177,8 @@ def package_plugin(
 
                         rel_to_plugin = path.relative_to(plugin_dir)
 
-                        # 배포 제외 경로 필터링
-                        if any(rel_to_plugin.is_relative_to(d) for d in exclude_rel_dirs):
+                        # 배포 제외 폴더 필터링
+                        if any(part in exclude_dir_names for part in rel_to_plugin.parts):
                             continue
 
                         # 확장자/파일명 필터링
