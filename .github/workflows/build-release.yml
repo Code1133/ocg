@@ -15,6 +15,10 @@ on:
         description: "Create GitHub Release as Draft?"
         type: boolean
         default: false
+      is_prerelease:
+        description: "Mark GitHub Release as Pre-release?"
+        type: boolean
+        default: false
 
 jobs:
   package:
@@ -57,6 +61,7 @@ jobs:
           tag_name: "v${{ steps.parse_version.outputs.VERSION }}"
           name: "v${{ steps.parse_version.outputs.VERSION }}"
           draft: ${{ github.event.inputs.is_draft }}
+          prerelease: ${{ github.event.inputs.is_prerelease }}
           body: |
             ## Release Assets
             Unreal Engine Version specific packages.
