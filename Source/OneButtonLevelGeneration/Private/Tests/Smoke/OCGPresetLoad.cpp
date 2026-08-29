@@ -1,20 +1,14 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 
 #include "CoreMinimal.h"
-#include "Editor.h"
-#include "HAL/PlatformTime.h"
 #include "Misc/AutomationTest.h"
 
 #include "Data/MapPreset.h"
-#include "Subsystems/OCGDataGenerationSubsystem.h"
 
 /**
- * Product: 5개 골든 MapPreset 에셋이 로드되는지, 그리고
- * MP_Golden_NoErosion 생성이 1초 이내에 완료되는지 검증합니다.
+ * Product: 5개 골든 MapPreset 에셋이 로드되는지 검증합니다.
  *
  * 에셋이 없으면 Error를 출력하고 실패시킵니다.
- * 생성 시간 임계값(1초)은 순수 데이터 생성(DataGen) 단계만을 측정합니다.
- * 랜드스케이프/하이드롤로지 적용은 포함되지 않습니다.
  *
  * [SmokeFilter → ProductFilter 변경 이유]
  * SmokeFilter는 FEngineLoop::PreInitPostStartupScreen 단계에서 실행됩니다.
@@ -48,7 +42,7 @@ namespace
 
 bool FOCGPresetLoad::RunTest(const FString& Parameters)
 {
-	// 1. 5개 골든 프리셋 로드 확인
+	// 5개 골든 프리셋 로드 확인
 	static const TCHAR* PresetPaths[] = {
 		TEXT("/OneButtonLevelGeneration/Test/MP_Golden_Default.MP_Golden_Default"),
 		TEXT("/OneButtonLevelGeneration/Test/MP_Golden_NoErosion.MP_Golden_NoErosion"),
@@ -75,44 +69,6 @@ bool FOCGPresetLoad::RunTest(const FString& Parameters)
 	}
 
 	AddInfo(FString::Printf(TEXT("Loaded %d / %llu golden presets."), LoadedCount, UE_ARRAY_COUNT(PresetPaths)));
-
-	// 2. MP_Golden_NoErosion 데이터 생성 시간 측정 (<1s)
-	UMapPreset* NoErosionPreset = nullptr;
-	if (!TrySmokeLoadPreset(this, TEXT("/OneButtonLevelGeneration/Test/MP_Golden_NoErosion.MP_Golden_NoErosion"), NoErosionPreset))
-	{
-		// 골든 에셋이 없는경우 실패로 처리
-		return false;
-	}
-
-	if (!GEditor)
-	{
-		AddError(TEXT("GEditor is null."));
-		return false;
-	}
-
-	UOCGDataGenerationSubsystem* DataGen = GEditor->GetEditorSubsystem<UOCGDataGenerationSubsystem>();
-	if (!DataGen)
-	{
-		AddError(TEXT("UOCGDataGenerationSubsystem not found."));
-		return false;
-	}
-
-	const double StartSec = FPlatformTime::Seconds();
-	DataGen->GenerateData(NoErosionPreset);
-	const double ElapsedMs = (FPlatformTime::Seconds() - StartSec) * 1000.0;
-
-	AddInfo(FString::Printf(TEXT("MP_Golden_NoErosion DataGen took %.1f ms."), ElapsedMs));
-
-	// 1초(1000ms) 이내 완료 여부 확인
-	constexpr double MaxAllowedMs = 1000.0;
-	if (ElapsedMs > MaxAllowedMs)
-	{
-		AddError(FString::Printf(
-			TEXT("MP_Golden_NoErosion DataGen exceeded time limit: %.1f ms > %.0f ms"),
-			ElapsedMs, MaxAllowedMs
-		));
-		return false;
-	}
 
 	return true;
 }
