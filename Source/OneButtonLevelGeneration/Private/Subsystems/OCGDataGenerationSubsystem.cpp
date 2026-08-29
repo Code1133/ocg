@@ -1,27 +1,67 @@
 // Copyright (c) 2025-2026 Code1133. All rights reserved.
 #include "Subsystems/OCGDataGenerationSubsystem.h"
 
+#include "OCGDeveloperSettings.h"
+#include "OCGLog.h"
 #include "Data/MapPreset.h"
 #include "Data/OCGHeightConverter.h"
-#include "Strategies/OCGDefaultHeightmapStrategy.h"
-#include "Strategies/OCGDefaultTemperatureStrategy.h"
-#include "Strategies/OCGDefaultHumidityStrategy.h"
 #include "Strategies/OCGDefaultBiomeStrategy.h"
-#include "Strategies/OCGDefaultTerrainModifierStrategy.h"
 #include "Strategies/OCGDefaultErosionStrategy.h"
+#include "Strategies/OCGDefaultHeightmapStrategy.h"
+#include "Strategies/OCGDefaultHumidityStrategy.h"
 #include "Strategies/OCGDefaultSmoothingStrategy.h"
+#include "Strategies/OCGDefaultTemperatureStrategy.h"
+#include "Strategies/OCGDefaultTerrainModifierStrategy.h"
+
+namespace
+{
+/**
+ * 프로젝트 설정에 지정된 클래스로 전략을 만듭니다.
+ * 비어 있거나 추상 클래스면 기본 구현으로 폴백합니다.
+ */
+template <typename TStrategyBase, typename TDefaultStrategy>
+TStrategyBase* CreateStrategy(UObject* Outer, const TSubclassOf<TStrategyBase>& ConfiguredClass, const TCHAR* StageName)
+{
+	UClass* StrategyClass = ConfiguredClass.Get();
+	if (!StrategyClass)
+	{
+		return NewObject<TDefaultStrategy>(Outer);
+	}
+
+	if (StrategyClass->HasAnyClassFlags(CLASS_Abstract))
+	{
+		UE_LOG(
+			LogOCGModule, Warning,
+			TEXT("%s strategy class '%s' is abstract. Falling back to the default implementation."),
+			StageName, *StrategyClass->GetName()
+		);
+		return NewObject<TDefaultStrategy>(Outer);
+	}
+
+	return NewObject<TStrategyBase>(Outer, StrategyClass);
+}
+}
 
 void UOCGDataGenerationSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	HeightmapStrategy       = NewObject<UOCGDefaultHeightmapStrategy>(this);
-	TemperatureStrategy     = NewObject<UOCGDefaultTemperatureStrategy>(this);
-	HumidityStrategy        = NewObject<UOCGDefaultHumidityStrategy>(this);
-	BiomeStrategy           = NewObject<UOCGDefaultBiomeStrategy>(this);
-	TerrainModifierStrategy = NewObject<UOCGDefaultTerrainModifierStrategy>(this);
-	ErosionStrategy         = NewObject<UOCGDefaultErosionStrategy>(this);
-	SmoothingStrategy       = NewObject<UOCGDefaultSmoothingStrategy>(this);
+	const UOCGDeveloperSettings* Settings = GetDefault<UOCGDeveloperSettings>();
+
+	HeightmapStrategy = CreateStrategy<UOCGHeightmapStrategyBase, UOCGDefaultHeightmapStrategy>(
+		this, Settings->HeightmapStrategyClass, TEXT("Heightmap"));
+	TemperatureStrategy = CreateStrategy<UOCGTemperatureStrategyBase, UOCGDefaultTemperatureStrategy>(
+		this, Settings->TemperatureStrategyClass, TEXT("Temperature"));
+	HumidityStrategy = CreateStrategy<UOCGHumidityStrategyBase, UOCGDefaultHumidityStrategy>(
+		this, Settings->HumidityStrategyClass, TEXT("Humidity"));
+	BiomeStrategy = CreateStrategy<UOCGBiomeStrategyBase, UOCGDefaultBiomeStrategy>(
+		this, Settings->BiomeStrategyClass, TEXT("Biome"));
+	TerrainModifierStrategy = CreateStrategy<UOCGTerrainModifierStrategyBase, UOCGDefaultTerrainModifierStrategy>(
+		this, Settings->TerrainModifierStrategyClass, TEXT("Terrain Modifier"));
+	ErosionStrategy = CreateStrategy<UOCGErosionStrategyBase, UOCGDefaultErosionStrategy>(
+		this, Settings->ErosionStrategyClass, TEXT("Erosion"));
+	SmoothingStrategy = CreateStrategy<UOCGSmoothingStrategyBase, UOCGDefaultSmoothingStrategy>(
+		this, Settings->SmoothingStrategyClass, TEXT("Smoothing"));
 }
 
 void UOCGDataGenerationSubsystem::Deinitialize()
