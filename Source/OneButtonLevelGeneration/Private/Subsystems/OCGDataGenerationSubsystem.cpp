@@ -90,24 +90,21 @@ void UOCGDataGenerationSubsystem::GenerateData(const UMapPreset* Preset)
 	SmoothingStrategy->SmoothHeightMap(Preset, DataContainer);
 	BiomeStrategy->FinalizeBiomes(Preset, DataContainer);
 	ErosionStrategy->ApplyErosion(Preset, DataContainer);
-	ComputeHeightRange(Preset);
+	ComputeMaxHeight(Preset);
 }
 
-void UOCGDataGenerationSubsystem::ComputeHeightRange(const UMapPreset* Preset)
+void UOCGDataGenerationSubsystem::ComputeMaxHeight(const UMapPreset* Preset)
 {
 	FOCGHeightConverter HeightConverter;
 	HeightConverter.Initialize(Preset);
 
 	float Max = Preset->HeightSettings.MinHeight;
-	float Min = Preset->HeightSettings.MaxHeight;
 
 	for (const uint16 RawHeight : DataContainer.HeightMapData)
 	{
 		const float WorldHeight = HeightConverter.ToWorldHeight(RawHeight);
 		if (WorldHeight > Max) Max = WorldHeight;
-		if (WorldHeight < Min) Min = WorldHeight;
 	}
 
 	DataContainer.CurMaxHeight = Max;
-	DataContainer.CurMinHeight = Min;
 }

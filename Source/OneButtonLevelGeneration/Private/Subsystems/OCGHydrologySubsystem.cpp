@@ -34,6 +34,15 @@
 
 namespace
 {
+/** 워터 바디 표면을 지형 해수면보다 살짝 아래에 두기 위한 여유값 (cm) */
+constexpr float WaterSurfaceDepthBias = 5.0f;
+
+/** 워터 바디가 기준으로 삼는 해수면 월드 높이를 반환합니다. */
+[[nodiscard]] float GetWaterSurfaceHeight(const UMapPreset* Preset)
+{
+	return FOCGHeightConverter::GetSeaLevelWorldHeight(Preset) - WaterSurfaceDepthBias;
+}
+
 /** */
 [[nodiscard]] UMaterialInterface* ResolveWaterMaterial(const TSoftObjectPtr<UMaterialInterface>& CustomMaterial, UMaterialInterface* DefaultMaterial)
 {
@@ -219,7 +228,8 @@ void UOCGHydrologySubsystem::GenerateRivers(UWorld* World, ALandscape* InLandsca
 
 	UOCGLandscapeGenSubsystem* LandscapeSubsystem = GEditor->GetEditorSubsystem<UOCGLandscapeGenSubsystem>();
 
-	CacheRiverStartPoints(HeightMapData, Preset, DataContainer.CurMinHeight, DataContainer.CurMaxHeight);
+	const float SeaHeight = GetWaterSurfaceHeight(Preset);
+	CacheRiverStartPoints(HeightMapData, Preset, DataContainer.CurMaxHeight);
 
 	for (int32 RiverCount = 0; RiverCount < Preset->RiverSettings.RiverCount; RiverCount++)
 	{
@@ -433,7 +443,7 @@ void UOCGHydrologySubsystem::CreateOcean(UWorld* World, ALandscape* InLandscape,
 		}
 	}
 
-	const float OceanSeaHeight = FOCGHeightConverter::GetSeaLevelWorldHeight(Preset) - 5.0f;
+	const float OceanSeaHeight = GetWaterSurfaceHeight(Preset);
 	Ocean->SetActorLocation(FVector(VolumeOrigin.X, VolumeOrigin.Y, OceanSeaHeight));
 
 	Ocean->PostEditChange();
@@ -728,14 +738,19 @@ void UOCGHydrologySubsystem::AddRiverProperties(AWaterBodyRiver* InRiverActor, c
 void UOCGHydrologySubsystem::CacheRiverStartPoints(
 	const TArray<uint16>& HeightMapData,
 	const UMapPreset* Preset,
-	float CurMinHeight,
 	float CurMaxHeight
 )
 {
 	CachedRiverStartPoints.Empty();
 
+	const float SeaHeight = GetWaterSurfaceHeight(Preset);
+	if (CurMaxHeight <= SeaHeight)
+	{
+		UE_LOG(LogOCGModule, Warning, TEXT("CacheRiverStartPoints: Terrain peak is below sea level; no river source candidates."));
+		return;
+	}
+
 	const float ThresholdMultiplier = FMath::Clamp(Preset->RiverSettings.RiverSourceElevationRatio, 0.0f, 1.0f);
-	SeaHeight = CurMinHeight + (CurMaxHeight - CurMinHeight) * Preset->HeightSettings.SeaLevel - 5.0f;
 	const float HighThreshold = SeaHeight + (CurMaxHeight - SeaHeight) * ThresholdMultiplier;
 
 	UOCGLandscapeGenSubsystem* LandscapeSubsystem = GEditor->GetEditorSubsystem<UOCGLandscapeGenSubsystem>();
