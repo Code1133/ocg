@@ -601,7 +601,6 @@ void UOCGHydrologySubsystem::ApplyWaterWeight(ALandscape* InLandscape, const UMa
 	FOCGLandscapeUtils::AddWeightMap(InLandscape, FirstLayer, BlurredWeightMap);
 }
 
-// TODO: CreateOcean하고 로직이 겹치는데?
 void UOCGHydrologySubsystem::SetDefaultRiverProperties(AWaterBodyRiver* InRiverActor, const TArray<FVector>& InRiverPath, const UMapPreset* Preset)
 {
 	UWaterBodyComponent* WaterBodyComponent = InRiverActor->GetWaterBodyComponent();
