@@ -773,7 +773,8 @@ void UOCGHydrologySubsystem::CacheRiverStartPoints(
 
 FIntPoint UOCGHydrologySubsystem::GetRandomStartPoint(int32 RiverIndex, const UMapPreset* Preset) const
 {
-	FRandomStream Stream(Preset->RiverSettings.RiverSeed + RiverIndex * 9973);
+	const int32 StreamSeed = static_cast<int32>(static_cast<uint32>(Preset->RiverSettings.RiverSeed) + static_cast<uint32>(RiverIndex) * 9973u);
+	FRandomStream Stream(StreamSeed);
 
 	if (CachedRiverStartPoints.Num() > 0)
 	{
