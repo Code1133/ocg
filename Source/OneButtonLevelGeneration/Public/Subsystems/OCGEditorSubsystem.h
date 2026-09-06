@@ -7,11 +7,12 @@
 
 class UMapPreset;
 class FSpawnTabArgs;
+class FWorkspaceItem;
 class SDockTab;
 
 /**
  * OCG 생성 파이프라인의 단일 진입점 에디터 서브시스템
- * 툴바 버튼 등록을 담당하며 4단계 파이프라인 실행을 조율합니다.
+ * 툴바 버튼과 Window 메뉴 등록을 담당하며 4단계 파이프라인 실행을 조율합니다.
  */
 UCLASS()
 class ONEBUTTONLEVELGENERATION_API UOCGEditorSubsystem : public UEditorSubsystem
@@ -89,4 +90,7 @@ private:
 
 	// 에셋 로딩 완료 후 트리거용 핸들
 	FDelegateHandle OnFilesLoadedHandle;
+
+	// Window 메뉴의 "OCG Tools" 그룹
+	TSharedPtr<FWorkspaceItem> MenuGroup;
 };

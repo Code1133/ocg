@@ -54,6 +54,8 @@ stage of terrain generation became a replaceable strategy.
   default assets and the LayerInfo output folder, with startup validation that reports any
   configured asset that no longer resolves.
 - Added a **sidebar to the OCG window** that filters the panel by category.
+- Added an **OCG button to the level editor toolbar**. The window is still available from
+  **Window → OCG Tools → OCG** as before.
 - Rivers now have their own **Water HLOD Material** and **Underwater Post Process Material**,
   so a river-only preset can override them independently of the ocean.
 - Added an **Experimental notice** in the Water tab when river generation is enabled.

@@ -18,15 +18,16 @@ Select File > New Level (Ctrl+N) to create a new empty level. OCG also supports 
 
 ### 2. Open the One-Click Level Generator
 
-Select Window > OCG Tools > OCG Window to open the OCG window.
+Click the **OCG** button on the level editor toolbar, or select **Window > OCG Tools > OCG**.
 
 ![Open OCG Window]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/open_ocg_window.png)
 
-Then, click the Create Level Generator button in the OCG window to add the level generator to the world.
+{: .info }
+> Changed in 2.0.0. There is no longer a `LevelGenerator` actor to place in the level — pick a
+> preset in the window and generate.
 
-![Create Level Generator Button]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/create_level_generator.png)
-
-Assign the MP_StylizedLandscape map preset located in the Plugins/One-Click Level Generation/Samples path.
+In the **Preset** field at the top of the window, assign the `MP_StylizedLandscape` map preset
+located under Plugins/One-Click Level Generation/Samples.
 
 ![Set Sample Map Preset]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/set_sample_mappreset.png)
 
@@ -34,7 +35,7 @@ Check if the PCG graph and landscape material are properly assigned. If not, ass
 
 ![Check Map Preset Graph and Material]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/check_map_preset.png)
 
-Click the Generate button to start generating the level.
+Click **Generate All** to start generating the level.
 
 ![Click Generate Button]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/click_generate.png)
 

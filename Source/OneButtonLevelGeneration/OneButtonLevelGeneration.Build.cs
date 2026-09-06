@@ -55,6 +55,7 @@ public class OneButtonLevelGeneration : ModuleRules
 				"UnrealEd",
 				"VirtualTexturingEditor",
 				"WaterEditor",
+				"WorkspaceMenuStructure",
 			});
 		}
 	}

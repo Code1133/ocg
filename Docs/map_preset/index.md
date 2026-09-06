@@ -22,10 +22,10 @@ By editing a **MapPreset**, you can define properties related to level generatio
 ## Editing MapPreset
 
 {: .info }
-> Changed in 2.0.0. Generation is now driven entirely from the **OCG Window**
-> (**Window → One Button Level Generation**). The separate MapPreset editor window and the
-> `LevelGenerator` actor that 1.x placed in the level are gone — double-clicking a `MapPreset`
-> now opens the standard Details panel.
+> Changed in 2.0.0. Generation is now driven entirely from the **OCG Window**. Open it from the
+> **OCG** button on the level editor toolbar, or from **Window → OCG Tools → OCG**. The separate
+> MapPreset editor window and the `LevelGenerator` actor that 1.x placed in the level are gone —
+> double-clicking a `MapPreset` now opens the standard Details panel.
 
 ![OCGWindow]({{ site.baseurl }}/assets/images/map_preset/OCGWindow.png)
 

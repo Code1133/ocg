@@ -18,6 +18,8 @@
 #include "PCGComponent.h"
 #include "PCGGraph.h"
 #include "ToolMenus.h"
+#include "WorkspaceMenuStructure.h"
+#include "WorkspaceMenuStructureModule.h"
 #include "AssetRegistry/AssetData.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Misc/MessageDialog.h"
@@ -31,6 +33,7 @@ static const TCHAR* OCGLastPresetKey = TEXT("LastUsedPreset");
 
 static const FName OCGToolbarMenuName    = TEXT("LevelEditor.LevelEditorToolBar.AssetsToolBar");
 static const FName OCGToolbarSectionName = TEXT("OCG");
+static const FName OCGMenuGroupName      = TEXT("OCGTools");
 static const FName OCGWindowTabName      = TEXT("OCGWindow");
 
 void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -42,13 +45,20 @@ void UOCGEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	UMapPreset::OnPropertyChanged.AddUObject(this, &UOCGEditorSubsystem::OnMapPresetPropertyChanged);
 
 	// OCG Window 탭 등록
+	MenuGroup = WorkspaceMenu::GetMenuStructure().GetLevelEditorCategory()->AddGroup(
+		OCGMenuGroupName,
+		LOCTEXT("OCGMenuGroup", "OCG Tools"),
+		FSlateIcon(FAppStyle::GetAppStyleSetName(), "LandscapeEditor.NewLandscape")
+	);
+
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
 		OCGWindowTabName,
 		FOnSpawnTab::CreateUObject(this, &UOCGEditorSubsystem::SpawnOCGWindowTab)
 	)
 	.SetDisplayName(LOCTEXT("OCGWindowTitle", "OCG"))
-	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "Icons.Settings"))
-	.SetMenuType(ETabSpawnerMenuType::Hidden);
+	.SetTooltipText(LOCTEXT("OCGWindowTooltip", "Open the OCG Level Generator window"))
+	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LandscapeEditor.NewLandscape"))
+	.SetGroup(MenuGroup.ToSharedRef());
 
 	RestoreLastUsedPreset();
 	RegisterToolbarEntry();
@@ -88,6 +98,13 @@ void UOCGEditorSubsystem::Deinitialize()
 	}
 
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(OCGWindowTabName);
+
+	// AddGroup은 같은 이름이어도 항목을 새로 만들기 때문에 직접 제거해야 중복이 쌓이지 않음
+	if (MenuGroup.IsValid())
+	{
+		WorkspaceMenu::GetMenuStructure().GetLevelEditorCategory()->RemoveItem(MenuGroup.ToSharedRef());
+		MenuGroup.Reset();
+	}
 
 	UnregisterToolbarEntry();
 
