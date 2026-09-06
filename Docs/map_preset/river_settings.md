@@ -9,6 +9,12 @@ nav_order: 3
 
 This document explains how to generate rivers in a level using the MapPreset asset and describes the properties in the River Settings section.
 
+{: .warning }
+> **River generation is experimental.** It supports only basic flow and shape. Complex water
+> networks, confluences and detailed adjustments have to be made by hand, and the generated
+> result may change in future updates. The property is shown as
+> *Generate River (Experimental)* in the Details panel.
+
 ## The river generation process via MapPreset is as follows:
 1. A random location at a certain height above sea level is chosen as the starting point.
 2. A Spline is generated that travels down to sea level and is then simplified.
@@ -37,4 +43,24 @@ This document explains how to generate rivers in a level using the MapPreset ass
 | :------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Base Value    | The base value for the river's width, depth, and velocity.<br>It is multiplied by the normalized Curve value to represent the actual river.                                                                        |
 | Curve Data    | Determines how the width, depth, and velocity change as the river flows.<br>This is a float curve where the X-axis represents the river's progress, and the Y-axis represents the width, depth, or velocity value. |
-| Materials     | The material properties to be set on the generated Water Body River actor.                                                                                                                                         |
+| Minimum Value | The baseline width, depth, and velocity.<br>It is **added** to the curve-driven value, so the result ranges from *Minimum Value* to *Base Value* + *Minimum Value*, and that total is then scaled by the preset's *Landscape Scale*.                                          |
+
+## River Materials
+
+All material properties may be left empty. When one is, OCG falls back to the Water plugin's
+own default for that slot, taken from
+**Project Settings → Plugins → Water Editor → Water Body River Defaults**.
+
+| Property Name                     | Description                                                                                    |
+| :-------------------------------- | :--------------------------------------------------------------------------------------------- |
+| River Water Material              | The material used to render the river. Applied to the `WaterBodyRiver`.                        |
+| River Water Static Mesh Material  | The material applied to the static mesh used for rendering the river.                          |
+| River To Lake Transition Material | The material used where a river meets a lake.                                                  |
+| River To Ocean Transition Material| The material used where a river meets the ocean.                                               |
+| Water HLODMaterial                | The material used for the HLOD representation of the river.                                    |
+| Underwater Post Process Material  | The material used for underwater post-processing effects inside the river.                     |
+
+{: .note }
+> *Water HLODMaterial* and *Underwater Post Process Material* also exist under
+> *Ocean Settings*. Since 2.0.0 the two sets are independent — the river uses the values set
+> here, and the ocean uses its own. In OCG 1.x a single pair was shared by both.
