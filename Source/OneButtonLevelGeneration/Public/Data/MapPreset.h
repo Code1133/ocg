@@ -4,42 +4,48 @@
 
 #include "CoreMinimal.h"
 #include "OCGBiomeSettings.h"
+#include "OCGMapPresetSettings.h"
 #include "Structure/OCGHierarchyDataStructure.h"
 #include "MapPreset.generated.h"
 
-/**
- *
- */
-
-class AOCGLevelGenerator;
-class AOCGLandscapeVolume;
 class UPCGGraph;
 
-
-// 7, 15, 31, 63, 127, 255만 선택 가능한 열거형
-UENUM(BlueprintType)
-enum class ELandscapeQuadsPerSection : uint8
-{
-    Q0	 = 0	UMETA(DisplayName = "0"),
-	Q7   = 7    UMETA(DisplayName = "7"),
-	Q15  = 15   UMETA(DisplayName = "15"),
-	Q31  = 31   UMETA(DisplayName = "31"),
-	Q63  = 63   UMETA(DisplayName = "63"),
-	Q127 = 127  UMETA(DisplayName = "127"),
-	Q255 = 255  UMETA(DisplayName = "255"),
-};
+/**
+ * UMapPreset 프로퍼티가 변경될 때 브로드캐스트됩니다.
+ * DataAsset은 월드를 직접 알 수 없으므로, 월드 액터 업데이트는
+ * 이 델리게이트를 구독한 OCGEditorSubsystem이 담당합니다.
+ *
+ * @param ChangedPreset 변경된 프리셋 인스턴스
+ * @param PropertyName 변경된 멤버 프로퍼티 이름
+ */
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMapPresetPropertyChanged, const class UMapPreset*, FName /*PropertyName*/);
 
 UCLASS(BlueprintType, meta = (DisplayName = "Map Preset"))
 class ONEBUTTONLEVELGENERATION_API UMapPreset : public UObject
 {
 	GENERATED_BODY()
+
 public:
-	UMapPreset();
+	virtual void Serialize(FArchive& Ar) override;
 	virtual void PostLoad() override;
 
-#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
+
+	/**
+	 * 중첩 struct 내부 필드 변경을 처리합니다.
+	 *
+	 * MapResolution(FIntPoint)처럼 struct 안의 struct는 FPropertyChangedEvent로 이름을 얻을 수 없기에,
+	 * PostEditChangeChainProperty로 이를 해결합니다.
+	 *
+	 * @note 코드에서 PostEditChange()를 직접 호출하면 체인이 비어 본 함수가 호출되지 않습니다.
+	 */
+	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedChainEvent) override;
+
+	/**
+	 * 프로퍼티 변경 시 브로드캐스트되는 정적 델리게이트.
+	 * OCGEditorSubsystem이 Initialize/Deinitialize에서 구독 관리를 담당합니다.
+	 */
+	static FOnMapPresetPropertyChanged OnPropertyChanged;
 
 private:
 	void CalculateOptimalLooseness();
@@ -47,566 +53,191 @@ private:
 	void UpdateInternalLandscapeFilterNames();
 
 public:
-	virtual UWorld* GetWorld() const override;
+	// ============================== World Settings : Basics ==============================
 
-public:
-	//~ Begin UPROPERTY World Settings | Basics
-	//~ Begin UPROPERTY World Settings | Basics | Landscape Settings
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 1, ClampMax = 16, UIMin = 1, UIMax = 16)
-	)
-	int32 WorldPartitionGridSize = 2;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 4, ClampMax = 64, UIMin = 4, UIMax = 64)
-	)
-	int32 WorldPartitionRegionSize = 16;
-
-	// Horizontal size of your Landscape in Km (Changes Landscape Actor Scale)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = 0.00001f)
-	)
-	float LandscapeSize = 1.009f;
-
-	UPROPERTY()
-	float LandscapeScale = 1;
-
-	// If true changing LandscapeScale changes the terrain formation
+	// --- Landscape ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	bool ApplyScaleToNoise = true;
+	FOCGLandscapeSettings LandscapeSettings;
 
-	// Decides the grid spacing of debug landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (ClampMin = 1))
-	int32 DebugGridSpacing = 16;
-	
-	// Decides the Blend radius(pixel) between different biomes
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "0", ClampMax = "50")
-	)
-	int32 BiomeBlendRadius = 10;
+#pragma region Deprecated Landscape Settings
+	UPROPERTY() int32 WorldPartitionGridSize_DEPRECATED = 2;
+	UPROPERTY() int32 WorldPartitionRegionSize_DEPRECATED = 16;
+	UPROPERTY() float LandscapeSize_DEPRECATED = 1.009f;
+	UPROPERTY() float LandscapeScale_DEPRECATED = 1;
+	UPROPERTY() bool ApplyScaleToNoise_DEPRECATED = true;
+	UPROPERTY() int32 DebugGridSpacing_DEPRECATED = 16;
+	UPROPERTY() int32 BiomeBlendRadius_DEPRECATED = 10;
+	UPROPERTY() int32 WaterBlendRadius_DEPRECATED = 10;
+	UPROPERTY() ELandscapeQuadsPerSection Landscape_QuadsPerSection_DEPRECATED = ELandscapeQuadsPerSection::Q63;
+	UPROPERTY() int32 Landscape_SectionsPerComponent_DEPRECATED = 1;
+	UPROPERTY() FIntPoint Landscape_ComponentCount_DEPRECATED = FIntPoint(16, 16);
+	UPROPERTY() FIntPoint MapResolution_DEPRECATED = FIntPoint(1009, 1009);
+	UPROPERTY() TObjectPtr<UMaterialInstance> LandscapeMaterial_DEPRECATED;
+	UPROPERTY() FFilePath HeightmapFilePath_DEPRECATED;
+#pragma endregion
 
-	// Decides the Blend radius(pixel) between water and other biomes
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "0", ClampMax = "50")
-	)
-	int32 WaterBlendRadius = 10;
-
-	// The number of quads in a single landscape section. One section is the unit of LOD transition for landscape rendering.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	ELandscapeQuadsPerSection Landscape_QuadsPerSection = ELandscapeQuadsPerSection::Q63;
-
-	// The number of sections in a single landscape component. This along with the section size determines the size of each landscape component. A component is the base unit of rendering and culling.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta=(ClampMin="1", ClampMax="2", UIMin="1", UIMax="2")
-	)
-	int32 Landscape_SectionsPerComponent = 1;
-
-	// The number of components in the X and Y direction, determining the overall size of the landscape.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	FIntPoint Landscape_ComponentCount = FIntPoint(16, 16);
-
-	// The Resolution of landscape, including resolution of different maps used for landscape generation, in X and Y direction
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings",
-		meta = (ClampMin = "63", ClampMax = "8129", UIMin = "63", UIMax = "8129")
-	)
-	FIntPoint MapResolution = FIntPoint(1009, 1009);
-
-	// The Material used for Landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings")
-	TObjectPtr<UMaterialInstance> LandscapeMaterial;
-
-	// You can use your own Height Map Texture to generate landscape. Texture resolution must be equal to Map Resolution.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Landscape Settings", meta = (FilePathFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|16-bit RAW (*.r16;*.raw)|*.r16;*.raw"))
-	FFilePath HeightmapFilePath;
-	
-	//~ End UPROPERTY World Settings | Basics | Landscape Settings
-
-	//~ Begin UPROPERTY World Settings | Basics | Height
-	// Landscapes Minimum Height (in cm)
+	// --- Height ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
-	float MinHeight = -15000.0f;
+	FOCGHeightSettings HeightSettings;
 
-	// Landscapes Maximum Height (in cm)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height")
-	float MaxHeight = 20000.0f;
+#pragma region Deprecated Height Settings
+	UPROPERTY() float MinHeight_DEPRECATED = -15000.0f;
+	UPROPERTY() float MaxHeight_DEPRECATED = 20000.0f;
+	UPROPERTY() float SeaLevel_DEPRECATED = 0.4f;
+#pragma endregion
 
-	// Decides the sea level height of landscape 0(Minimum height) ~ 1(Maximum height)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Height",
-		meta = (ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float SeaLevel = 0.4f;
-	//~ End UPROPERTY World Settings | Basics | Height
+	// --- Temperature ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature")
+	FOCGTemperatureSettings TemperatureSettings;
 
-	//~ Begin UPROPERTY World Settings | Basics | Temperature
-	// Landscapes Minimum Temperature
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature",
-		meta = (ClampMin = -273.15)
-	)
-	float MinTemp = -30.0f;
+#pragma region Deprecated Temperature Settings
+	UPROPERTY() float MinTemp_DEPRECATED = -30.0f;
+	UPROPERTY() float MaxTemp_DEPRECATED = 80.0f;
+#pragma endregion
 
-	// Landscapes Maximum Temperature
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Temperature",
-		meta = (ClampMin = -273.15)
-	)
-	float MaxTemp = 80.0f;
-	//~ End UPROPERTY World Settings | Basics | Temperature
+	// --- Noise ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise")
+	FOCGBasicNoiseSettings BasicNoiseSettings;
 
-	//~ Begin UPROPERTY World Settings | Basics | Noise
-	// Decides the frequency of Mountains
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.005")
-	)
-	float ContinentNoiseScale = 0.003f;
+#pragma region Deprecated Basic Noise Settings
+	UPROPERTY() float ContinentNoiseScale_DEPRECATED = 0.003f;
+	UPROPERTY() float TerrainNoiseScale_DEPRECATED = 0.01f;
+	UPROPERTY() float TemperatureNoiseScale_DEPRECATED = 0.002f;
+#pragma endregion
 
-	// Decides the frequency of Mountains
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.03")
-	)
-	float TerrainNoiseScale = 0.01f;
+	// ============================== World Settings : Advanced ==============================
 
-	// Decides the frequency of Temperature Change
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Basics | Noise",
-		meta = (ClampMin = "0.0001", ClampMax = "0.01")
-	)
-	float TemperatureNoiseScale = 0.002f;
-	//~ End UPROPERTY World Settings | Basics | Noise
-	//~ End UPROPERTY World Settings | Basics
-
-	//~ Begin UPROPERTY World Settings | Advanced
-	//~ Begin UPROPERTY World Settings | Advanced | Height
-	// Landscapes Minimum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMinHeight = 0.0f;
-
-	// Landscapes Maximum Height
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	float CurMaxHeight = 0.0f;
-
+	// --- Height (Smoothing / Island / Biome Terrain) ---
+	// Smoothing Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bSmoothHeight = true;
+	FOCGSmoothingSettings SmoothingSettings;
 
-	// Larger Radius gives softer smoothing effect
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides, ClampMin = "5", ClampMax = "25")
-	)
-	int32 GaussianBlurRadius = 5;
+#pragma region Deprecated Smoothing Settings
+	UPROPERTY() bool bSmoothHeight_DEPRECATED = true;
+	UPROPERTY() int32 GaussianBlurRadius_DEPRECATED = 5;
+	UPROPERTY() bool bSmoothBySlope_DEPRECATED = false;
+	UPROPERTY() int32 SmoothingIteration_DEPRECATED = 3;
+	UPROPERTY() float MaxSlopeAngle_DEPRECATED = 60.0f;
+	UPROPERTY() float SmoothingStrength_DEPRECATED = 0.5f;
+	UPROPERTY() bool bSmoothByMediumHeight_DEPRECATED = false;
+	UPROPERTY() int32 MedianSmoothRadius_DEPRECATED = 3;
+#pragma endregion
 
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
-	)
-	bool bSmoothBySlope = false;
-
-	// Larger Iteration takes more time but gives stronger smoothing
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "1", ClampMax = "5")
-	)
-	int32 SmoothingIteration = 3;
-
-	// Slope larger than this angle will be smoothed
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "89.9")
-	)
-	float MaxSlopeAngle = 60.f;
-
-	// Decides the strength of smoothing
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothBySlope", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float SmoothingStrength = 0.5f;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothHeight", EditConditionHides)
-	)
-	bool bSmoothByMediumHeight = false;
-
-	// Threshold Angle of the slope of the landscape
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bSmoothByMediumHeight", EditConditionHides, ClampMin = "0", ClampMax = "5")
-	)
-	int32 MedianSmoothRadius = 3;
-
-	//Island Properties
-	// Decides whether the landscape will be island or not
+	// Island Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bIsland = true;
+	FOCGIslandSettings IslandSettings;
 
-	// Decides the sharpness of island edge and island's size
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.1, ClampMax = 3.0)
-	)
-	float IslandFalloffExponent = 2.0f;
-
-	// Decides irregularity of island shape
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = "0.0001", ClampMax = "0.05")
-	)
-	float IslandShapeNoiseScale = 0.0025f;
-
-	// Decides irregularity of island edge
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bIsland", EditConditionHides, ClampMin = 0.0001)
-	)
-	float IslandShapeNoiseStrength = 0.5f;
+#pragma region Deprecated Island Settings
+	UPROPERTY() bool bIsland_DEPRECATED = true;
+	UPROPERTY() float IslandFalloffExponent_DEPRECATED = 2.0f;
+	UPROPERTY() float IslandShapeNoiseScale_DEPRECATED = 0.0025f;
+	UPROPERTY() float IslandShapeNoiseStrength_DEPRECATED = 0.5f;
+#pragma endregion
 
 	// Modify Terrain Properties
-	// Decides whether the Mountain Ratio of biomes will be applied or not
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height")
-	bool bModifyTerrainByBiome = false;
+	FOCGBiomeTerrainSettings BiomeTerrainSettings;
 
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = 0.0f, ClampMax = 1.0f)
-	)
-	float PlainSmoothFactor = 1.f;
+#pragma region Deprecated Biome Terrain Settings
+	UPROPERTY() bool bModifyTerrainByBiome_DEPRECATED = false;
+	UPROPERTY() float PlainSmoothFactor_DEPRECATED = 1.0f;
+	UPROPERTY() float BiomeNoiseScale_DEPRECATED = 0.01f;
+	UPROPERTY() float BiomeNoiseAmplitude_DEPRECATED = 0.2f;
+	UPROPERTY() int32 BiomeHeightBlendRadius_DEPRECATED = 5;
+#pragma endregion
 
-	// Decides the frequency of details in Biome
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0001", ClampMax = "0.05")
-	)
-	float BiomeNoiseScale = 0.01f;
+	// --- Temperature ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature")
+	FOCGAdvancedTemperatureSettings AdvancedTemperatureSettings;
 
-	// Decides the height of details in Biome
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0.0001", ClampMax = "1.0")
-	)
-	float BiomeNoiseAmplitude = 0.2f;
+#pragma region Deprecated Advanced Temperature Settings
+	UPROPERTY() float TempDropPer1000Units_DEPRECATED = 0.1f;
+#pragma endregion
 
-	// Larger radius gives smaller spike height difference at biome borders
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Height",
-		meta = (EditCondition = "bModifyTerrainByBiome", EditConditionHides, ClampMin = "0", ClampMax = "50")
-	)
-	int32 BiomeHeightBlendRadius = 5;
-	//~ End UPROPERTY World Settings | Advanced | Height
+	// --- Humidity ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity")
+	FOCGHumiditySettings HumiditySettings;
 
-	//~ Begin UPROPERTY World Settings | Advanced | Temperature
-	// Decides the amount of temperature drop per 1000 units of height
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Temperature",
-		meta = (ClampMin = "0.0")
-	)
-	float TempDropPer1000Units = 0.1f;
-	//~ End UPROPERTY World Settings | Advanced | Temperature
+#pragma region Deprecated Humidity Settings
+	UPROPERTY() float MoistureFalloffRate_DEPRECATED = 0.0005f;
+	UPROPERTY() float TemperatureInfluenceOnHumidity_DEPRECATED = 0.7f;
+#pragma endregion
 
-	//~ Begin UPROPERTY World Settings | Advanced | Humidity
-	// Decides the amount of humidity drop per distance from water
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity", meta = (ClampMin = "0.0")
-	)
-	float MoistureFalloffRate = 0.0005f;
+	// --- Noise ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise")
+	FOCGAdvancedNoiseSettings AdvancedNoiseSettings;
 
-	// Decides the amount of change in humidity caused by temperature
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Humidity",
-		meta = (ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float TemperatureInfluenceOnHumidity = 0.7f;
-	//~ End UPROPERTY World Settings | Advanced | Humidity
+#pragma region Deprecated Advanced Noise Settings
+	UPROPERTY() float StandardNoiseOffset_DEPRECATED = 10000.0f;
+	UPROPERTY() float RedistributionFactor_DEPRECATED = 2.5f;
+	UPROPERTY() int32 Octaves_DEPRECATED = 3;
+	UPROPERTY() float Lacunarity_DEPRECATED = 2.0f;
+	UPROPERTY() float Persistence_DEPRECATED = 0.5f;
+#pragma endregion
 
-	//~ Begin UPROPERTY World Settings | Advanced | Noise
-	// --- Noise Settings ---
-	// Decides the difference between different noises (larger value gives more randomness)
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "0.0", ClampMax = "10000.0")
-	)
-	float StandardNoiseOffset = 10000.f;
-
-	// Decides how much the noise is spread out
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "10.0")
-	)
-	float RedistributionFactor = 2.5f;
-
-	// Larger Octaves gives more detail to the landscape
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1", ClampMax = "10"))
-	int32 Octaves = 3; // 노이즈 겹치는 횟수 (많을수록 디테일 증가)
-
-	// Larger Lancunarity gives more tight detail
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise", meta = (ClampMin = "1.0", ClampMax = "5.0")
-	)
-	float Lacunarity = 2.0f; // 주파수 변화율 (클수록 더 작고 촘촘한 노이즈 추가)
-
-	// Larger Persistence give more height change detail
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Noise",
-		meta = (ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float Persistence = 0.5f; // 진폭 변화율 (작을수록 추가되는 노이즈의 높이가 낮아짐)
-	//~ End UPROPERTY World Settings | Advanced | Noise
-
-	//~ Begin UPROPERTY World Settings | Advanced | Erosion
+	// --- Erosion ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion")
-	bool bErosion = true;
+	FOCGErosionSettings ErosionSettings;
 
-	// More Iteration gives more erosion details
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "1", ClampMax = "1000000")
-	)
-	int32 NumErosionIterations = 100000;
-
-	// Decides the size of erosion
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "2",ClampMax = "8")
-	)
-	int32 ErosionRadius = 3;
-
-	// Larger Inertia gives more smooth flow of erosion droplets
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "0.99")
-	)
-	float DropletInertia = 0.25f; // 1에 가까울 수록 직진 성향 강해짐 0에 가까울수록 기울기에 따른 무작위 움직임
-
-	// Decides the capacity of sediment one droplet can have
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "100.0")
-	)
-	float SedimentCapacityFactor = 10.0f; // 흙 운반 용량 계수
-
-	// Decides the minimum capacity of sediment one droplet can have
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float MinSedimentCapacity = 0.01f; // 최소 운반 용량
-
-	// Decides the speed of erosion
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float ErodeSpeed = 0.3f; // 침식 속도
-
-	// Decides the speed of deposit
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float DepositSpeed = 0.3f; // 퇴적 속도
-
-	// Decides how fast the droplet evaporates
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "1.0")
-	)
-	float EvaporateSpeed = 0.01f; // 증발 속도
-
-	// Decides the gravity effect on droplets
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "100.0")
-	)
-	float Gravity = 9.8f;
-
-	// Decides the maximum lifetime of droplets
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "512")
-	)
-	int32 MaxDropletLifetime = 50;
-
-	// Decides the initial water volume of droplets
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "10.0")
-	)
-	float InitialWaterVolume = 0.5f;
-
-	// Decides the initial speed of droplets
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "World Settings | Advanced | Erosion",
-		meta = (EditCondition = "bErosion", EditConditionHides, ClampMin = "0.0", ClampMax = "20.0")
-	)
-	float InitialSpeed = 2.0f;
-	//~ End UPROPERTY World Settings | Advanced | Erosion
-	//~ End UPROPERTY World Settings | Advanced
+#pragma region Deprecated Erosion Settings
+	UPROPERTY() bool bErosion_DEPRECATED = true;
+	UPROPERTY() int32 NumErosionIterations_DEPRECATED = 100000;
+	UPROPERTY() int32 ErosionRadius_DEPRECATED = 3;
+	UPROPERTY() float DropletInertia_DEPRECATED = 0.25f;
+	UPROPERTY() float SedimentCapacityFactor_DEPRECATED = 10.0f;
+	UPROPERTY() float MinSedimentCapacity_DEPRECATED = 0.01f;
+	UPROPERTY() float ErodeSpeed_DEPRECATED = 0.3f;
+	UPROPERTY() float DepositSpeed_DEPRECATED = 0.3f;
+	UPROPERTY() float EvaporateSpeed_DEPRECATED = 0.01f;
+	UPROPERTY() float Gravity_DEPRECATED = 9.8f;
+	UPROPERTY() int32 MaxDropletLifetime_DEPRECATED = 50;
+	UPROPERTY() float InitialWaterVolume_DEPRECATED = 0.5f;
+	UPROPERTY() float InitialSpeed_DEPRECATED = 2.0f;
+#pragma endregion
 
 public:
-	//~ Begin UPROPERTY Ocean Settings
+	// ============================== Ocean Settings ==============================
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings")
-	bool bContainWater = true;
+	FOCGOceanSettings OceanSettings;
 
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "Ocean Settings",
-		meta = (EditCondition = "bContainWater", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial;
-	//~ End UPROPERTY Ocean Settings
+#pragma region Deprecated Ocean Settings
+	UPROPERTY() bool bContainWater_DEPRECATED = true;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> OceanWaterMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> OceanWaterStaticMeshMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> WaterHLODMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> UnderwaterPostProcessMaterial_DEPRECATED;
+#pragma endregion
 
 public:
-	//~ Begin UPROPERTY River Settings
-	// Generates River. If true, the following river settings will be displayed.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings")
-	bool bGenerateRiver = false;
+	// ============================== River Settings (Experimental) ==============================
+	// Category 문자열은 SOCGWindow.cpp의 OCGNav::CategoryMap과 일치해야 합니다.
+	// 한쪽만 바꾸면 컴파일은 되고 Water 탭에서 강 설정만 사라집니다.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings (Experimental)")
+	FOCGRiverSettings RiverSettings;
 
-	// Seed for the River
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides))
-	int32 RiverSeed = 0;
-
-	// Count of rivers to generate.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "1", ClampMax = "10", UIMin = "1",
-			UIMax = "10")
-	)
-	int32 RiverCount = 1;
-
-	// Determines river's start point. 1.0 means the river will start at the highest point of the landscape, 0.5 means it will start at the middle height.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.5", ClampMax = "1.0", UIMin = "0.5",
-			UIMax = "1.0")
-	)
-	float RiverSourceElevationRatio = 0.8f;
-
-	// Intensity of Simplifing River Path. Higher value means more simplification, lower value means less simplification.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "100", ClampMax = "1000", UIMin = "100"
-			, UIMax = "1000")
-	)
-	float RiverSplineSimplifyEpsilon = 200.f;
-
-	// Base of the river width. RiverWidthCurve value will be normalized and multiplied by this value to get the final width of the river.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	float RiverWidthBaseValue = 2048.0f;
-
-	// Base of the river depth. RiverDepthCurve value will be normalized and multiplied by this value to get the final depth of the river.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	float RiverDepthBaseValue = 1024.0f;
-
-	// --- Advanced River Settings ---
-
-	// Base of the river velocity. RiverVelocityCurve value will be normalized and multiplied by this value to get the final velocity of the river.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	float RiverVelocityBaseValue = 100.0f;
-
-	// Minimum width of the river. This value is added to the calculated width.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0")
-	)
-	float RiverWidthMin = 50.0f;
-
-	// Minimum depth of the river. This value is added to the calculated depth.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0")
-	)
-	float RiverDepthMin = 20.0f;
-
-	// Minimum velocity of the river. This value is added to the calculated velocity.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides, ClampMin = "0.0")
-	)
-	float RiverVelocityMin = 5.0f;
-
-	// Curve that defines the river's width based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the width.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TObjectPtr<UCurveFloat> RiverWidthCurve;
-
-	// Curve that defines the river's depth based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the depth.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TObjectPtr<UCurveFloat> RiverDepthCurve;
-
-	// Curve that defines the river's velocity based on its distance from the start point. The X-axis represents the distance along the river, and the Y-axis represents the velocity.
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TObjectPtr<UCurveFloat> RiverVelocityCurve;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial;
-
-	UPROPERTY(
-		EditAnywhere, BlueprintReadWrite, Category = "River Settings",
-		meta = (EditCondition = "bGenerateRiver", EditConditionHides)
-	)
-	TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial;
-	//~ End UPROPERTY River Settings
+#pragma region Deprecated River Settings
+	UPROPERTY() bool bGenerateRiver_DEPRECATED = false;
+	UPROPERTY() int32 RiverSeed_DEPRECATED = 0;
+	UPROPERTY() int32 RiverCount_DEPRECATED = 1;
+	UPROPERTY() float RiverSourceElevationRatio_DEPRECATED = 0.8f;
+	UPROPERTY() float RiverSplineSimplifyEpsilon_DEPRECATED = 200.0f;
+	UPROPERTY() float RiverWidthBaseValue_DEPRECATED = 2048.0f;
+	UPROPERTY() float RiverDepthBaseValue_DEPRECATED = 1024.0f;
+	UPROPERTY() float RiverVelocityBaseValue_DEPRECATED = 100.0f;
+	UPROPERTY() float RiverWidthMin_DEPRECATED = 50.0f;
+	UPROPERTY() float RiverDepthMin_DEPRECATED = 20.0f;
+	UPROPERTY() float RiverVelocityMin_DEPRECATED = 5.0f;
+	UPROPERTY() TObjectPtr<UCurveFloat> RiverWidthCurve_DEPRECATED;
+	UPROPERTY() TObjectPtr<UCurveFloat> RiverDepthCurve_DEPRECATED;
+	UPROPERTY() TObjectPtr<UCurveFloat> RiverVelocityCurve_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> RiverWaterMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> RiverWaterStaticMeshMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> RiverToLakeTransitionMaterial_DEPRECATED;
+	UPROPERTY() TSoftObjectPtr<UMaterialInterface> RiverToOceanTransitionMaterial_DEPRECATED;
+#pragma endregion
 
 public:
-	//~ Begin UPROPERTY PCG
+	// ============================== PCG ==============================
 	/** The PCG graph to be used for generation. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	TObjectPtr<UPCGGraph> PCGGraph;
@@ -614,10 +245,11 @@ public:
 	/** Whether to automatically generate the PCG graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PCG")
 	bool bAutoGenerate = true;
-	//~ End UPROPERTY PCG
 
 public:
-	//~ Begin UPROPERTY OCG
+	// ============================== OCG ==============================
+	// TODO: UOCGDefaultHeightmapStrategy, UOCGDefaultTemperatureStrategy, UOCGDefaultErosionStrategy에서 같이 사용되고 있음
+	//       각각의 시드로 분리하기 (골든 CRC 5종 재생성 필요)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
 
@@ -628,26 +260,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	TArray<FOCGBiomeSettings> Biomes;
 
-	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.f, 1.f, FLinearColor::Blue, 1, 0.5f };
+	FOCGBiomeSettings WaterBiome{ TEXT("Water"), 0.0f, 1.0f, FLinearColor::Blue, 1, 0.5f };
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "OCG")
 	TArray<FLandscapeHierarchyData> HierarchiesData;
-	//~ End UPROPERTY OCG
-
-public:
-	UPROPERTY()
-	TArray<uint16> HeightMapData;
-
-	UPROPERTY()
-	TArray<uint16> TemperatureMapData;
-
-	UPROPERTY()
-	TArray<uint16> HumidityMapData;
-
-#if WITH_EDITOR
-
-public:
-	UPROPERTY(Transient)
-	TWeakObjectPtr<AOCGLevelGenerator> LandscapeGenerator = nullptr;
-#endif
 };

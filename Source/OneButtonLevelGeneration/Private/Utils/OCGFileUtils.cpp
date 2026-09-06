@@ -1,23 +1,12 @@
 // Copyright (c) 2025 Code1133. All rights reserved.
 
-#if WITH_EDITOR
 #include "Utils/OCGFileUtils.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 #include "Logging/LogMacros.h"
-#endif
-
-FOCGFileUtils::FOCGFileUtils()
-{
-}
-
-FOCGFileUtils::~FOCGFileUtils()
-{
-}
 
 bool FOCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
 {
-#if WITH_EDITOR
 	// 1. /Game/ 접두사를 제거하여 Content 폴더 내의 상대 경로를 만듭니다.
 	FString RelativeContentPath = InPackagePath;
 	if (RelativeContentPath.StartsWith(TEXT("/Game/")))
@@ -43,5 +32,4 @@ bool FOCGFileUtils::EnsureContentDirectoryExists(const FString& InPackagePath)
 		// 5. 디렉토리가 없으면 생성합니다.
 		return FileManager.MakeDirectory(*DirectoryPath, true);
 	}
-#endif
 }

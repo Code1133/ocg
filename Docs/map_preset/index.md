@@ -14,18 +14,38 @@ By editing a **MapPreset**, you can define properties related to level generatio
 
 ![MapPreset asset image]({{ site.baseurl }}/assets/images/map_preset/map_preset.png)
 
-- You can create a new **MapPreset** from the **OCG Window** or by right-clicking in the **Content Drawer** and selecting **OCG > Map Preset**.
+- To create a new **MapPreset**, right-click in the **Content Drawer** and select **OCG > Map Preset**.
+  Newly created presets pick up the default landscape material and PCG graph configured in
+  [Additional Settings]({{ site.baseurl }}/additional_settings/).
 
 
 ## Editing MapPreset
-You can edit the **MapPreset** asset and generate a level from the **OCG Window** or the custom **MapPreset editor**.
+
+{: .info }
+> Changed in 2.0.0. Generation is now driven entirely from the **OCG Window**. Open it from the
+> **OCG** button on the level editor toolbar, or from **Window → OCG Tools → OCG**. The separate
+> MapPreset editor window and the `LevelGenerator` actor that 1.x placed in the level are gone —
+> double-clicking a `MapPreset` now opens the standard Details panel.
 
 ![OCGWindow]({{ site.baseurl }}/assets/images/map_preset/OCGWindow.png)
 
+Pick the asset you want to work on in the **Preset** field at the top, then edit its properties
+in the panel below. The sidebar on the left filters the panel by category.
+
+### Toolbar
+
 | Button | Description |
-| Create Level Generator / Select Level Generator | Create New ALevelGenerator in current Level. / Select one ALevelGenertor in current Level.                                                                                                          |
-| Preview Map | The Landscape that will be generated based on the .png specified in the HeightMap File Path is previewed with a green outline and maps such as temperature maps are generated as png file in Contents/Maps folder. If there is no HeightMap File Path, the Landscape generated from the current Seed value is previewed with a green outline.                                                                                                          |
-| Generate | Generate Landscape & PCG & Rivers based on the MapPreset in current Level.                                                                                                          |
-| Generate With Random Seed | Generate Landscape & PCG & Rivers based on the MapPreset with Random Seed in current Level.                                                                                                               |
-| Force Generate PCG | Removes all existing *PCG* actors in the current level and generates new ones. <br>**Note:** This is an *editor-only* function.                                                                                                          |
-| Regenerate River | the current River is removed and a new River is regenerated on the current Landscape based on the River Setting. If you changed any weights on the Landscape that were affected by the River, those changes will be lost.                                                                                             |
+| :----- | :---------- |
+| Generate All | Runs the full pipeline in the current level: *DataGeneration → LandscapeGen → Population → Hydrology*. |
+| Regen River  | Re-runs only the hydrology step, reusing the cached heightmap. Requires *Generate River (Experimental)* to be enabled on the preset. Landscape weight edits made where the previous river ran are lost. |
+| Force PCG    | Forces PCG graph re-generation on every `OCGLandscapeVolume` in the current world. |
+
+### Inline Fields
+
+| Field | Description |
+| :---- | :---------- |
+| Preset     | The `MapPreset` asset to edit and generate from. |
+| Seed       | The generation seed. It drives the heightmap, temperature and erosion passes, so changing it reshapes the terrain. The button beside it assigns a random value. |
+| River Seed | The seed for river path generation. The button beside it assigns a random value. |
+| Island     | Generate the map as an island, surrounded by ocean. |
+| Water      | Include an ocean water body. |

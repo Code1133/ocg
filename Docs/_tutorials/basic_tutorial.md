@@ -19,17 +19,16 @@ File > New Level(Ctrl+N)을 선택한 뒤, 새로운 빈 레벨을 생성합니�
 
 ### 2. Open the One-Click Level Generator
 
-Window > OCG Tools > OCG Window를 선택하여 OCG 창을 엽니다.
+레벨 에디터 툴바의 **OCG** 버튼을 누르거나, **Window > OCG Tools > OCG**를 선택하여 OCG 창을 엽니다.
 
 ![Open OCG Window]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/open_ocg_window.png)
 
-이후 OCG 창에서 Create Level Generator 버튼을 클릭하여 레벨 생성기를 월드에 추가합니다.
+{: .info }
+> 2.0.0부터는 레벨에 `LevelGenerator` 액터를 배치하지 않습니다. OCG 창 상단의 **Preset** 칸에서
+> 사용할 `MapPreset`을 고른 뒤 바로 **Generate All**을 누르면 됩니다.
 
-![Create Level Generator Button]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/create_level_generator.png)
-
-OCG 창에서 `ㅤ+ㅤ` 버튼을 클릭후, 새로운 Map Preset 저장합니다.
-
-![Add Map Preset Button]({{ site.baseurl }}/assets/images/tutorials/basic_tutorial/add_map_preset.png)
+아직 `MapPreset`이 없다면, Content Drawer에서 우클릭 후 **OCG > Map Preset**으로 새로 만듭니다.
+그런 다음 OCG 창의 **Preset** 칸에서 방금 만든 에셋을 선택합니다.
 
 ### 3. Configure the Map Preset
 

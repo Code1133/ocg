@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.2.1",
+	"Version": 2,
+	"VersionName": "2.0.0-beta.1",
 	"FriendlyName": "One-Click Level Generation",
 	"Description": "One-Click Level Generation Plugin",
 	"Category": "Editor",
@@ -12,7 +12,7 @@
 	"MarketplaceURL": "com.epicgames.launcher://ue/Fab/product/a0a5678a-2747-4550-aa54-0fa8f2a78460",
 	"SupportURL": "https://github.com/Code1133/ocg/issues",
 	"CanContainContent": true,
-	"IsBetaVersion": false,
+	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [

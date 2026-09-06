@@ -7,65 +7,56 @@ public class OneButtonLevelGeneration : ModuleRules
 	public OneButtonLevelGeneration(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		PublicIncludePaths.AddRange(
-			new string[] {
-				// ... add public include paths required here ...
-			}
-			);
-				
-		
-		PrivateIncludePaths.AddRange(
-			new string[] {
-				// ... add other private include paths required here ...
-			}
-			);
-			
-		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
+
+		// 공개 헤더에서 타입을 직접 노출하는 모듈
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"PCG",
+			"PCGGeometryScriptInterop",
+			"PCGWaterInterop",
+		});
+
+		// 내부에서 필요한 구현 전용 모듈
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"DeveloperSettings",
+			"Foliage",
+			"Landscape",
+			"Projects",
+			"Water",
+		});
+
+        // 에디터 전용 모듈
+		if (Target.Type == TargetType.Editor)
+		{
+            PublicDependencyModuleNames.AddRange(new string[]
+            {
+                "EditorSubsystem",
+            });
+
+			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"Core",
-				"CoreUObject",
-				"PCG",
-				"PCGGeometryScriptInterop",
-				"PCGWaterInterop",
-			}
-			);
-			
-		
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
+				"AssetRegistry",
 				"AssetTools",
-				"EditorStyle",
-				"Engine",
-				"Landscape",
+				"ContentBrowser",
+				"ContentBrowserData",
+				"InputCore",
 				"LandscapeEditor",
+				"LevelEditor",
 				"PCGEditor",
 				"PropertyEditor",
 				"Slate",
 				"SlateCore",
-				"UnrealEd",
-				"WorkspaceMenuStructure",
-				"MaterialEditor",
-				"InputCore",
-				"DeveloperSettings", 
-				"VirtualTexturingEditor",
-				"Projects", 
-				"Water", 
-				"WaterEditor",
 				"ToolMenus",
-				"Foliage",
-			}  
-			);
-		
-		
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+				"ToolWidgets",
+				"UnrealEd",
+				"VirtualTexturingEditor",
+				"WaterEditor",
+				"WorkspaceMenuStructure",
+			});
+		}
 	}
 }
