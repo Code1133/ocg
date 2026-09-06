@@ -248,6 +248,8 @@ public:
 
 public:
 	// ============================== OCG ==============================
+	// TODO: UOCGDefaultHeightmapStrategy, UOCGDefaultTemperatureStrategy, UOCGDefaultErosionStrategy에서 같이 사용되고 있음
+	//       각각의 시드로 분리하기 (골든 CRC 5종 재생성 필요)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OCG")
 	int32 Seed = 1337;
 

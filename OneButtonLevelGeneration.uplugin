@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
+	"Version": 2,
 	"VersionName": "2.0.0-beta.1",
 	"FriendlyName": "One-Click Level Generation",
 	"Description": "One-Click Level Generation Plugin",
