@@ -7,6 +7,11 @@ url: https://code1133.github.io
 baseurl: /ocg
 repository: https://github.com/Code1133/ocg/
 
+# 배포 시 .github/workflows/pages.yml 이 버전별로 덮어쓰는 값.
+# 로컬 `jekyll serve` 에서는 아래 기본값이 그대로 쓰여 main = next 로 표시됨.
+ocg_version: "next"
+docs_root: "/ocg"
+
 theme: just-the-docs
 color_scheme: dark
 permalink: pretty

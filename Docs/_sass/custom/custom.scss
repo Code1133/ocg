@@ -1,0 +1,110 @@
+// 버전 선택기 스타일.
+// 테마 색상 변수만 사용하고 치수는 리터럴로 둬서 just-the-docs 업그레이드에 덜 민감하게 함.
+
+.ocg-versions {
+  position: relative;
+  align-self: center;
+  margin: 0 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+
+  > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.6rem;
+    color: $body-text-color;
+    white-space: nowrap;
+    list-style: none;
+    cursor: pointer;
+    border: 1px solid $border-color;
+    border-radius: 1rem;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: "\25be";
+      opacity: 0.6;
+    }
+  }
+
+  &--prerelease > summary {
+    color: $orange-300;
+    border-color: $orange-300;
+  }
+
+  &--dev > summary {
+    color: $grey-dk-000;
+    border-color: $grey-dk-000;
+  }
+}
+
+.ocg-versions__channel {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.ocg-versions__menu {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  min-width: 13rem;
+  margin: 0.3rem 0 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background-color: $body-background-color;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+
+  a {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0.75rem;
+    color: $body-text-color;
+    text-decoration: none;
+
+    &:hover {
+      background-color: $feedback-color;
+    }
+  }
+
+  .is-current a {
+    font-weight: 600;
+  }
+}
+
+// 사이드바 / 모바일 푸터
+
+.ocg-nav-versions {
+  margin-bottom: 0.4rem;
+
+  > * {
+    margin-right: 0.5rem;
+  }
+}
+
+.ocg-nav-versions__title {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+.ocg-nav-copy {
+  margin-bottom: 0;
+  opacity: 0.7;
+}
+
+// 프리릴리스 안내
+
+.ocg-prerelease-note {
+  padding: 0.6rem 0.9rem;
+  color: $orange-300;
+  border: 1px solid $orange-300;
+  border-radius: 4px;
+}

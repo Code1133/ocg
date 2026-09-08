@@ -1,0 +1,16 @@
+{%- comment -%}
+  안정판이 아닌 빌드에서만 본문 하단에 안정판으로 되돌아가는 링크를 노출.
+{%- endcomment -%}
+{%- assign current_path = site.ocg_version | default: "" -%}
+{%- assign current_channel = "" -%}
+{%- assign stable_label = "" -%}
+{%- for v in site.data.versions -%}
+  {%- if v.path == current_path -%}{%- assign current_channel = v.channel -%}{%- endif -%}
+  {%- if v.channel == "stable" -%}{%- assign stable_label = v.label -%}{%- endif -%}
+{%- endfor -%}
+{%- if current_channel != "" and current_channel != "stable" -%}
+<p class="ocg-prerelease-note">
+  You are reading documentation for an unreleased version of OCG.
+  <a href="{{ site.docs_root }}/">Go to the {{ stable_label }} documentation &rarr;</a>
+</p>
+{%- endif -%}
