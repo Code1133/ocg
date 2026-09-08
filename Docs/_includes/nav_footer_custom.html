@@ -1,0 +1,18 @@
+{%- comment -%}
+  사이드바 하단(데스크톱) 및 페이지 푸터(모바일)에 렌더링됨.
+  헤더가 숨겨지는 모바일에서 유일한 버전 이동 수단이므로 링크를 모두 노출함.
+{%- endcomment -%}
+{%- assign current_path = site.ocg_version | default: "" -%}
+{%- if site.data.versions -%}
+<p class="ocg-nav-versions">
+  <span class="ocg-nav-versions__title">Version</span>
+  {%- for v in site.data.versions -%}
+  {%- assign href = site.docs_root | append: "/" -%}
+  {%- if v.path != "" -%}{%- assign href = href | append: v.path | append: "/" -%}{%- endif -%}
+  {% if v.path == current_path %}<strong>{{ v.label }}</strong>{% else %}<a href="{{ href }}">{{ v.label }}</a>{% endif %}
+  {%- endfor -%}
+</p>
+{%- endif -%}
+{%- if site.footer_content -%}
+<p class="ocg-nav-copy">{{ site.footer_content }}</p>
+{%- endif -%}

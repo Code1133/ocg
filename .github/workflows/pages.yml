@@ -1,9 +1,6 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+# Docs/_data/versions.yml 에 나열된 버전을 각각 빌드해 하나의 사이트로 배포한다.
+#   path: ""  -> 사이트 루트 (안정판)
+#   그 외     -> /<path>/ 하위 경로
 name: Deploy Jekyll site to Pages
 
 on:
@@ -12,8 +9,15 @@ on:
       - "main"
     paths:
       - "Docs/**"
+      - ".github/workflows/pages.yml"
 
-  # Allows you to run this workflow manually from the Actions tab
+  # PR 에서는 build만 돌려 문서가 실제로 빌드되는지 검증. (deploy는 건너뜀)
+  pull_request:
+    paths:
+      - "Docs/**"
+      - ".github/workflows/pages.yml"
+
+  # 새 태그를 versions.yml 에 추가한 뒤 수동 실행하는 용도로도 사용
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -22,21 +26,21 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
+# 실제 배포는 하나씩. PR 검증은 브랜치별로 분리해 배포 큐를 막지 않게 한다.
 concurrency:
-  group: "pages"
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.ref) || 'pages' }}
   cancel-in-progress: true
 
 jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./Docs
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # 과거 릴리스 태그를 worktree 로 꺼내야 하므로 전체 히스토리와 태그가 필요
+          fetch-depth: 0
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -50,20 +54,83 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      - name: Build with Jekyll
-        # Outputs to the './_site' directory by default
-        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+      - name: Build every published version
         env:
+          # 모든 버전을 main 의 Gemfile.lock 으로 빌드한다.
+          # v1.0.0 이후 Docs/Gemfile 이 동일하므로 bundle 은 한 번만 설치하면 된다.
+          BUNDLE_GEMFILE: "${{ github.workspace }}/Docs/Gemfile"
           JEKYLL_ENV: production
+          DOCS_ROOT: "${{ steps.pages.outputs.base_path }}"
+        run: |
+          set -euo pipefail
+
+          out="$GITHUB_WORKSPACE/_site"
+          mkdir -p "$out"
+
+          ruby -ryaml -e '
+            YAML.load_file("Docs/_data/versions.yml").each do |v|
+              # 탭은 IFS 공백이라 선행 빈 필드가 사라진다. 비공백 구분자를 쓴다.
+              puts [v["path"], v["ref"]].join("|")
+            end
+          ' > "$RUNNER_TEMP/versions.list"
+
+          echo "::group::versions to build"
+          cat "$RUNNER_TEMP/versions.list"
+          echo "::endgroup::"
+
+          while IFS='|' read -r vpath vref; do
+            echo "::group::build ${vref} -> ${DOCS_ROOT}/${vpath}"
+
+            if [ "$vref" = "main" ]; then
+              src="$GITHUB_WORKSPACE/Docs"
+            else
+              wt="$RUNNER_TEMP/wt-$vref"
+              git worktree add --detach "$wt" "$vref"
+              src="$wt/Docs"
+
+              # 버전 선택기와 버전 목록, 스타일은 항상 main 것을 쓴다.
+              # 과거 문서의 본문은 그대로 두고 사이트 크롬만 최신으로 통일하기 위함.
+              rm -rf "$src/_includes" "$src/_data" "$src/_sass/custom"
+              cp -r "$GITHUB_WORKSPACE/Docs/_includes" "$src/_includes"
+              cp -r "$GITHUB_WORKSPACE/Docs/_data"     "$src/_data"
+              cp -r "$GITHUB_WORKSPACE/Docs/_sass/custom" "$src/_sass/custom"
+            fi
+
+            # 빌드 시점 값을 주입. worktree 는 일회용이라 그대로 덮어써도 무방하다.
+            sed -i '/^ocg_version:/d; /^docs_root:/d' "$src/_config.yml"
+            {
+              echo ""
+              echo "ocg_version: \"$vpath\""
+              echo "docs_root: \"$DOCS_ROOT\""
+            } >> "$src/_config.yml"
+
+            # 각 버전을 별도 디렉터리에 빌드한 뒤 합친다.
+            # jekyll 이 destination 을 청소하므로 _site 에 직접 쓰면 앞선 결과가 지워진다.
+            dest="$RUNNER_TEMP/build-${vpath:-root}"
+            bundle exec jekyll build \
+              --source "$src" \
+              --destination "$dest" \
+              --baseurl "${DOCS_ROOT}${vpath:+/$vpath}"
+
+            mkdir -p "${out}${vpath:+/$vpath}"
+            cp -r "$dest/." "${out}${vpath:+/$vpath}/"
+
+            echo "::endgroup::"
+          done < "$RUNNER_TEMP/versions.list"
+
+          echo "::group::site layout"
+          find "$out" -maxdepth 1 -mindepth 1 | sort
+          echo "::endgroup::"
 
       - name: Upload artifact
         # Automatically uploads an artifact from the './_site' directory by default
         uses: actions/upload-pages-artifact@v5
         with:
-          path: "Docs/_site/"
+          path: "_site"
 
   # Deployment job
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

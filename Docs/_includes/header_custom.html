@@ -1,0 +1,36 @@
+{%- comment -%}
+  버전 선택기. just-the-docs 가 #main-header 안, 검색창과 aux nav 사이에 렌더링함.
+  md 미만에서는 헤더 자체가 숨겨지므로 모바일은 nav_footer_custom.html 이 담당.
+  site.ocg_version / site.docs_root 는 배포 시 워크플로가 _config.yml 에 써 넣는 빌드 시점 값.
+{%- endcomment -%}
+{%- assign current_path = site.ocg_version | default: "" -%}
+{%- assign current_label = "" -%}
+{%- assign current_channel = "" -%}
+{%- for v in site.data.versions -%}
+  {%- if v.path == current_path -%}
+    {%- assign current_label = v.label -%}
+    {%- assign current_channel = v.channel -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- if current_label != "" -%}
+<details class="ocg-versions ocg-versions--{{ current_channel }}">
+  <summary title="Switch documentation version">
+    <span class="ocg-versions__label">{{ current_label }}</span>
+    {%- unless current_channel == "stable" -%}
+    <span class="ocg-versions__channel">{{ current_channel }}</span>
+    {%- endunless -%}
+  </summary>
+  <ul class="ocg-versions__menu">
+    {%- for v in site.data.versions -%}
+    {%- assign href = site.docs_root | append: "/" -%}
+    {%- if v.path != "" -%}{%- assign href = href | append: v.path | append: "/" -%}{%- endif -%}
+    <li{% if v.path == current_path %} class="is-current"{% endif %}>
+      <a href="{{ href }}">
+        <span>{{ v.label }}</span>
+        <span class="ocg-versions__channel">{{ v.channel }}</span>
+      </a>
+    </li>
+    {%- endfor -%}
+  </ul>
+</details>
+{%- endif -%}

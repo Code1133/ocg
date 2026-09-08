@@ -1,0 +1,25 @@
+# 문서 사이트에 게시할 버전 목록. 이 파일이 유일한 소스이며
+# .github/workflows/pages.yml 이 그대로 읽어 버전별로 빌드함.
+#
+#   path    : 배포 경로. 빈 문자열이면 사이트 루트
+#   ref     : 빌드에 사용할 git 태그 또는 브랜치
+#   label   : 버전 선택기에 표시할 이름
+#   channel : stable | prerelease | dev
+#
+# 새 릴리스 절차: 태그를 푸시한 뒤 이 목록의 path/ref/label 을 갱신하고
+# 안정판이 바뀌면 path: "" 의 ref 를 새 태그로 옮길 것.
+
+- path: ""
+  ref: "v1.2.1"
+  label: "1.2.1"
+  channel: "stable"
+
+- path: "v2.0.0-beta.1"
+  ref: "v2.0.0-beta.1"
+  label: "2.0.0-beta.1"
+  channel: "prerelease"
+
+- path: "next"
+  ref: "main"
+  label: "next"
+  channel: "dev"
