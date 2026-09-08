@@ -11,6 +11,12 @@ on:
       - "Docs/**"
       - ".github/workflows/pages.yml"
 
+  # PR 에서는 build만 돌려 문서가 실제로 빌드되는지 검증. (deploy는 건너뜀)
+  pull_request:
+    paths:
+      - "Docs/**"
+      - ".github/workflows/pages.yml"
+
   # 새 태그를 versions.yml 에 추가한 뒤 수동 실행하는 용도로도 사용
   workflow_dispatch:
 
@@ -20,9 +26,9 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment
+# 실제 배포는 하나씩. PR 검증은 브랜치별로 분리해 배포 큐를 막지 않게 한다.
 concurrency:
-  group: "pages"
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.ref) || 'pages' }}
   cancel-in-progress: true
 
 jobs:
@@ -124,6 +130,7 @@ jobs:
 
   # Deployment job
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
